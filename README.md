@@ -4,13 +4,13 @@
 
 | | |
 | --- | --- |
-| 계획서 버전 | **v2.1** (2026-09-08) |
+| 계획서 버전 | **v2.2** (2026-09-08) |
 | 대상 | Paper / Minecraft **26.2** / Java **25** |
 | BetterModel | **3.4.1** (MIT) |
 | 빌드 | **Maven** |
 | **서버 규모** | **최대 5명** — 설계 전반의 기준 (3장) |
 | 상태 | 기획 확정, 구현 착수 전 |
-| 예상 기간 | 약 12주 (1인 파트타임) |
+| 예상 기간 | 약 11주 (1인 파트타임) |
 
 ---
 
@@ -18,6 +18,7 @@
 
 - [1. 요약](#1-요약)
 - [2. 원작 시스템 분석](#2-원작-시스템-분석)
+- [2.5 참고 구현 분석 — betterpets-paper](#25-참고-구현-분석--betterpets-paper)
 - [3. 서버 규모와 범위](#3-서버-규모와-범위)
 - [4. 전제 조건과 빌드](#4-전제-조건과-빌드)
 - [5. 남은 확인 사항](#5-남은-확인-사항)
@@ -50,7 +51,7 @@
 | | 결정 | 근거 |
 | --- | --- | --- |
 | **렌더링 캐리어** | 보이지 않는 `Mob` + `EntityTracker` | `DummyTracker`는 클릭 판정·이름표·탑승을 전부 직접 구현해야 한다 |
-| **탑승** | BetterModel `SEAT`(`p_`) 본 + `MountedHitBox` | 원작의 핵심 기능. BetterModel이 네이티브로 지원한다 (7장) |
+| **탑승** | 보이지 않는 `ArmorStand` + `addPassenger` + Paper `Input` API | 원작의 핵심 기능. 배포 중인 플러그인에서 검증된 구조 (2.5장, 11장) |
 | **이동** | `setAI(false)` 후 자체 컨트롤러 | 지상/비행/탑승 3가지 모드를 한 컨트롤러에서 전환해야 한다 |
 | **애니메이션** | 상태 전이 시점에만 `animate()` 호출 | `animate()`는 패킷을 만든다. 매 틱 호출은 규모와 무관한 버그다 |
 | **영속화** | SQLite 단일 커넥션 + 단일 스레드 실행자 | 5명 규모라 커넥션 풀·MySQL은 과잉 (3장) |
@@ -105,6 +106,65 @@
 | 비행 | A등급부터 확률 | **채택** | 원작 준수 |
 | 획득 | NPC 알 구매(S2) + 뽑기권(S1) | **알 아이템 우클릭 하나로 통합** | 5명 서버에 NPC는 과잉. 랜덤 알로 뽑기 감각은 유지 (14장) |
 | 능력 | 이동속도 위주 | **패시브/트리거/액티브 확장** | 원작보다 확장. 끄면 원작과 동일 |
+
+---
+
+## 2.5 참고 구현 분석 — betterpets-paper
+
+[`yourShika/betterpets-paper`](https://github.com/yourShika/betterpets-paper) (MIT, v1.26.1)는 **이미 BetterModel 연동과 비행 탑승을 구현해 배포 중인 Paper 플러그인**이다. 소스를 읽고 확인한 내용을 정리한다. 우리와 목표가 상당히 겹쳐서 — Paper 26.2, Maven, BetterModel, 탑승·비행 펫 — 가장 값진 입력이다.
+
+> MIT 라이선스이므로 **저작권 표시를 유지하면 코드를 참고·차용할 수 있다.** 다만 이 프로젝트는 스스로 "AI의 도움으로 만들어졌다"고 밝히고 있으니, 검증 없이 그대로 옮기지는 않는다.
+
+### 우리 설계가 확인된 것
+
+| 우리 결정 | 그쪽 구현 |
+| --- | --- |
+| Maven 빌드 | ✅ 동일 (`pom.xml`) |
+| BetterModel API 격리 계층 | ✅ 동일 — `PetModelBridge` 인터페이스 ← `BetterModelHook` 구현 |
+| 핸들이 `AutoCloseable` | ✅ 동일 — `PetModelHandle extends AutoCloseable` |
+| `getOrCreate` + `TrackerModifier.DEFAULT` | ✅ 동일 |
+| `tracker.close()` / `isClosed()` / `hide` / `show` | ✅ 동일 |
+
+7장에 정리한 API 시그니처가 **실제 동작하는 플러그인에서 그대로 쓰이고 있음이 확인됐다.**
+
+### 우리 계획을 고쳐야 하는 것
+
+| # | 발견 | 조치 |
+| --- | --- | --- |
+| 1 | **`paper-plugin.yml` + `api-version: '26.2'`** 를 쓴다 | 우리 계획의 `plugin.yml` / `api-version: '1.21'` 은 **구식이다.** 4장 정정 |
+| 2 | **탑승에 BetterModel `MountedHitBox`를 쓰지 않는다.** 보이지 않는 `ArmorStand` + `addPassenger`로 직접 구현 | 11장 전면 개정. **R1이 크게 완화된다** — 검증된 대안이 생겼다 |
+| 3 | 조향에 **Paper `Input` API** (`input.isSneak()` 등 WASD/점프 상태)를 쓴다 | 11장 반영. 시선+속도 해킹보다 훨씬 낫다 |
+| 4 | Paper 26.2는 **Adventure 5.x** 기반이다 (4.x는 `ObjectContentsLike` 부재) | 의존성 충돌 시 확인 |
+| 5 | 저장소 기본값이 **YAML**이고 SQLite는 미구현 옵션 | 5명 규모면 YAML도 충분하다. 12장에 대안으로 명시 |
+
+### 그대로 가져올 만한 기법 — 우리가 겪었을 버그들
+
+이들이 릴리스 노트에서 고쳤다고 밝힌 것들이 곧 우리가 만날 버그다.
+
+| 문제 | 해법 |
+| --- | --- |
+| 빠른 마운트가 얇은 벽을 **관통** | 이동 경로를 **0.45블록 이하 서브스텝으로 분할 검사**. 하나라도 막히면 전체 취소 |
+| 벽에 닿으면 이동이 완전히 멈춤 | **벽 슬라이딩** — 전체 이동 → 수평만 → 수직만 순으로 시도 |
+| 어깨/머리가 벽에 **끼임** | 중심 + 반경 0.35의 4방향 점을 **발치와 머리 높이 양쪽에서** 검사 |
+| 하차 시 **낙하 피해** | `setFallDistance(0)` + `SLOW_FALLING` 100틱 |
+| 비행 중 펫 히트박스가 **블록 파괴 레이캐스트를 가로챔** | 비행 중 `Interaction` 히트박스를 0.1×0.1로 축소, 하차 시 복원 |
+| 펫이 채굴·건축을 방해 | 우클릭 동작이 없는 펫은 히트박스를 아예 작게. 공격 불가 처리 |
+| 실수로 이륙 | **두 번째 우클릭 확인**을 요구 (시간 창 내) |
+| 비행 중 우클릭하면 하차돼버림 | 비행 중 하차는 **스니크 전용** |
+| 고도 제한 | 빌드 높이가 아니라 `flight-max-height`(기본 1024)로 별도 상한 |
+| 펫 본체가 마운트를 못 따라감 | `display.setTeleportDuration(1)` — 탑승 중엔 1틱 보간, 평상시엔 8틱 |
+
+### 반면교사 — 구조
+
+전체 12,816줄 중 **`BetterPetsPlugin.java`가 5,034줄, `ActivePetManager.java`가 3,792줄**이다. 두 파일이 코드의 69%를 차지하는 전형적인 신 클래스(God class)다.
+
+우리의 계층 분리(6장)는 이걸 피하기 위한 것이다. **`ActivePetManager`에 해당하는 책임을 `MovementController` / `RideController` / `AnimationStateMachine` / `PetTicker`로 나눠 유지한다.** 한 파일이 800줄을 넘으면 분리 신호로 본다.
+
+### 엔티티 구성 — 그쪽과 우리의 차이
+
+그쪽은 펫 1마리당 **`ItemDisplay`(본체) + `Interaction`(클릭) + `TextDisplay`(이름표)** 3개를 쓰고, 탑승 시 `ArmorStand`가 하나 더 붙는다. BetterModel이 **선택 사항**이라 없을 때 플레이어 머리로 대체 렌더링해야 하기 때문이다.
+
+우리는 BetterModel에 **하드 의존**하므로 본 태그로 히트박스(`b_`)와 이름표(`tag_`)를 얻을 수 있어 엔티티를 줄일 수 있다. 다만 **BetterModel이 `ItemDisplay`에도 정상적으로 붙는다는 것**이 확인됐으므로, 캐리어를 `Mob`으로 할지 `ItemDisplay`로 할지는 M1에서 실측해 정한다.
 
 ---
 
@@ -216,13 +276,25 @@ mvn test                 # 단위 테스트만
 셰이딩 대상은 SQLite 하나뿐이다. **커넥션 풀(HikariCP)은 쓰지 않는다** — 5명 규모에 과잉이고, 단일 커넥션 + 단일 스레드 실행자가 SQLite 잠금 문제를 애초에 없앤다 (12장).
 
 ```yaml
-# plugin.yml
+# src/main/resources/paper-plugin.yml
+# ⚠️ plugin.yml 이 아니라 paper-plugin.yml 이다. api-version 도 '1.21' 이 아니라 '26.2'.
 name: BetterPets
+version: '${project.version}'
 main: kr.qmftm.betterpets.BetterPetsPlugin
-api-version: '1.21'
-depend: [BetterModel]
-softdepend: [PlaceholderAPI, Vault]   # Vault 는 보류(Q5). Citizens 는 NPC 제거로 불필요
+api-version: '26.2'
+dependencies:
+  server:
+    BetterModel:
+      load: BEFORE
+      required: true          # 우리 펫은 3D 모델이 본체다. 선택 사항이 아니다
+      join-classpath: true
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true
 ```
+
+> Paper 26.2는 **Adventure 5.x** 기반이다. Adventure 4.x 계열 라이브러리를 끌어오는 다른 플러그인과 섞이면 `ObjectContentsLike` 같은 클래스 부재로 깨질 수 있다 (2.5장).
 
 > ⚠️ **BetterModel 3.4.1은 Java 25 전용이다.** 클래스 파일 버전 69라서 JDK 24 이하로는 컴파일조차 되지 않는다. 빌드 머신과 운영 서버 모두 JDK 25가 필요하다.
 
@@ -239,10 +311,10 @@ softdepend: [PlaceholderAPI, Vault]   # Vault 는 보류(Q5). Citizens 는 NPC �
 | ~~Q4~~ | ~~MySQL 필요 여부~~ | ✅ **SQLite만. MySQL 구현체 제외** | — |
 | ~~Q5~~ | ~~Vault 사용 여부~~ | ✅ **보류.** NPC 상점을 없애며 결제 지점 소멸 | — |
 | ~~Q7~~ | ~~NPC 구현 방식~~ | ✅ **NPC 없음. 알 아이템으로 대체 (14장)** | — |
+| ~~Q9~~ | ~~비행 조작 방식~~ | ✅ **`ArmorStand` 마운트 + Paper `Input` API (11장)** | — |
 | **Q8** | **등급별 이동속도·비행 확률 수치는?** | 13장 플레이스홀더 | M7 전 |
-| **Q9** | **비행 펫의 조작 방식은?** | 겉날개식 활공 vs 자유 비행 | M5 전 |
 
-남은 질문은 둘 다 **밸런싱·조작감** 문제라, 실제로 만들어보고 타보면서 정하는 게 맞다. 착수를 막지 않는다.
+남은 건 Q8 하나이고 **밸런싱 수치** 문제다. 실제로 타보면서 정하는 게 맞으니 착수를 막지 않는다.
 
 ---
 
@@ -591,16 +663,61 @@ void tick() {
 
 원작의 핵심 기능이자 **이 프로젝트에서 가장 불확실한 부분**이다.
 
-### 탑승
+> **2.5장 조사로 접근이 바뀌었다.** 원래는 BetterModel의 `MountedHitBox`(`p_` 좌석 본)에 기대는 계획이었으나, 같은 일을 하는 배포 중인 플러그인이 **그 경로를 쓰지 않고** 보이지 않는 `ArmorStand`를 직접 구동한다. 그래서 아래를 **기본안**으로 삼고, `MountedHitBox`는 더 간단하면 채택하는 선택지로 내린다.
+
+### 탑승 — 기본안 (검증된 구조)
 
 1. `ADULT` 상태이고 `rideable: true` 인 펫만 탑승 가능
-2. 모델에 `p_seat` 본이 있어야 한다 (8.3)
-3. 플레이어가 펫을 **우클릭**하면 탑승 시도
-4. BetterModel의 `MountedHitBox`가 좌석 결합을 처리한다 (7장)
-5. 탑승 중에는 `MovementMode.RIDDEN` 으로 전환 — 추종 로직 정지, 탑승자 입력에 따름
-6. 하차: 스니크 또는 `/pet dismount`
+2. 플레이어가 펫을 **우클릭** → 지상 마운트는 즉시, **비행은 시간 창 내 두 번째 우클릭으로 확인** (실수 이륙 방지)
+3. 보이지 않는 `ArmorStand`를 스폰해 `addPassenger(player)` 로 태운다
+   - `setVisible(false)` · `setGravity(false)` · `setInvulnerable(true)` · `setCollidable(false)` · `setSmall(true)` · `setBasePlate(false)` · `setPersistent(false)`
+   - 스코어보드 태그 + PDC(소유자·펫 UUID)로 식별 — 서버 재시작 후 청소용
+   - `addPassenger`가 실패하면 마운트를 **즉시 제거**하고 메시지. 유령 아머스탠드를 남기지 않는다
+4. 펫 본체는 마운트를 따라 `teleport` + **`setTeleportDuration(1)`** (1틱 보간)으로 밀착 추적. 하차 시 평상시 값(8틱)으로 복원
+5. 탑승 중에는 `MovementMode.RIDDEN` — 추종 로직 정지, 탑승자 입력에 따름
+6. **하차는 스니크 전용** (비행 중 우클릭으로 하차하면 오작동이 잦다) 또는 `/pet dismount`
 
-**이동 속도는 등급에 비례한다** (원작 준수). `Rarity.rideSpeed` 참고.
+**조향은 Paper `Input` API로 한다.** 시선 방향 + 속도 부여 같은 옛 해킹 대신, `input.isForward()/isJump()/isSneak()` 등 실제 키 입력 상태를 읽는다.
+
+```java
+// 비행 이동 벡터 구성
+Vector look = player.getLocation().getDirection();
+Vector move = new Vector();
+if (input.isForward())  move.add(look);
+if (input.isBackward()) move.subtract(look);
+Vector flat  = new Vector(look.getX(), 0, look.getZ()).normalize();
+Vector right = new Vector(-flat.getZ(), 0, flat.getX());
+if (input.isRight()) move.add(right);
+if (input.isLeft())  move.subtract(right);
+if (move.lengthSquared() > 1e-4) move.normalize().multiply(speed);
+if (input.isJump()) move.setY(move.getY() + lift);
+```
+
+**이동 적용은 서브스텝 검사 + 벽 슬라이딩**으로 한다. 이게 없으면 빠른 마운트가 얇은 벽을 관통하거나 벽에 닿는 순간 완전히 멈춘다.
+
+```java
+// 전체 이동 → 수평만 → 수직만 순으로 시도 (벽 슬라이딩)
+if (!tryMove(mount, base, dx, dy, dz, yaw)
+ && !tryMove(mount, base, dx, 0,  dz, yaw)
+ && !tryMove(mount, base, 0,  dy, 0,  yaw)) {
+    mount.setRotation(yaw, 0f);   // 셋 다 막히면 회전만
+}
+
+// tryMove: 목적지만이 아니라 경로 전체를 0.45블록 이하 서브스텝으로 검사한다.
+// 하나라도 막히면 all-or-nothing 으로 취소 → 호출부가 축을 바꿔 재시도
+int steps = Math.max(1, (int) Math.ceil(dist / 0.45));
+```
+
+안전 검사는 **탑승자의 대략적 바운딩 박스를 표본**한다 — 중심 + 반경 0.35의 4방향 점을, 발치와 머리 높이 **양쪽에서**. 중심만 검사하면 어깨가 벽에 끼인다.
+
+**이동 속도는 등급에 비례한다** (원작 준수).
+
+### 마운트 방식 비교
+
+| | 방식 | 판정 |
+| --- | --- | --- |
+| **A** | 보이지 않는 `ArmorStand` + `addPassenger` + `Input` API | ✅ **기본안** — 배포 중인 플러그인에서 검증됨 |
+| B | BetterModel `MountedHitBox` + `p_` 좌석 본 | ⚪ **M5 첫날 검증.** 더 간단하면 채택 |
 
 ### 비행
 
@@ -608,24 +725,23 @@ void tick() {
 | --- | --- |
 | 자격 | **A등급 이상**에서 확률적으로 `canFly` 부여 (원작 준수) |
 | 확률 | 등급별 설정값 (13장) |
-| 속도 | **겉날개+폭죽보다 느리게** 설정 — 원작의 밸런스 의도 |
+| 속도 | **겉날개+폭죽보다 느리게** — 원작의 밸런스 의도 |
 | 연료 | **없음. 무한 비행** — 원작 준수 |
-| 조작 | **Q9 미결** — 겉날개식 활공 vs 자유 비행 |
+| 고도 상한 | 빌드 높이가 아니라 **`flight-max-height`(기본 1024)** 로 따로 둔다 |
+| 조작 | Paper `Input` API — 보고 조향, 앞으로 전진, 점프로 상승, 스니크로 하차 |
 
-**구현 후보 2가지 (M5에서 프로토타입 비교):**
+> **`allowFlight` 부여 방식은 채택하지 않는다.** 바닐라 비행 물리를 재사용할 수 있지만, 하차·로그아웃·종료·사망 모든 경로에서 회수하지 않으면 플레이어가 영구 크리에이티브 비행을 얻는다. `ArmorStand` 마운트 방식은 이 위험 자체가 없다. **Q9는 이것으로 해소한다.**
 
-| | 방식 | 장점 | 단점 |
-| --- | --- | --- | --- |
-| A | 캐리어 `Mob`에 `setGravity(false)` + 탑승자 시선 방향으로 속도 부여 | 구현 단순, 조작 직관적 | 지형 충돌 처리를 직접 해야 함 |
-| B | 탑승자에게 `allow-flight` 부여 + 펫을 플레이어에 종속 이동 | 바닐라 비행 물리 재사용 | 비행 권한 누수 위험, 하차 시 반드시 회수 필요 |
+### 위험 요소와 대응
 
-> B안은 **`allowFlight`를 반드시 원복**해야 한다. 하차·로그아웃·서버 종료·펫 사망 모든 경로에서 회수하지 않으면 플레이어가 영구 크리에이티브 비행을 얻는다. 능력 시스템의 `onUnequip` 역연산 원칙(13장)이 여기에도 그대로 적용된다.
-
-### 위험 요소
-
-- **탑승 상태에서 로그아웃** → 재접속 시 좌석 상태 복원 또는 안전 하차
-- **탑승 중 펫 디스폰** → 플레이어가 공중에 남는다. 낙하 피해 면제 처리 필요
-- **월드 이동 중 탑승** → 포탈 통과 시 강제 하차가 안전하다
+| 위험 | 대응 |
+| --- | --- |
+| 하차 시 낙하 피해 | `setFallDistance(0)` + `SLOW_FALLING` 100틱 부여 |
+| 비행 중 히트박스가 블록 파괴 레이캐스트를 가로챔 | 비행 중 히트박스를 0.1×0.1로 축소, 하차 시 복원 |
+| 탑승 상태로 로그아웃 | 재접속 시 **안전 하차**로 처리 (좌석 복원은 하지 않는다) |
+| 탑승 중 펫/마운트 디스폰 | 매 틱 마운트 생존·탑승자 일치·월드 일치를 확인하고, 어긋나면 즉시 안전 하차 |
+| 월드 이동 / 포탈 | 강제 하차가 안전하다 |
+| 서버 재시작 후 유령 마운트 | 스코어보드 태그 + PDC로 식별해 기동 시 청소 |
 
 ---
 
@@ -937,17 +1053,17 @@ M9에서 Spark로 한 번 실측한다. 목표치는 **추정이며 측정된 �
 | **M2** | 이동 + 애니메이션 | 지상 추종 상태 머신 · 텔레포트 폴백 · 애니메이션 상태 머신 | 2주 |
 | **M3** | 데이터 + 명령어 | `PetRepository`(SQLite) · 단일 스레드 실행자 · 명령어/권한 | 1주 |
 | **M4** | 생애주기 | 알 → 부화 → 아기 → 성체 · 성장도(시간+먹이) · 지연 계산 | 1.5주 |
-| **M5** | **탑승 + 비행** | `MountedHitBox` 검증 → 탑승 · 비행 A/B 프로토타입 · 안전 하차 | **2.5주** |
+| **M5** | **탑승 + 비행** | `ArmorStand` 마운트 + `Input` 조향 · 서브스텝/슬라이딩 · 안전 하차 | **1.5주** |
 | **M6** | GUI | 보관함 · 상세 · 부화/급여 · 이름변경 | 1.5주 |
 | **M7** | 등급 + 능력 | D~S 등급 · 3종 능력 시스템 · 능력 3~5개 | 2주 |
 | **M8** | 획득 + 진화 | **알 아이템 우클릭** · 랜덤 알 가중치 · 진화 · 과급식 기믹 | 1주 |
 | **M9** | 폴리시 | Spark 1회 실측 · Folia · PlaceholderAPI · 문서화 | 1주 |
 
-**합계 약 12주** (1인 파트타임, 모델 제작 시간 제외)
+**합계 약 11주** (1인 파트타임, 모델 제작 시간 제외)
 
-v2.0의 16주에서 4주가 줄었다. 5명 규모라 M3(커넥션 풀·MySQL 제거)·M9(LOD 제거)가 짧아졌고, M8은 NPC 상점이 알 아이템으로 대체되며 줄었다.
+v2.0의 16주 → v2.1에서 12주(5명 규모) → v2.2에서 11주. M5가 2.5주에서 1.5주로 줄었는데, **2.5장에서 검증된 탑승 구조를 확보해 프로토타입 A/B 비교가 필요 없어졌기 때문**이다.
 
-**M5가 최대 변수다.** BetterModel의 `MountedHitBox`로 탑승이 바로 되면 1.5주, 자체 구현으로 가면 3주 이상 걸릴 수 있다. **M5 착수 첫날에 이 검증부터 한다.**
+이제 최대 변수는 M5가 아니라 **모델 제작 진척**이다.
 
 **병행**: 8장 규격에 맞춘 모델 제작을 M1과 동시에 진행해야 M2 진입 시 테스트 모델이 준비된다. 탑승 펫 모델(`p_seat` 본 포함)은 M5 전까지 필요하다.
 
@@ -964,9 +1080,10 @@ v2.0의 16주에서 4주가 줄었다. 5명 규모라 M3(커넥션 풀·MySQL �
 
 | # | 리스크 | 영향 | 확률 | 대응 |
 | --- | --- | --- | --- | --- |
-| **R1** | **탑승 API가 기대대로 동작하지 않음** | **높음** | **중** | M5 첫날 `MountedHitBox` 검증. 실패 시 `addPassenger` 자체 구현으로 전환 (일정 +1.5주) |
-| **R2** | 트래커 누수 → 유령 모델 | 높음 | 중 | `AutoCloseable` + 4경로 close + `registries()` 진단 + M1 DoD |
-| **R3** | **비행 권한(`allowFlight`) 누수** | 높음 | 중 | 하차·로그아웃·종료·사망 모든 경로에서 회수. 체크리스트 항목화. 가능하면 A안(중력 제어) 채택 |
+| **R1** | 트래커 누수 → 유령 모델 | 높음 | 중 | `AutoCloseable` + 4경로 close + `registries()` 진단 + M1 DoD |
+| **R2** | 탑승 구현 난도 | 중 | 낮음 | **2.5장으로 크게 완화.** `ArmorStand` + `Input` API 기본안이 검증돼 있다. `MountedHitBox`는 선택지로만 |
+| **R3** | ~~비행 권한(`allowFlight`) 누수~~ | — | — | ✅ **해소.** `allowFlight`를 쓰지 않는 마운트 방식 채택 (11장) |
+| **R13** | **탑승 중 유령 마운트 잔존** | 중 | 중 | 스코어보드 태그 + PDC 식별, 기동 시 청소. 매 틱 생존 검사 후 안전 하차 |
 | **R4** | BetterModel 버전 업 시 API 파괴 | 중 | 높음 | `BetterModelBridge` 단일 격리 계층. 버전 핀 고정 |
 | **R5** | `AttributeModifier` 누적 버그 | 중 | 높음 | 부착 전 항상 제거 + 접속 시 청소 + 반복 테스트 |
 | **R6** | **원작 사양 오해** | 중 | 중 | 2장은 검색 요약 기반이며 **원문 대조를 못 했다.** 실제와 다르면 밸런싱 수치부터 조정 |
@@ -989,6 +1106,11 @@ v2.0의 16주에서 4주가 줄었다. 5명 규모라 M3(커넥션 풀·MySQL �
 - [BetterModel — Hangar (PaperMC)](https://hangar.papermc.io/toxicity188/BetterModel)
 - [BetterModel — 공식 문서](https://mintlify.wiki/toxicity188/BetterModel/introduction)
 
+### 참고 구현 (2.5장 근거)
+
+- [yourShika/betterpets-paper — GitHub](https://github.com/yourShika/betterpets-paper) (MIT) — BetterModel 연동 + 비행 탑승을 구현한 Paper 플러그인
+- [BetterPets-Paper — Modrinth](https://modrinth.com/plugin/betterpets-paper)
+
 ### 원작 시스템 (2장 근거)
 
 - [악어의 놀이터 — 나무위키](https://namu.wiki/w/%EC%95%85%EC%96%B4(%EC%9D%B8%ED%84%B0%EB%84%B7%20%EB%B0%A9%EC%86%A1%EC%9D%B8)/%EB%8C%80%EA%B7%9C%EB%AA%A8%20%EC%BD%98%ED%85%90%EC%B8%A0/%EC%95%85%EC%96%B4%EC%9D%98%20%EB%86%80%EC%9D%B4%ED%84%B0)
@@ -1004,4 +1126,5 @@ v2.0의 16주에서 4주가 줄었다. 5명 규모라 M3(커넥션 풀·MySQL �
 | v1.0 | 2026-09-08 | 최초 작성 |
 | v1.1 | 2026-09-08 | Java 25 / MC 26.2 확정 · 모델 직접 제작 확정 · 소스 JAR로 API 검증 · 본 태그 규칙 확정 · paper-api 좌표 정정 |
 | **v2.0** | 2026-09-08 | **빌드를 Maven으로 전환** · **원작 시스템 조사 반영(2장)** — 등급 D~S, 알/부화/성장도, 탑승·비행을 핵심 기능으로 승격, 성능을 R1으로 격상 · 생애주기(9장)·탑승과 비행(11장) 신설 · 로드맵 11.5주 → 16주 |
+| **v2.2** | 2026-09-08 | **참고 구현 `yourShika/betterpets-paper` 분석(2.5장)** — API 격리·`AutoCloseable` 등 우리 설계가 확인됨 · `plugin.yml`→**`paper-plugin.yml`, api-version `26.2`** 정정 · **탑승을 `MountedHitBox`에서 `ArmorStand`+Paper `Input` API로 전환**(11장), 서브스텝/벽 슬라이딩/안전 하차 기법 도입 · Q9 해소, R3 해소, R13 추가 · 로드맵 12주 → 11주 |
 | **v2.1** | 2026-09-08 | **서버 규모 5명 확정(3장)** — 100마리 가정이 20배 과잉이었음. LOD·`viewRange` 튜닝·MySQL 구현체·HikariCP 제거, 성능을 R1→R7로 강등 · **NPC 상점을 알 아이템 우클릭으로 대체(14장)**, Citizens 불필요, Vault 보류 · Q2/Q4/Q5/Q7 해소 · 로드맵 16주 → 12주 |
