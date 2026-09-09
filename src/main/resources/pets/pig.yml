@@ -1,0 +1,33 @@
+# 과급식 이스터에그로 변하는 돼지.
+#
+# 아기 펫에게 짧은 시간 안에 먹이를 몰아주면 이 종류로 바뀐다.
+# 어떤 펫으로 바뀔지는 config.yml 의 gimmick.overfeed.becomes 에서 정한다.
+#
+# 원작에서도 "탈것인 돼지"로 진화하는 기믹이라 걷는 탑승은 된다.
+# 다만 LifeStage.PIG 는 능력이 발현되지 않으므로 abilities 를 적어도 무시된다.
+
+id: pig
+display-name: "<light_purple>돼지"
+model: pet_pig
+rarity: D
+growth-max: 100          # PIG 상태는 더 자라지 않으므로 실제로 쓰이지 않는다
+
+# 탑승 방식: NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승)
+ride: GROUND
+
+animations:
+  idle: idle
+  walk: walk
+  run: run
+  eat: eat
+
+movement:
+  follow-distance: 2.0
+  walk-speed: 0.22       # 살쪄서 느리다
+  run-speed: 0.35
+  teleport-distance: 24.0
+
+# 능력 없음 — 이스터에그의 대가다.
+
+acquire:
+  gacha-weight: 0        # 알에서는 나오지 않는다. 과급식으로만 얻는다

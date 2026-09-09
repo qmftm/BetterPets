@@ -133,6 +133,30 @@ public final class PetService {
         store.remove(data);
     }
 
+    /**
+     * 소환 중인 펫의 종류가 바뀌었으면 모델을 다시 붙인다.
+     *
+     * <p><b>이게 없으면 종류 변경이 화면에 반영되지 않는다.</b> {@link ActivePet} 은 소환
+     * 시점의 {@link PetType} 을 붙들고 있어서, {@code data.typeId()} 만 바뀌면 예전 모델과
+     * 예전 애니메이션 이름을 계속 쓴다. 성장 단계 진화와 과급식 변신 두 경로 모두
+     * 이 마무리가 필요하다.
+     *
+     * <p>탑승 중이었다면 {@link #summon} 안의 {@link #dismiss} 가 안전하게 내려준다 —
+     * 드래곤이 돼지가 됐는데 그대로 하늘에 떠 있으면 곤란하다.
+     *
+     * @return 모델을 다시 붙였으면 true
+     */
+    public boolean refreshIfTypeChanged(final Player owner, final PetData data) {
+        final ActivePet current = registry.of(owner.getUniqueId()).orElse(null);
+        if (current == null || !current.data().petId().equals(data.petId())) {
+            return false;   // 소환 중이 아니거나, 소환된 건 다른 펫이다
+        }
+        if (current.type().id().equals(data.typeId())) {
+            return false;   // 종류가 그대로다
+        }
+        return summon(owner, data) == SummonResult.OK;
+    }
+
     /** 소유자당 활성 펫은 하나. DB 제약 대신 여기서 강제한다. */
     private void markActive(final Player owner, final PetData data) {
         for (final PetData other : store.owned(owner.getUniqueId())) {

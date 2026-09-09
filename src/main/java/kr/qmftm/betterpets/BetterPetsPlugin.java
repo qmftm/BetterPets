@@ -70,6 +70,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         saveResourceIfMissing("eggs.yml");
         saveResourceIfMissing("pets/wolf.yml");
         saveResourceIfMissing("pets/dragon.yml");
+        saveResourceIfMissing("pets/pig.yml");
 
         final AbilityRegistry abilityRegistry = new AbilityRegistry(this);
 
@@ -91,6 +92,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getBoolean("gimmick.overfeed.enabled", true),
             getConfig().getInt("gimmick.overfeed.count", 10),
             getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L,
+            getConfig().getString("gimmick.overfeed.becomes", "pig"),
             getConfig().getInt("growth.max-stage", 1));
 
         final AbilityService abilities = new AbilityService(this, abilityRegistry);
@@ -110,7 +112,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         registerListeners(items, menus, abilities, growth);
         registerCommands(items, menus, abilityRegistry);
 
-        ticker = new PetTicker(this, registry, rides, growth, store);
+        ticker = new PetTicker(this, registry, rides, growth, store, pets);
         ticker.start();
 
         // 리로드로 들어온 경우 이미 접속해 있는 플레이어의 데이터를 읽어야 한다.
@@ -184,6 +186,16 @@ public final class BetterPetsPlugin extends JavaPlugin {
         if (!problems.isEmpty()) {
             getLogger().warning("설정에서 " + problems.size() + "개의 문제를 찾았습니다:");
             problems.forEach(problem -> getLogger().warning("  - " + problem));
+        }
+
+        // 과급식 기믹이 가리키는 펫이 없으면 상태만 '돼지'가 되고 모습은 그대로 남는다.
+        // 조용히 넘어가면 "돼지가 됐다는데 왜 드래곤이지"로 헤매게 된다.
+        final String pigType = getConfig().getString("gimmick.overfeed.becomes", "pig");
+        if (getConfig().getBoolean("gimmick.overfeed.enabled", true)
+            && pigType != null && !pigType.isBlank()
+            && catalog.type(pigType).isEmpty()) {
+            getLogger().warning("gimmick.overfeed.becomes 가 가리키는 펫 '" + pigType
+                + "' 가 없습니다. 과급식해도 모습은 그대로 남습니다.");
         }
     }
 

@@ -23,6 +23,7 @@ BetterPets가 기대하는 `.bbmodel` 규격. BlockBench로 펫 모델을 만들
 - [ ] 비행 펫이면 `fly` 애니메이션이 있다
 - [ ] 파일을 `plugins/BetterModel/models/` 에 넣었다
 - [ ] `pets/*.yml` 의 `model:` 값이 파일명(확장자 제외)과 같다
+- [ ] 과급식 기믹을 쓴다면 `pet_pig` 도 만들었다 ([돼지](#돼지-과급식-이스터에그))
 
 **Bedrock 플레이어를 받는다면 추가로:**
 
@@ -133,6 +134,23 @@ pet_dragon.bbmodel
 ```
 
 `p_seat` 의 위치가 곧 플레이어가 앉는 자리다. 등에 얹히도록 몸통 위쪽에 둔다.
+
+### 돼지 (과급식 이스터에그)
+
+기본 설정이 `pet_pig` 모델을 참조한다. 아기 펫에게 먹이를 몰아주면 이 종류로 바뀌므로,
+**이 모델이 없으면 변신했을 때 소환이 실패한다.** 걷는 탑승만 되는 평범한 지상 펫이면 된다.
+
+```
+pet_pig.bbmodel
+├─ h_head
+├─ b_body
+│   ├─ p_seat        걷는 탑승만 되므로 좌석은 있어야 한다
+│   └─ leg_*
+└─ tag_name
+```
+
+기믹을 쓰지 않는다면 `config.yml` 의 `gimmick.overfeed.enabled: false` 로 끄면
+이 모델을 만들지 않아도 된다.
 
 ### 알
 

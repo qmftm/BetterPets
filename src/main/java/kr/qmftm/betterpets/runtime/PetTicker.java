@@ -4,6 +4,7 @@ import kr.qmftm.betterpets.domain.GrowthCurve;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.service.GrowthService;
+import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -30,6 +31,7 @@ public final class PetTicker {
     private final RideController rides;
     private final GrowthService growth;
     private final PetStore store;
+    private final PetService pets;
 
     private BukkitTask followTask;
     private BukkitTask rideTask;
@@ -38,12 +40,14 @@ public final class PetTicker {
                      final PetRegistry registry,
                      final RideController rides,
                      final GrowthService growth,
-                     final PetStore store) {
+                     final PetStore store,
+                     final PetService pets) {
         this.plugin = plugin;
         this.registry = registry;
         this.rides = rides;
         this.growth = growth;
         this.store = store;
+        this.pets = pets;
     }
 
     public void start() {
@@ -88,7 +92,7 @@ public final class PetTicker {
                 continue;
             }
 
-            applyTimeGrowth(pet.data());
+            applyTimeGrowth(owner, pet.data());
             pet.tick(owner);
         }
     }
@@ -118,15 +122,25 @@ public final class PetTicker {
      * <p>지연 계산이라 여기서 하는 일은 값 갱신뿐이고, 주기적 DB 쓰기가 없다.
      * 성장이 실제로 일어났을 때만 저장을 건다.
      */
-    private void applyTimeGrowth(final PetData data) {
+    private void applyTimeGrowth(final Player owner, final PetData data) {
         if (data.stage() != LifeStage.BABY) {
             return;     // 알은 먹이로만, 성체는 더 자라지 않는다
         }
         final int before = data.growth();
         growth.refresh(data);
-        if (data.growth() != before) {
+        if (data.growth() == before) {
+            return;
+        }
+        store.saveAsync(data);
+
+        final String typeBefore = data.typeId();
+        growth.promoteIfGrown(data);
+
+        // 성장 단계 진화로 종류가 바뀌었으면 모델을 갈아끼운다. 이걸 빼면 데이터만
+        // 바뀌고 화면은 예전 모습 그대로다.
+        if (!typeBefore.equals(data.typeId())) {
             store.saveAsync(data);
-            growth.promoteIfGrown(data);
+            pets.refreshIfTypeChanged(owner, data);
         }
     }
 

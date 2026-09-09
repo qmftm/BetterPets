@@ -136,6 +136,9 @@ public final class InteractionListener implements Listener {
         final GrowthService.FeedResult result = growth.feed(data);
         held.setAmount(held.getAmount() - 1);
         store.saveAsync(data);
+
+        // 먹는 동작은 종류가 바뀌기 전에 얹어야 한다. 아래 refreshIfTypeChanged 가
+        // 모델을 다시 붙이면 이 오버레이는 어차피 사라진다.
         pet.animation().overlay(kr.qmftm.betterpets.domain.PetType.AnimationSet.EAT);
 
         switch (result) {
@@ -149,6 +152,9 @@ public final class InteractionListener implements Listener {
                 "growth", String.valueOf(data.growth()),
                 "max", String.valueOf(growth.maxOf(data)));
         }
+
+        // 성장 단계 진화나 과급식 변신으로 종류가 바뀌었으면 모델을 갈아끼운다.
+        pets.refreshIfTypeChanged(player, data);
     }
 
     /**

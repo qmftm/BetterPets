@@ -27,6 +27,7 @@ public final class GrowthService {
     private final boolean overfeedGimmick;
     private final int overfeedCount;
     private final long overfeedWindowMillis;
+    private final String overfeedBecomes;
     private final int maxStage;
 
     /** 펫별 과급식 카운터. 짧은 시간에 몰아 먹이면 돼지가 된다. */
@@ -39,12 +40,14 @@ public final class GrowthService {
                          final boolean overfeedGimmick,
                          final int overfeedCount,
                          final long overfeedWindowMillis,
+                         final String overfeedBecomes,
                          final int maxStage) {
         this.catalog = catalog;
         this.feedAmount = feedAmount;
         this.overfeedGimmick = overfeedGimmick;
         this.overfeedCount = overfeedCount;
         this.overfeedWindowMillis = overfeedWindowMillis;
+        this.overfeedBecomes = overfeedBecomes;
         // 0 이하로 설정되면 아무도 성체가 될 수 없다. 최소 1로 막는다.
         this.maxStage = Math.max(1, maxStage);
     }
@@ -73,7 +76,7 @@ public final class GrowthService {
         data.addGrowth(feedAmount, max);
 
         if (overfeedGimmick && registerBurst(data)) {
-            data.stage(LifeStage.PIG);
+            becomePig(data);
             bursts.remove(data.petId());
             return FeedResult.BECAME_PIG;
         }
@@ -129,6 +132,30 @@ public final class GrowthService {
         // 성장도와 기준 시각은 항상 함께 갱신한다 — applyGrowth 가 그 계약을 지킨다.
         data.applyGrowth(new GrowthCurve.Projection(0, System.currentTimeMillis()));
         return StageResult.STAGE_UP;
+    }
+
+    /**
+     * 과급식 이스터에그. 상태를 {@link LifeStage#PIG} 로 바꾸고 종류도 돼지로 갈아끼운다.
+     *
+     * <p>상태만 바꾸면 겉모습은 그대로라 "돼지가 됐다"는 메시지와 화면이 어긋난다.
+     * 설정된 돼지 종류가 없으면 상태만 바꾼다 — 기믹은 못 살려도 펫을 망가뜨리지는 않는다.
+     * (그 경우 기동 시 경고가 뜬다)
+     *
+     * <p>모델 교체는 호출부가 {@code PetService.refreshIfTypeChanged} 로 마무리한다.
+     * 소환 중인 개체는 소환 시점의 종류를 들고 있어서, 데이터만 바꾸면 화면이 안 바뀐다.
+     */
+    private void becomePig(final PetData data) {
+        data.stage(LifeStage.PIG);
+        if (overfeedBecomes == null || overfeedBecomes.isBlank()) {
+            return;
+        }
+        if (catalog.type(overfeedBecomes).isEmpty()) {
+            return;
+        }
+        data.typeId(overfeedBecomes);
+        // 돼지가 날아다니면 곤란하다. 나중에 돼지 종류를 FLY 로 바꿔도
+        // 추첨 없이 비행이 딸려가지 않도록 여기서 지운다.
+        data.canFly(false);
     }
 
     /** 과급식 판정. 창 안에서 기준 횟수를 넘으면 true. */

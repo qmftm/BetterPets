@@ -73,7 +73,7 @@
 - [x] 먹이를 줘서 부화
 - [x] 성장도 — 시간 경과 1분당 +1, 먹이 +10
 - [x] 알 → 아기 → 성체 생애주기
-- [x] 과급식 시 돼지로 변하는 기믹
+- [x] 과급식 시 돼지로 변하는 기믹 — 종류까지 실제로 바뀐다 (`pets/pig.yml`)
 
 **데리고 다니기**
 - [x] 3D 모델 렌더링 (BetterModel)
@@ -162,7 +162,7 @@ plugins/BetterPets/
 ├─ config.yml       성장·기믹·비행 설정
 ├─ messages.yml     사용자 노출 문자열 (MiniMessage)
 ├─ eggs.yml         알 아이템 정의
-├─ pets/*.yml       펫 종류 정의
+├─ pets/*.yml       펫 종류 정의 (wolf · dragon · pig 예시 제공)
 └─ playerdata/      플레이어별 펫 데이터 (자동 생성)
 ```
 

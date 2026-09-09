@@ -27,6 +27,10 @@ gimmick:
     count: 10            # 이 횟수 이상
     window-seconds: 60   # 이 시간 안에
 
+    # 어떤 펫 종류로 변할지. pets/ 에 있는 id 여야 한다.
+    # 이 종류가 없으면 상태만 '돼지'가 되고 모습은 그대로 남는다 (기동 시 경고).
+    becomes: pig
+
 ride:
   # 비행 상승력. 점프 키를 눌렀을 때 y 로 더해지는 값이다.
   flight-lift: 0.5
