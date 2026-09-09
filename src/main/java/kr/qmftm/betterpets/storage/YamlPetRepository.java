@@ -115,7 +115,7 @@ public final class YamlPetRepository implements PetRepository {
             ownerId,
             node.getString("type", ""),
             node.getString("nickname"),
-            LifeStage.parse(node.getString("stage")).orElse(LifeStage.EGG),
+            LifeStage.parse(node.getString("stage")).orElse(LifeStage.BABY),
             node.getInt("growth"),
             node.getInt("growth-stage", 1),
             node.getBoolean("can-fly"),

@@ -80,7 +80,6 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         final PetService.SummonResult result = pets.summon(player, target.get());
         switch (result) {
             case OK -> messages.send(player, "pet.summoned");
-            case NOT_SUMMONABLE -> messages.send(player, "pet.not-summonable");
             case MODEL_MISSING -> messages.send(player, "pet.model-missing");
             case UNKNOWN_TYPE -> messages.send(player, "pet.unknown-type");
         }

@@ -1,6 +1,5 @@
 package kr.qmftm.betterpets.runtime;
 
-import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.render.PetRenderHandle;
 
@@ -27,15 +26,14 @@ public final class AnimationStateMachine {
         this.type = type;
     }
 
-    /** 소환 직후 한 번. 생애주기에 맞는 기본 애니메이션을 건다. */
-    public void start(final LifeStage stage) {
-        apply(baseFor(stage, MovementController.Mode.GROUND, MovementController.State.IDLE));
+    /** 소환 직후 한 번. 기본 애니메이션을 건다. */
+    public void start() {
+        apply(baseFor(MovementController.Mode.GROUND, MovementController.State.IDLE));
     }
 
-    public void tick(final LifeStage stage,
-                     final MovementController.Mode mode,
+    public void tick(final MovementController.Mode mode,
                      final MovementController.State state) {
-        apply(baseFor(stage, mode, state));
+        apply(baseFor(mode, state));
     }
 
     private void apply(final String logical) {
@@ -60,12 +58,8 @@ public final class AnimationStateMachine {
         handle.playOverlay(type.animations().resolve(logical), OVERLAY_PRIORITY, null);
     }
 
-    private String baseFor(final LifeStage stage,
-                           final MovementController.Mode mode,
+    private String baseFor(final MovementController.Mode mode,
                            final MovementController.State state) {
-        if (stage == LifeStage.EGG || stage == LifeStage.HATCHING) {
-            return PetType.AnimationSet.EGG;
-        }
         return switch (mode) {
             case RIDDEN -> PetType.AnimationSet.RIDE;
             case FLY -> PetType.AnimationSet.FLY;

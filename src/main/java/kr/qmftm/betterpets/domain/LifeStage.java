@@ -4,42 +4,32 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * 펫 생애주기. 원작 시즌 2의 알–부화–성장 구조를 따른다.
+ * 펫 생애주기.
  *
  * <pre>
- *   EGG ──먹이──▶ HATCHING ──연출──▶ BABY ──성장도 100──▶ ADULT
- *                                    │
- *                                    └──과급식──▶ PIG (이스터에그)
+ *   BABY ──성장도 100──▶ ADULT
+ *     │
+ *     └──과급식──▶ PIG (이스터에그)
  * </pre>
+ *
+ * <p>알은 생애주기 상태가 아니다 — 알 아이템은 그 안에 담긴 펫을 곧바로 아기로 꺼내주는
+ * 아이템이고, 보관함에 "알" 상태로 남지 않는다.
  */
 public enum LifeStage {
 
-    /** 알. 보관함에만 존재하며 소환할 수 없다. */
-    EGG(false, false),
-
-    /** 부화 연출 중. 짧은 과도 상태다. */
-    HATCHING(false, false),
-
     /** 아기. 소환해 데리고 다닐 수 있으나 탑승은 불가. */
-    BABY(true, false),
+    BABY(false),
 
     /** 성체. 탑승 가능하며 등급별 능력이 발현된다. */
-    ADULT(true, true),
+    ADULT(true),
 
     /** 과급식 기믹으로 변한 상태. 탑승은 되지만 능력은 없다. */
-    PIG(true, true);
+    PIG(true);
 
-    private final boolean summonable;
     private final boolean rideable;
 
-    LifeStage(final boolean summonable, final boolean rideable) {
-        this.summonable = summonable;
+    LifeStage(final boolean rideable) {
         this.rideable = rideable;
-    }
-
-    /** 이 상태에서 소환할 수 있는가. */
-    public boolean summonable() {
-        return summonable;
     }
 
     /**

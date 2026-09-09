@@ -55,7 +55,6 @@ public final class PetService {
     public enum SummonResult {
         OK,
         UNKNOWN_TYPE,
-        NOT_SUMMONABLE,
         MODEL_MISSING
     }
 
@@ -68,9 +67,6 @@ public final class PetService {
             return SummonResult.UNKNOWN_TYPE;
         }
         growth.refresh(data);
-        if (!data.stage().summonable()) {
-            return SummonResult.NOT_SUMMONABLE;
-        }
 
         dismiss(owner);     // 기존 것을 먼저 정리한다. 교체 시 흘리지 않기 위해서다
 
@@ -118,9 +114,9 @@ public final class PetService {
         registry.remove(ownerId);
     }
 
-    /** 알을 지급한다. */
-    public PetData grantEgg(final Player owner, final String typeId) {
-        final PetData data = PetData.newEgg(owner.getUniqueId(), typeId, System.currentTimeMillis());
+    /** 펫을 지급한다. 알 아이템을 깠을 때와 관리자 지급이 같은 경로를 탄다. */
+    public PetData grantPet(final Player owner, final String typeId) {
+        final PetData data = PetData.newBaby(owner.getUniqueId(), typeId, System.currentTimeMillis());
         store.add(data);
         return data;
     }

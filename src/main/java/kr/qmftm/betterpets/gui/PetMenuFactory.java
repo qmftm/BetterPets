@@ -82,9 +82,7 @@ public final class PetMenuFactory {
     /** 펫 하나를 나타내는 아이콘. 등급·생애주기·성장도를 한눈에 보여준다. */
     public ItemStack icon(final PetData pet) {
         final PetType type = catalog.type(pet.typeId()).orElse(null);
-        final Material material = pet.stage() == LifeStage.EGG || pet.stage() == LifeStage.HATCHING
-            ? Material.TURTLE_EGG
-            : Material.LEAD;
+        final Material material = pet.stage() == LifeStage.BABY ? Material.BONE : Material.LEAD;
 
         final ItemStack stack = new ItemStack(material);
         final ItemMeta meta = stack.getItemMeta();
@@ -127,8 +125,6 @@ public final class PetMenuFactory {
 
     private static String stageLabel(final LifeStage stage) {
         return switch (stage) {
-            case EGG -> "알";
-            case HATCHING -> "부화 중";
             case BABY -> "아기";
             case ADULT -> "성체";
             case PIG -> "돼지";

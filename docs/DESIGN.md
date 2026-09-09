@@ -210,6 +210,7 @@ BetterModel이 좌석 마운트를 네이티브로 지원하지만, [참고 구�
 | 성장 | 성장도 (시간+먹이) | 동일 | 원작 준수 |
 | 탑승·비행 | 핵심 기능 | 핵심 기능 | 원작 준수 |
 | 획득 | NPC 알 구매(S2) + 뽑기권(S1) | **알 아이템 우클릭으로 통합** | 5명 서버에 NPC는 과잉. 랜덤 알로 뽑기 감각 유지 |
+| 부화 | 알에 먹이를 먹여 부화 | **알 아이템이 아기를 바로 준다** | 소환도 못 하는 대기 상태를 하나 줄인다. 키우는 재미는 아기→성체 구간이 담당한다 |
 | 능력 | 이동속도 위주 | 패시브/트리거 확장 | 원작보다 확장. 끄면 원작과 동일 |
 
 ---
@@ -325,24 +326,24 @@ Java 타깃은 21이라 Java 25 JVM에서 도는 데는 문제가 없다.
 ## 펫 생애주기
 
 ```
-   획득            먹이           성장도 100        (조건)
- ┌───────┐     ┌──────────┐     ┌───────┐      ┌────────┐
- │  EGG  │────▶│ HATCHING │────▶│ BABY  │─────▶│ ADULT  │
- └───────┘     └──────────┘     └───┬───┘      └────────┘
-                                    │ 과급식        탑승 가능
-                                    ▼              비행 가능(A+)
-                                 ┌───────┐         능력 발현
-                                 │  PIG  │
-                                 └───────┘
+  알 아이템 우클릭        성장도 100        (조건)
+  ┌───────┐            ┌───────┐      ┌────────┐
+  │ 알 아이템 │───────────▶│ BABY  │─────▶│ ADULT  │
+  └───────┘            └───┬───┘      └────────┘
+                           │ 과급식        탑승 가능
+                           ▼              비행 가능(A+)
+                        ┌───────┐         능력 발현
+                        │  PIG  │
+                        └───────┘
 ```
 
-| 상태 | 진입 조건 | 소환 | 탑승 | 능력 |
-| --- | --- | :---: | :---: | :---: |
-| `EGG` | 획득 시 | ❌ | ❌ | ❌ |
-| `HATCHING` | 먹이 급여 시작 | ❌ | ❌ | ❌ |
-| `BABY` | 부화 완료 | ✅ | ❌ | ❌ |
-| `ADULT` | 최대 단계에서 성장도 상한 도달 | ✅ | ✅ | ✅ |
-| `PIG` | 아기 상태에서 단시간 과급식 | ✅ | ✅ | ❌ |
+**알은 생애주기 상태가 아니다.** 알 아이템은 그 안에 담긴 펫을 곧바로 꺼내주는 아이템이고, 보관함에 "알" 상태로 남지 않는다. 원작은 알을 사서 먹여 부화시켰지만, 5명 서버에서 그 한 단계는 소환도 못 하는 대기 시간만 늘린다 — 우클릭한 순간 데리고 다닐 수 있는 아기를 준다.
+
+| 상태 | 진입 조건 | 탑승 | 능력 |
+| --- | --- | :---: | :---: |
+| `BABY` | 알 아이템 우클릭 / `/petadmin give` | ❌ | ❌ |
+| `ADULT` | 최대 단계에서 성장도 상한 도달 | ✅ | ✅ |
+| `PIG` | 아기 상태에서 단시간 과급식 | ✅ | ❌ |
 
 `PIG` 로 갈 때는 **상태뿐 아니라 종류(`typeId`)도 바꾼다.** 상태만 바꾸면 "돼지가 됐다"는 메시지와 화면이 어긋난다 — 겉모습은 여전히 드래곤이다. 어떤 펫으로 바뀔지는 `config.yml` 의 `gimmick.overfeed.becomes` 가 정하고(기본 `pig`), 기본 제공 `pets/pig.yml` 은 걷는 탑승만 되는 능력 없는 펫이다. 그 종류가 없으면 상태만 바꾸고 기동 시 경고한다.
 
@@ -433,7 +434,7 @@ void tick() {
 }
 ```
 
-일회성 애니메이션(`attack`, `eat`, `hatch`)은 `priority` 를 올린 `PLAY_ONCE` 로 **오버레이**하고, 완료 콜백에서 루프 상태를 복원한다.
+일회성 애니메이션(`attack`, `eat`)은 `priority` 를 올린 `PLAY_ONCE` 로 **오버레이**하고, 완료 콜백에서 루프 상태를 복원한다.
 
 ---
 
@@ -536,7 +537,7 @@ int steps = Math.max(1, (int) Math.ceil(dist / 0.45));
 
 ```java
 public record PetType(
-        String id, String displayName, String modelId, String eggModelId,
+        String id, String displayName, String modelId,
         Rarity rarity, AnimationSet animations, MovementProfile movement,
         RideMode ride, double flyChance,   // NONE / GROUND / FLY
         List<AbilityDefinition> abilities,
@@ -551,7 +552,7 @@ public final class PetData {
     private LifeStage stage;
     private int growth;
     private int growthStage;       // 1부터 시작
-    private boolean canFly;        // 부화 시 확률로 확정
+    private boolean canFly;        // 성체가 될 때 확률로 확정
     private boolean active;
 }
 ```
@@ -625,7 +626,7 @@ public interface PetAbility {
 
 | 경로 | 구현 |
 | --- | --- |
-| **알 아이템 우클릭** | 아이템 1개 소비 → 보관함에 `EGG` 상태 펫 추가 |
+| **알 아이템 우클릭** | 아이템 1개 소비 → 보관함에 `BABY` 상태 펫 추가 |
 | 관리자 지급 | `/petadmin give`, `/petadmin egg` |
 
 ### 아이템 — 알과 먹이

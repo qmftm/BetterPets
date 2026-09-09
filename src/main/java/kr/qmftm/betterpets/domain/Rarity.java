@@ -52,7 +52,7 @@ public enum Rarity {
         return rideSpeed;
     }
 
-    /** 부화 시 비행 능력이 부여될 확률. A등급 미만은 0이다. */
+    /** 성체가 될 때 비행 능력이 부여될 확률. A등급 미만은 0이다. */
     public double flyChance() {
         return flyChance;
     }

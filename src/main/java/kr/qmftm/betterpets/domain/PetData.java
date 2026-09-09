@@ -52,10 +52,10 @@ public final class PetData {
         this.updatedAt = updatedAt;
     }
 
-    /** 새로 획득한 알. */
-    public static PetData newEgg(final UUID ownerId, final String typeId, final long now) {
+    /** 새로 획득한 펫. 알에서 갓 나온 아기 상태다. */
+    public static PetData newBaby(final UUID ownerId, final String typeId, final long now) {
         return new PetData(UUID.randomUUID(), ownerId, typeId, null,
-            LifeStage.EGG, 0, 1, false, false, now, now);
+            LifeStage.BABY, 0, 1, false, false, now, now);
     }
 
     public UUID petId() { return petId; }

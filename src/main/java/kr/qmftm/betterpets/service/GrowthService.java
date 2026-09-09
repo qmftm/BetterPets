@@ -14,6 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * 성장도와 생애주기 전이.
  *
  * <p>원작 시즌 2를 따른다 — 시간 경과 1분당 +1, 먹이 +10, 상한 도달 시 성체.
+ * 알 아이템은 아기를 바로 꺼내주므로 부화 단계는 없다.
  *
  * <p><b>성장 단계(growth stage)</b> — 성장도가 상한에 닿아도 곧바로 성체가 되지 않을 수 있다.
  * {@code max-stage} 설정값(기본 1)에 못 미쳤으면 <b>다음 단계로 넘어간다</b>: 펫 종류의
@@ -70,12 +71,6 @@ public final class GrowthService {
     public FeedResult feed(final PetData data, final FeedDefinition feed) {
         final int max = maxOf(data);
         refresh(data);
-
-        if (data.stage() == LifeStage.EGG) {
-            // 알에 처음 먹이를 주면 부화가 시작된다.
-            data.stage(LifeStage.HATCHING);
-        }
-
         data.addGrowth(feed.growthOr(feedAmount), max);
 
         if (overfeedGimmick && registerBurst(data)) {
@@ -91,11 +86,6 @@ public final class GrowthService {
         if (stageResult == StageResult.STAGE_UP) {
             return FeedResult.STAGE_UP;
         }
-        if (data.stage() == LifeStage.HATCHING) {
-            // 부화는 즉시 끝난다. 연출은 애니메이션이 담당한다.
-            data.stage(LifeStage.BABY);
-            return FeedResult.HATCHED;
-        }
         return FeedResult.FED;
     }
 
@@ -110,7 +100,7 @@ public final class GrowthService {
      * @return 이번 호출로 일어난 일. 상한에 닿지 않았으면 {@link StageResult#NONE}
      */
     public StageResult promoteIfGrown(final PetData data) {
-        if (data.stage() != LifeStage.BABY && data.stage() != LifeStage.HATCHING) {
+        if (data.stage() != LifeStage.BABY) {
             return StageResult.NONE;
         }
         final PetType type = catalog.type(data.typeId()).orElse(null);
@@ -163,7 +153,7 @@ public final class GrowthService {
 
     /** 과급식 판정. 창 안에서 기준 횟수를 넘으면 true. */
     private boolean registerBurst(final PetData data) {
-        if (data.stage() != LifeStage.BABY && data.stage() != LifeStage.HATCHING) {
+        if (data.stage() != LifeStage.BABY) {
             return false;
         }
         final long now = System.currentTimeMillis();
@@ -196,7 +186,7 @@ public final class GrowthService {
     }
 
     public enum FeedResult {
-        FED, HATCHED, STAGE_UP, GREW_UP, BECAME_PIG
+        FED, STAGE_UP, GREW_UP, BECAME_PIG
     }
 
     /** {@link #promoteIfGrown} 의 결과. */

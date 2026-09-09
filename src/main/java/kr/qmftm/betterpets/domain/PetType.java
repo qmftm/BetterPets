@@ -17,7 +17,6 @@ public record PetType(
     String id,
     String displayName,
     String modelId,
-    String eggModelId,          // nullable — 없으면 본 모델의 egg 애니메이션을 쓴다
     Rarity rarity,
     int growthMax,
     RideMode ride,
@@ -36,11 +35,6 @@ public record PetType(
         nextStage = Collections.unmodifiableMap(new LinkedHashMap<>(nextStage));
         growthMax = Math.max(1, growthMax);
         flyChance = Math.max(0.0, Math.min(1.0, flyChance));
-    }
-
-    /** 알 상태에 쓸 모델. 별도 지정이 없으면 본 모델을 그대로 쓴다. */
-    public String eggOrBaseModel() {
-        return eggModelId == null || eggModelId.isBlank() ? modelId : eggModelId;
     }
 
     /**
@@ -70,8 +64,6 @@ public record PetType(
         public static final String RUN = "run";
         public static final String FLY = "fly";
         public static final String RIDE = "ride";
-        public static final String EGG = "egg";
-        public static final String HATCH = "hatch";
         public static final String EAT = "eat";
 
         /** 이게 없으면 펫이 정지 상태로만 보인다. 로드 시 경고 대상. */

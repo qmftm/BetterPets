@@ -86,7 +86,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "admin.unknown-pet-type", "id", args[2]);
             return;
         }
-        pets.grantEgg(target, args[2]);
+        pets.grantPet(target, args[2]);
         messages.send(sender, "admin.given", "player", target.getName(), "type", args[2]);
     }
 

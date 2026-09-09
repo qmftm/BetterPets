@@ -100,7 +100,6 @@ public final class MenuListener implements Listener {
                     final PetService.SummonResult result = pets.summon(player, pet);
                     switch (result) {
                         case OK -> messages.send(player, "pet.summoned");
-                        case NOT_SUMMONABLE -> messages.send(player, "pet.not-summonable");
                         case MODEL_MISSING -> messages.send(player, "pet.model-missing");
                         case UNKNOWN_TYPE -> messages.send(player, "pet.unknown-type");
                     }

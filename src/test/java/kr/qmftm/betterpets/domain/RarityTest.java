@@ -66,16 +66,11 @@ class RarityTest {
     }
 
     @Test
-    @DisplayName("생애주기: 알은 소환 불가, 아기는 탑승 불가, 성체만 능력 발현")
+    @DisplayName("생애주기: 아기는 탑승 불가, 성체만 능력 발현")
     void lifeStageCapabilities() {
-        assertFalse(LifeStage.EGG.summonable());
-        assertFalse(LifeStage.HATCHING.summonable());
-
-        assertTrue(LifeStage.BABY.summonable());
         assertFalse(LifeStage.BABY.rideable(), "아기는 탈 수 없다");
-
-        assertTrue(LifeStage.ADULT.summonable());
         assertTrue(LifeStage.ADULT.rideable());
+        assertTrue(LifeStage.PIG.rideable(), "돼지도 탈 수는 있다");
 
         assertTrue(LifeStage.ADULT.abilitiesActive());
         assertFalse(LifeStage.BABY.abilitiesActive());

@@ -106,7 +106,6 @@ public final class PetCatalog {
                 id,
                 yaml.getString("display-name", id),
                 model,
-                yaml.getString("egg-model"),
                 rarity.get(),
                 yaml.getInt("growth-max", 100),
                 ride,
@@ -230,7 +229,7 @@ public final class PetCatalog {
 
         final ConfigurationSection feedSection = yaml.getConfigurationSection("feeds");
         if (feedSection == null) {
-            problems.add("items.yml 에 'feeds:' 섹션이 없습니다. 먹이를 줄 수 없으면 알이 부화하지 않습니다.");
+            problems.add("items.yml 에 'feeds:' 섹션이 없습니다. 먹이를 줄 수 없으면 펫이 자라지 않습니다.");
         } else {
             feedSection.getKeys(false).forEach(id -> readFeed(feedSection, id));
         }

@@ -97,11 +97,11 @@ public final class InteractionListener implements Listener {
             return;
         }
 
-        pets.grantEgg(player, typeId);
+        pets.grantPet(player, typeId);
         held.setAmount(held.getAmount() - 1);   // 성공한 뒤에만 소비한다
 
         final PetType type = pets.catalog().type(typeId).orElseThrow();
-        messages.send(player, "egg.hatched-into", "name", stripTags(type.displayName()));
+        messages.send(player, "egg.opened", "name", stripTags(type.displayName()));
         player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1.0f, 1.2f);
     }
 
@@ -150,7 +150,6 @@ public final class InteractionListener implements Listener {
         pet.animation().overlay(kr.qmftm.betterpets.domain.PetType.AnimationSet.EAT);
 
         switch (result) {
-            case HATCHED -> messages.send(player, "feed.hatched");
             case STAGE_UP -> messages.send(player, "feed.stage-up",
                 "stage", String.valueOf(data.growthStage()),
                 "max", String.valueOf(growth.maxStage()));

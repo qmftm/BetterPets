@@ -14,16 +14,16 @@ class PetDataTest {
     private static final long T0 = 1_700_000_000_000L;
 
     private static PetData sample() {
-        final PetData data = PetData.newEgg(UUID.randomUUID(), "wolf", T0);
+        final PetData data = PetData.newBaby(UUID.randomUUID(), "wolf", T0);
         data.clearDirty();
         return data;
     }
 
     @Test
-    @DisplayName("새 펫은 알 상태, 성장 단계 1에서 시작한다")
-    void newPetStartsAsEgg() {
-        final PetData data = PetData.newEgg(UUID.randomUUID(), "wolf", T0);
-        assertEquals(LifeStage.EGG, data.stage());
+    @DisplayName("새 펫은 아기 상태, 성장 단계 1에서 시작한다")
+    void newPetStartsAsBaby() {
+        final PetData data = PetData.newBaby(UUID.randomUUID(), "wolf", T0);
+        assertEquals(LifeStage.BABY, data.stage());
         assertEquals(0, data.growth());
         assertEquals(1, data.growthStage());
         assertFalse(data.active());
@@ -58,10 +58,10 @@ class PetDataTest {
     void dirtyOnlyOnRealChange() {
         final PetData data = sample();
 
-        data.stage(LifeStage.EGG);      // 같은 값
+        data.stage(LifeStage.BABY);     // 같은 값
         assertFalse(data.isDirty(), "같은 값을 넣었는데 저장을 유발하면 안 된다");
 
-        data.stage(LifeStage.BABY);
+        data.stage(LifeStage.ADULT);
         assertTrue(data.isDirty());
     }
 
@@ -109,15 +109,12 @@ class PetDataTest {
     }
 
     @Test
-    @DisplayName("생애주기별 소환·탑승 가능 여부")
+    @DisplayName("생애주기별 탑승·능력 가능 여부")
     void lifeStageGating() {
         final PetData data = sample();
 
-        assertFalse(data.stage().summonable(), "알은 소환할 수 없다");
-
-        data.stage(LifeStage.BABY);
-        assertTrue(data.stage().summonable());
         assertFalse(data.stage().rideable(), "아기는 탈 수 없다");
+        assertFalse(data.stage().abilitiesActive());
 
         data.stage(LifeStage.ADULT);
         assertTrue(data.stage().rideable());

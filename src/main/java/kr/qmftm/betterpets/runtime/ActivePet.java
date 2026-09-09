@@ -41,7 +41,7 @@ public final class ActivePet implements AutoCloseable {
         this.handle = handle;
         this.movement = new MovementController(carrier, type);
         this.animation = new AnimationStateMachine(handle, type);
-        this.animation.start(data.stage());
+        this.animation.start();
     }
 
     public UUID ownerId() { return ownerId; }
@@ -58,7 +58,7 @@ public final class ActivePet implements AutoCloseable {
             return;
         }
         movement.tick(owner);
-        animation.tick(data.stage(), movement.mode(), movement.state());
+        animation.tick(movement.mode(), movement.state());
     }
 
     /** 등급 색을 모델에 입힌다. 소환 직후 한 번. */
