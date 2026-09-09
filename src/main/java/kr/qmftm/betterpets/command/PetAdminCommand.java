@@ -57,16 +57,17 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
                              final @NotNull String label,
                              final String @NotNull [] args) {
         if (args.length == 0) {
-            sender.sendMessage("/petadmin give|egg|growth|reload|debug");
+            sender.sendMessage("/petadmin give|egg|feed|growth|reload|debug");
             return true;
         }
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "give" -> give(sender, args);
             case "egg" -> egg(sender, args);
+            case "feed" -> feed(sender, args);
             case "growth" -> growth(sender, args);
             case "reload" -> reload(sender);
             case "debug" -> debug(sender);
-            default -> sender.sendMessage("/petadmin give|egg|growth|reload|debug");
+            default -> sender.sendMessage("/petadmin give|egg|feed|growth|reload|debug");
         }
         return true;
     }
@@ -109,6 +110,26 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "admin.egg-given", "player", target.getName(), "id", args[2]);
     }
 
+    private void feed(final CommandSender sender, final String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage("/petadmin feed <플레이어> <먹이id> [개수]");
+            return;
+        }
+        final Player target = sender.getServer().getPlayer(args[1]);
+        if (target == null) {
+            messages.send(sender, "admin.player-not-found");
+            return;
+        }
+        final var definition = catalog.feed(args[2]);
+        if (definition.isEmpty()) {
+            messages.send(sender, "admin.unknown-feed", "id", args[2]);
+            return;
+        }
+        final int amount = args.length > 3 ? parseInt(args[3], 1) : 1;
+        target.getInventory().addItem(items.createFeed(definition.get(), amount));
+        messages.send(sender, "admin.feed-given", "player", target.getName(), "id", args[2]);
+    }
+
     private void growth(final CommandSender sender, final String[] args) {
         if (args.length < 4) {
             sender.sendMessage("/petadmin growth <플레이어> <펫id앞자리> <양>");
@@ -140,7 +161,8 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
         if (problems.isEmpty()) {
             messages.send(sender, "admin.reloaded",
                 "pets", String.valueOf(catalog.types().size()),
-                "eggs", String.valueOf(catalog.eggs().size()));
+                "eggs", String.valueOf(catalog.eggs().size()),
+                "feeds", String.valueOf(catalog.feeds().size()));
         } else {
             messages.send(sender, "admin.reloaded-with-problems",
                 "count", String.valueOf(problems.size()));
@@ -184,7 +206,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
                                       final @NotNull String label,
                                       final String @NotNull [] args) {
         if (args.length == 1) {
-            return List.of("give", "egg", "growth", "reload", "debug").stream()
+            return List.of("give", "egg", "feed", "growth", "reload", "debug").stream()
                 .filter(option -> option.startsWith(args[0].toLowerCase(Locale.ROOT)))
                 .toList();
         }
@@ -197,6 +219,9 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             }
             if (args[0].equalsIgnoreCase("egg")) {
                 return new ArrayList<>(catalog.eggs().keySet());
+            }
+            if (args[0].equalsIgnoreCase("feed")) {
+                return new ArrayList<>(catalog.feeds().keySet());
             }
         }
         return List.of();

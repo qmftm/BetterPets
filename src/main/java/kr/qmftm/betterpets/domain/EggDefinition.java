@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.random.RandomGenerator;
 
 /**
- * 알 아이템 정의. {@code eggs.yml} 에서 로드한다.
+ * 알 아이템 정의. {@code items.yml} 의 {@code eggs:} 에서 로드한다.
  *
  * <p>두 종류를 지원한다:
  * <ul>

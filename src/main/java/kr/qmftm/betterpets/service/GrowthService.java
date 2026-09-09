@@ -1,6 +1,7 @@
 package kr.qmftm.betterpets.service;
 
 import kr.qmftm.betterpets.config.PetCatalog;
+import kr.qmftm.betterpets.domain.FeedDefinition;
 import kr.qmftm.betterpets.domain.GrowthCurve;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
@@ -62,9 +63,11 @@ public final class GrowthService {
     /**
      * 먹이를 준다.
      *
+     * @param feed 먹인 먹이. 성장도 증가량이 여기서 나온다 —
+     *             {@code growth} 를 적지 않은 먹이는 전역 기본값을 쓴다
      * @return 이번 급여로 일어난 일
      */
-    public FeedResult feed(final PetData data) {
+    public FeedResult feed(final PetData data, final FeedDefinition feed) {
         final int max = maxOf(data);
         refresh(data);
 
@@ -73,7 +76,7 @@ public final class GrowthService {
             data.stage(LifeStage.HATCHING);
         }
 
-        data.addGrowth(feedAmount, max);
+        data.addGrowth(feed.growthOr(feedAmount), max);
 
         if (overfeedGimmick && registerBurst(data)) {
             becomePig(data);

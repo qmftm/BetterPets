@@ -2,6 +2,7 @@ package kr.qmftm.betterpets.item;
 
 import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.domain.EggDefinition;
+import kr.qmftm.betterpets.domain.FeedDefinition;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -40,12 +41,15 @@ public final class PetItems {
         return stack;
     }
 
-    public ItemStack createFeed(final String displayName, final String itemModel, final int amount) {
-        final ItemStack stack = new ItemStack(Material.MILK_BUCKET, amount);
+    public ItemStack createFeed(final FeedDefinition definition, final int amount) {
+        final Material material = Material.matchMaterial(definition.material());
+        final ItemStack stack = new ItemStack(material == null ? Material.MILK_BUCKET : material, amount);
         final ItemMeta meta = stack.getItemMeta();
-        meta.displayName(Messages.plain(displayName));
-        applyItemModel(meta, itemModel);
-        meta.getPersistentDataContainer().set(feedKey, PersistentDataType.INTEGER, 1);
+        meta.displayName(Messages.plain(definition.displayName()));
+        applyItemModel(meta, definition.itemModel());
+        // 먹이마다 성장도가 다르므로 어떤 먹이인지 id 로 남긴다.
+        meta.getPersistentDataContainer()
+            .set(feedKey, PersistentDataType.STRING, definition.id());
         stack.setItemMeta(meta);
         return stack;
     }
@@ -72,10 +76,9 @@ public final class PetItems {
         return read(stack).map(pdc -> pdc.get(eggKey, PersistentDataType.STRING));
     }
 
-    public boolean isFeed(final ItemStack stack) {
-        return read(stack)
-            .map(pdc -> pdc.has(feedKey, PersistentDataType.INTEGER))
-            .orElse(false);
+    /** 이 아이템이 먹이면 그 먹이 id. */
+    public Optional<String> feedIdOf(final ItemStack stack) {
+        return read(stack).map(pdc -> pdc.get(feedKey, PersistentDataType.STRING));
     }
 
     private Optional<PersistentDataContainer> read(final ItemStack stack) {

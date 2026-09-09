@@ -67,7 +67,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
         saveDefaultConfig();
         saveResourceIfMissing("messages.yml");
-        saveResourceIfMissing("eggs.yml");
+        saveResourceIfMissing("items.yml");
         saveResourceIfMissing("pets/wolf.yml");
         saveResourceIfMissing("pets/dragon.yml");
         saveResourceIfMissing("pets/pig.yml");
@@ -122,7 +122,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
         }
 
         getLogger().info("BetterPets 활성화됨. 펫 " + catalog.types().size()
-            + "종, 알 " + catalog.eggs().size() + "종, 모델 " + renderer.availableModels().size() + "개.");
+            + "종, 알 " + catalog.eggs().size() + "종, 먹이 " + catalog.feeds().size()
+            + "종, 모델 " + renderer.availableModels().size() + "개.");
     }
 
     @Override

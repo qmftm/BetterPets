@@ -628,33 +628,54 @@ public interface PetAbility {
 | **알 아이템 우클릭** | 아이템 1개 소비 → 보관함에 `EGG` 상태 펫 추가 |
 | 관리자 지급 | `/petadmin give`, `/petadmin egg` |
 
-### 알 아이템
+### 아이템 — 알과 먹이
+
+알과 먹이를 `items.yml` 한 파일에 모은다. 둘 다 성격이 비슷하고 개수도 적어서, 관리자가 아이템을 손볼 때 파일을 오가지 않아도 되게 했다.
 
 **식별은 PDC로 한다.** 이름·로어 문자열 비교 금지 — 플레이어가 모루로 이름을 바꾸면 깨진다.
 
 ```java
 meta.getPersistentDataContainer().set(EGG_KEY, PersistentDataType.STRING, eggId);
+meta.getPersistentDataContainer().set(FEED_KEY, PersistentDataType.STRING, feedId);
 ```
+
+먹이도 **id를 담는다** — 단순 플래그가 아니다. 먹이마다 성장도 증가량이 달라서 어떤 먹이인지 알아야 한다.
 
 ```yaml
-# eggs.yml
-dragon_egg:
-  display-name: "&6드래곤 알"
-  material: TURTLE_EGG
-  model-data: 1001
-  gives: dragon             # 고정 알
+# items.yml
+eggs:
+  dragon_egg:
+    display-name: "<gold>드래곤 알"
+    material: TURTLE_EGG
+    gives: dragon            # 고정 알
 
-random_egg:
-  display-name: "&f수상한 알"
-  material: EGG
-  weights:                  # 랜덤 알 — 가중치 추첨
-    wolf: 50
-    bear: 30
-    dragon: 1
+  random_egg:
+    display-name: "<white>수상한 알"
+    material: EGG
+    weights:                 # 랜덤 알 — 가중치 추첨
+      wolf: 50
+      dragon: 1
+
+feeds:
+  milk:
+    display-name: "<white>펫 우유"
+    material: MILK_BUCKET
+    growth: 10               # 이 먹이가 올려줄 성장도
+
+  premium_feed:
+    display-name: "<gold>고급 사료"
+    material: WHEAT
+    growth: 30
 ```
+
+`growth` 를 적지 않은 먹이는 `config.yml` 의 `growth.feed-amount` 를 쓴다 (`FeedDefinition.growthOr`).
+
+`item-model` 로 리소스팩 모델을 네임스페이스 키로 가리킨다 — `setCustomModelData(int)` 는 지원 중단됐다.
 
 - 우클릭 처리는 `PlayerInteractEvent`. **`EquipmentSlot.HAND` 만 처리**해 오프핸드 중복 발동을 막는다
 - 보관함이 가득 찼으면 **아이템을 소비하지 않고** 메시지만 띄운다
+- 설정에서 지워진 먹이를 들고 있으면 **아이템을 먹어치우지 않고** 알려준다
+- 지급: `/petadmin egg <플레이어> <알id> [개수]`, `/petadmin feed <플레이어> <먹이id> [개수]`
 
 ---
 
@@ -662,13 +683,14 @@ random_egg:
 
 ```
 plugins/BetterPets/
-├─ config.yml       일반 설정, 저장소, 성능, 기믹 on/off
-├─ messages.yml     사용자 노출 문자열 (한국어)
-├─ gui.yml          GUI 레이아웃
-├─ rarity.yml       등급별 수치
-├─ eggs.yml         알 아이템 정의
-└─ pets/*.yml       펫 종류 정의
+├─ config.yml       성장·기믹·비행 설정
+├─ messages.yml     사용자 노출 문자열 (MiniMessage)
+├─ items.yml        알 · 먹이 아이템 정의
+├─ pets/*.yml       펫 종류 정의 (wolf · dragon · pig 예시 제공)
+└─ playerdata/      플레이어별 펫 데이터 (자동 생성)
 ```
+
+등급별 수치(`Rarity`)와 GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때 파일을 나눈다.
 
 **설정 검증** — 로드 시 필수 필드 누락, 존재하지 않는 모델 참조(`BetterModel.modelKeys()` 로 대조), 미등록 능력 id를 **모두 수집해 한 번에 보고**한다. 첫 오류에서 멈추지 않는다. 관리자가 재시작을 반복하게 만들지 않기 위해서다.
 

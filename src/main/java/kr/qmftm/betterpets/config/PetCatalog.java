@@ -3,6 +3,7 @@ package kr.qmftm.betterpets.config;
 import kr.qmftm.betterpets.ability.AbilityDefinition;
 import kr.qmftm.betterpets.ability.AbilityRegistry;
 import kr.qmftm.betterpets.domain.EggDefinition;
+import kr.qmftm.betterpets.domain.FeedDefinition;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.Rarity;
 import kr.qmftm.betterpets.domain.RideMode;
@@ -20,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * {@code pets/*.yml} 과 {@code eggs.yml} 을 읽어 정의를 만든다.
+ * {@code pets/*.yml} 과 {@code items.yml} 을 읽어 정의를 만든다.
  *
  * <p><b>검증 방침</b> — 첫 오류에서 멈추지 않고 <b>전부 모아 한 번에</b> 보고한다.
  * 관리자가 고치고 재시작하기를 반복하게 만들지 않기 위해서다. 문제가 있는 항목만
@@ -30,6 +31,7 @@ public final class PetCatalog {
 
     private final Map<String, PetType> types = new LinkedHashMap<>();
     private final Map<String, EggDefinition> eggs = new LinkedHashMap<>();
+    private final Map<String, FeedDefinition> feeds = new LinkedHashMap<>();
     private final List<String> problems = new ArrayList<>();
 
     public Optional<PetType> type(final String id) {
@@ -40,12 +42,20 @@ public final class PetCatalog {
         return Optional.ofNullable(eggs.get(id));
     }
 
+    public Optional<FeedDefinition> feed(final String id) {
+        return Optional.ofNullable(feeds.get(id));
+    }
+
     public Map<String, PetType> types() {
         return Map.copyOf(types);
     }
 
     public Map<String, EggDefinition> eggs() {
         return Map.copyOf(eggs);
+    }
+
+    public Map<String, FeedDefinition> feeds() {
+        return Map.copyOf(feeds);
     }
 
     /** 로드 중 발견한 문제. 비어 있으면 정상이다. */
@@ -56,10 +66,11 @@ public final class PetCatalog {
     public void load(final File dataFolder, final AbilityRegistry abilities, final PetRenderer renderer) {
         types.clear();
         eggs.clear();
+        feeds.clear();
         problems.clear();
 
         loadTypes(new File(dataFolder, "pets"), abilities);
-        loadEggs(new File(dataFolder, "eggs.yml"));
+        loadItems(dataFolder);
 
         crossValidate(renderer);
     }
@@ -189,31 +200,97 @@ public final class PetCatalog {
         return result;
     }
 
-    private void loadEggs(final File file) {
+    /**
+     * {@code items.yml} 에서 알과 먹이를 읽는다.
+     *
+     * <p>둘은 성격이 비슷하고 개수도 적어서 한 파일에 둔다 — 관리자가 아이템을 손볼 때
+     * 파일 두 개를 왔다 갔다 하지 않아도 된다.
+     */
+    private void loadItems(final File dataFolder) {
+        // 예전에는 알만 eggs.yml 에 있었다. 그 파일이 남아 있으면 조용히 무시하지 않는다 —
+        // 거기 적어둔 알이 사라진 것처럼 보여 원인을 찾기 어렵다.
+        if (new File(dataFolder, "eggs.yml").exists()) {
+            problems.add("eggs.yml 은 items.yml 의 'eggs:' 섹션으로 옮겨졌습니다."
+                + " 내용을 옮긴 뒤 eggs.yml 을 지우세요. 지금은 무시됩니다.");
+        }
+
+        final File file = new File(dataFolder, "items.yml");
         if (!file.exists()) {
-            problems.add("eggs.yml 이 없습니다. 알 아이템을 쓸 수 없습니다.");
+            problems.add("items.yml 이 없습니다. 알과 먹이 아이템을 쓸 수 없습니다.");
             return;
         }
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-        for (final String id : yaml.getKeys(false)) {
-            final ConfigurationSection node = yaml.getConfigurationSection(id);
-            if (node == null) {
-                continue;
-            }
-            final String materialName = node.getString("material", "EGG");
-            if (Material.matchMaterial(materialName) == null) {
-                problems.add("eggs.yml/" + id + ": 알 수 없는 material '" + materialName + "'");
-                continue;
-            }
-            eggs.put(id, new EggDefinition(
-                id,
-                node.getString("display-name", id),
-                materialName,
-                node.getString("item-model"),
-                node.getString("gives"),
-                readWeights(node.getConfigurationSection("weights"))
-            ));
+
+        final ConfigurationSection eggSection = yaml.getConfigurationSection("eggs");
+        if (eggSection == null) {
+            problems.add("items.yml 에 'eggs:' 섹션이 없습니다.");
+        } else {
+            eggSection.getKeys(false).forEach(id -> readEgg(eggSection, id));
         }
+
+        final ConfigurationSection feedSection = yaml.getConfigurationSection("feeds");
+        if (feedSection == null) {
+            problems.add("items.yml 에 'feeds:' 섹션이 없습니다. 먹이를 줄 수 없으면 알이 부화하지 않습니다.");
+        } else {
+            feedSection.getKeys(false).forEach(id -> readFeed(feedSection, id));
+        }
+    }
+
+    private void readEgg(final ConfigurationSection parent, final String id) {
+        final ConfigurationSection node = parent.getConfigurationSection(id);
+        if (node == null) {
+            return;
+        }
+        final String materialName = readMaterial(node, "EGG", "items.yml/eggs/" + id);
+        if (materialName == null) {
+            return;
+        }
+        eggs.put(id, new EggDefinition(
+            id,
+            node.getString("display-name", id),
+            materialName,
+            node.getString("item-model"),
+            node.getString("gives"),
+            readWeights(node.getConfigurationSection("weights"))
+        ));
+    }
+
+    private void readFeed(final ConfigurationSection parent, final String id) {
+        final ConfigurationSection node = parent.getConfigurationSection(id);
+        if (node == null) {
+            return;
+        }
+        final String materialName = readMaterial(node, "MILK_BUCKET", "items.yml/feeds/" + id);
+        if (materialName == null) {
+            return;
+        }
+        // growth 를 적지 않으면 config.yml 의 전역 기본값을 쓴다는 뜻이라 null 로 남긴다.
+        final Integer growth = node.contains("growth") ? node.getInt("growth") : null;
+        if (growth != null && growth <= 0) {
+            problems.add("items.yml/feeds/" + id + ": growth 가 " + growth
+                + " 입니다. 0 이하면 먹여도 자라지 않습니다.");
+        }
+        feeds.put(id, new FeedDefinition(
+            id,
+            node.getString("display-name", id),
+            materialName,
+            node.getString("item-model"),
+            growth
+        ));
+    }
+
+    /**
+     * material 값을 읽고 검증한다.
+     *
+     * @return 유효한 material 이름. 알 수 없는 값이면 문제로 기록하고 null
+     */
+    private String readMaterial(final ConfigurationSection node, final String fallback, final String where) {
+        final String materialName = node.getString("material", fallback);
+        if (Material.matchMaterial(materialName) == null) {
+            problems.add(where + ": 알 수 없는 material '" + materialName + "'");
+            return null;
+        }
+        return materialName;
     }
 
     /**
@@ -264,12 +341,12 @@ public final class PetCatalog {
         }
         for (final EggDefinition egg : eggs.values()) {
             if (!egg.isRandom() && !types.containsKey(egg.gives())) {
-                problems.add("알 '" + egg.id() + "': gives 가 가리키는 펫 '"
+                problems.add("items.yml/eggs/" + egg.id() + ": gives 가 가리키는 펫 '"
                     + egg.gives() + "' 가 없습니다.");
             }
             for (final String key : egg.weights().keySet()) {
                 if (!types.containsKey(key)) {
-                    problems.add("알 '" + egg.id() + "': weights 의 '" + key + "' 가 없는 펫입니다.");
+                    problems.add("items.yml/eggs/" + egg.id() + ": weights 의 '" + key + "' 가 없는 펫입니다.");
                 }
             }
         }

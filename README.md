@@ -142,6 +142,7 @@
 | `/pet rename <이름>` | `betterpets.use` | 이름 변경 |
 | `/petadmin give <플레이어> <타입>` | `betterpets.admin` | 펫 지급 |
 | `/petadmin egg <플레이어> <알> [개수]` | `betterpets.admin` | 알 아이템 지급 |
+| `/petadmin feed <플레이어> <먹이> [개수]` | `betterpets.admin` | 먹이 아이템 지급 |
 | `/petadmin growth <플레이어> <petId> <양>` | `betterpets.admin` | 성장도 지급 |
 | `/petadmin reload` | `betterpets.admin` | 설정 리로드 |
 | `/petadmin debug` | `betterpets.admin` | 트래커 누수 진단 |
@@ -161,7 +162,7 @@
 plugins/BetterPets/
 ├─ config.yml       성장·기믹·비행 설정
 ├─ messages.yml     사용자 노출 문자열 (MiniMessage)
-├─ eggs.yml         알 아이템 정의
+├─ items.yml        알 · 먹이 아이템 정의
 ├─ pets/*.yml       펫 종류 정의 (wolf · dragon · pig 예시 제공)
 └─ playerdata/      플레이어별 펫 데이터 (자동 생성)
 ```

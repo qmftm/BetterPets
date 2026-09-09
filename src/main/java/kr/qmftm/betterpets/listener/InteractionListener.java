@@ -2,6 +2,7 @@ package kr.qmftm.betterpets.listener;
 
 import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.domain.EggDefinition;
+import kr.qmftm.betterpets.domain.FeedDefinition;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
@@ -120,20 +121,27 @@ public final class InteractionListener implements Listener {
         final ActivePet pet = clicked.get();
         final ItemStack held = player.getInventory().getItemInMainHand();
 
-        if (items.isFeed(held)) {
-            feed(player, pet, held);
+        final Optional<String> feedId = items.feedIdOf(held);
+        if (feedId.isPresent()) {
+            feed(player, pet, held, feedId.get());
             return;
         }
         tryRide(player, pet);
     }
 
-    private void feed(final Player player, final ActivePet pet, final ItemStack held) {
+    private void feed(final Player player, final ActivePet pet, final ItemStack held, final String feedId) {
         final PetData data = pet.data();
         if (data.stage() == LifeStage.ADULT || data.stage() == LifeStage.PIG) {
             messages.send(player, "feed.already-grown");
             return;
         }
-        final GrowthService.FeedResult result = growth.feed(data);
+        // 설정에서 지워진 먹이를 들고 있을 수 있다. 아이템을 먹어치우지 않고 알려준다.
+        final Optional<FeedDefinition> definition = pets.catalog().feed(feedId);
+        if (definition.isEmpty()) {
+            messages.send(player, "feed.unknown");
+            return;
+        }
+        final GrowthService.FeedResult result = growth.feed(data, definition.get());
         held.setAmount(held.getAmount() - 1);
         store.saveAsync(data);
 
