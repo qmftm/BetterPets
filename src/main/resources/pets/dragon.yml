@@ -1,0 +1,43 @@
+# 펫 종류 정의 예시 — 탑승·비행 펫.
+#
+# 탑승 펫은 모델에 p_seat 본이 있어야 한다. docs/MODELING.md 참고.
+
+id: dragon
+display-name: "<gold>드래곤"
+model: pet_dragon
+rarity: S
+growth-max: 100
+
+rideable: true
+
+# 부화해서 성체가 될 때 이 확률로 비행 능력이 확정된다.
+# 원작 규칙상 A등급 미만에서는 비행이 나오지 않는다.
+fly-chance: 0.35
+
+animations:
+  idle: idle
+  walk: walk
+  run: run
+  fly: fly
+  ride: ride
+  eat: eat
+
+movement:
+  follow-distance: 3.0
+  walk-speed: 0.28
+  run-speed: 0.50
+  teleport-distance: 28.0
+
+abilities:
+  - id: attribute_speed
+    base: 0.05
+    per-growth: 0.0005
+  - id: attribute_health
+    base: 2.0
+    per-growth: 0.02
+  - id: on_kill_extra_drop
+    chance-base: 0.05
+    chance-per-growth: 0.002
+
+acquire:
+  gacha-weight: 1

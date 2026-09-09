@@ -1,0 +1,30 @@
+# 알 아이템 정의.
+#
+# 두 종류를 지원한다:
+#   gives   - 고정 알. 지정한 펫 하나를 준다
+#   weights - 랜덤 알. 가중치 추첨. 원작의 뽑기권을 아이템 하나로 대체한다
+#
+# 아이템 식별은 PDC 로 한다. 플레이어가 모루로 이름을 바꿔도 인식이 유지된다.
+#
+# item-model 은 리소스팩의 모델을 네임스페이스 키로 가리킨다 (MC 1.21.4+ 방식).
+# 리소스팩이 없으면 생략해도 된다 — material 의 기본 모양으로 나온다.
+
+wolf_egg:
+  display-name: "<white>늑대 알"
+  material: TURTLE_EGG
+  gives: wolf
+  # item-model: "betterpets:egg_wolf"
+
+dragon_egg:
+  display-name: "<gold>드래곤 알"
+  material: TURTLE_EGG
+  gives: dragon
+  # item-model: "betterpets:egg_dragon"
+
+random_egg:
+  display-name: "<white>수상한 알"
+  material: EGG
+  weights:
+    wolf: 50
+    dragon: 1
+  # item-model: "betterpets:egg_random"

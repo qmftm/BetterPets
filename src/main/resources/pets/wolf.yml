@@ -1,0 +1,34 @@
+# 펫 종류 정의 예시 — 지상 펫.
+#
+# model 값은 plugins/BetterModel/models/<이름>.bbmodel 의 파일명(확장자 제외)이다.
+# 모델 제작 규격은 docs/MODELING.md 참고.
+
+id: wolf
+display-name: "<white>늑대"
+model: pet_wolf
+rarity: C
+growth-max: 100
+
+rideable: false
+
+# 모델의 실제 애니메이션 이름과 매핑한다.
+# 생략하면 논리 이름(idle/walk/run)을 그대로 쓴다.
+animations:
+  idle: idle
+  walk: walk
+  run: run
+  eat: eat
+
+movement:
+  follow-distance: 2.0
+  walk-speed: 0.25
+  run-speed: 0.45
+  teleport-distance: 24.0
+
+abilities:
+  - id: attribute_speed
+    base: 0.03
+    per-growth: 0.0003
+
+acquire:
+  gacha-weight: 50

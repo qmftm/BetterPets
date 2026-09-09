@@ -1,0 +1,53 @@
+# 사용자에게 보이는 문자열. MiniMessage 형식이다.
+# https://docs.advntr.dev/minimessage/format.html
+
+prefix: "<gray>[<gold>펫<gray>] </gray>"
+
+pet:
+  summoned: "<green>펫을 소환했습니다."
+  dismissed: "<gray>펫을 돌려보냈습니다."
+  none-active: "<red>소환 중인 펫이 없습니다."
+  not-found: "<red>그런 펫을 찾을 수 없습니다."
+  not-summonable: "<yellow>아직 알입니다. 먹이를 줘서 부화시키세요."
+  model-missing: "<red>모델을 찾을 수 없습니다. 관리자에게 문의하세요."
+  unknown-type: "<red>알 수 없는 펫 종류입니다."
+  renamed: "<green>이름을 '<white>%name%<green>' 으로 바꿨습니다."
+  name-too-long: "<red>이름은 32자를 넘을 수 없습니다."
+  released: "<gray>펫을 놓아줬습니다."
+  rename-hint: "<gray>/pet rename <이름> 으로 바꿀 수 있습니다."
+
+egg:
+  unknown: "<red>알 수 없는 알입니다."
+  broken-definition: "<red>이 알의 설정이 잘못됐습니다. 관리자에게 문의하세요."
+  hatched-into: "<green>알에서 <white>%name%<green> 이(가) 나왔습니다!"
+
+feed:
+  fed: "<green>먹이를 줬습니다. <gray>성장도 <white>%growth%<gray>/<white>%max%"
+  hatched: "<gold>알이 부화했습니다!"
+  grew-up: "<gold>다 자랐습니다! 이제 탈 수 있습니다."
+  became-pig: "<yellow>너무 많이 먹여서... 돼지가 됐습니다."
+  already-grown: "<gray>이미 다 자란 펫입니다."
+
+ride:
+  started-ground: "<green>탑승했습니다. <gray>바라보며 이동, 스니크로 하차."
+  started-flying: "<gold>비행을 시작합니다. <gray>점프로 상승, 스니크로 하차."
+  confirm: "<gold>한 번 더 우클릭하면 날아오릅니다."
+  stopped: "<gray>내렸습니다."
+  not-riding: "<red>타고 있지 않습니다."
+  not-rideable: "<red>이 펫은 탈 수 없습니다."
+  failed: "<red>여기서는 탈 수 없습니다."
+
+command:
+  unknown: "<red>알 수 없는 명령입니다. <gray>/pet"
+  summon-usage: "<gray>/pet summon <펫id앞자리>"
+  rename-usage: "<gray>/pet rename <이름>"
+
+admin:
+  player-not-found: "<red>플레이어를 찾을 수 없습니다."
+  unknown-pet-type: "<red>알 수 없는 펫 종류: <white>%id%"
+  unknown-egg: "<red>알 수 없는 알: <white>%id%"
+  given: "<green><white>%player%<green> 에게 <white>%type%<green> 알을 줬습니다."
+  egg-given: "<green><white>%player%<green> 에게 알 <white>%id%<green> 을 줬습니다."
+  growth-given: "<green>성장도 <white>%amount%<green> 를 줬습니다."
+  reloaded: "<green>설정을 다시 읽었습니다. <gray>펫 <white>%pets%<gray>종, 알 <white>%eggs%<gray>종"
+  reloaded-with-problems: "<yellow>설정을 읽었지만 <white>%count%<yellow>개의 문제가 있습니다:"

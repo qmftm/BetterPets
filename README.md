@@ -4,35 +4,37 @@
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![BetterModel](https://img.shields.io/badge/BetterModel-3.4.1-blue)
 ![Build](https://img.shields.io/badge/Build-Maven-C71A36)
-![Status](https://img.shields.io/badge/Status-개발%20중%20(M1)-yellow)
+![Status](https://img.shields.io/badge/Status-검증%20대기%20(M9)-yellow)
 
 악어의 놀이터 스타일 펫 시스템. 알을 부화시켜 펫을 키우고, 성장한 펫을 타고 다니며, 일부는 하늘을 난다.
 
 렌더링은 [BetterModel](https://github.com/toxicity188/BetterModel)이 맡는다 — 리소스팩이나 데이터팩을 직접 다룰 필요 없이 BlockBench 모델을 그대로 쓴다.
 
-> ⚠️ **아직 배포 가능한 상태가 아니다.** 뼈대와 도메인 로직만 있고 실제 펫은 아직 소환되지 않는다. 진행 상황은 아래 [개발 단계](#개발-단계) 참고.
+> ⚠️ **아직 실제 서버에서 검증되지 않았다.** 기능 전체가 구현돼 빌드와 단위 테스트는 통과하지만, **모델 파일이 있어야 실제로 펫이 뜨는지 확인할 수 있다.** 진행 상황은 아래 [개발 단계](#개발-단계) 참고.
 
 ---
 
 ## 개발 단계
 
-전체 10단계 중 **1단계 완료**. 각 단계는 앞 단계 위에 쌓이며, 완료 조건을 모두 채워야 다음으로 넘어간다.
+전체 11단계 중 **9단계 코드 완료**. 남은 것은 실제 서버 검증과 Bedrock 대응이다.
+
+"코드 완료"는 구현·빌드·단위 테스트가 끝났다는 뜻이고, **테스트 서버에서 확인된 것은 아니다.** 그건 모델 파일이 필요하다.
 
 | 단계 | 내용 | 상태 |
 | :---: | --- | :---: |
 | **M0** | **프로젝트 뼈대** — Maven 빌드, `paper-plugin.yml`, 진입점, 렌더 격리 계층, 도메인(등급·생애주기·성장도) | ✅ **완료** |
-| **M1** | **렌더링** — `/pet summon` 으로 모델 소환/해제, 캐리어 엔티티 확정, 트래커 누수 0 검증<br>**+ Bedrock 변환 1회 시험** (아래 참고) | 🔨 **진행 예정** |
-| **M2** | **이동 · 애니메이션** — 추종 상태 머신, 텔레포트 폴백, 애니메이션 전이 | ⬜ |
-| **M3** | **데이터 · 명령어** — 저장소, 비동기 I/O, 전체 명령어와 권한 | ⬜ |
-| **M4** | **생애주기** — 알 → 부화 → 아기 → 성체, 성장도(시간 + 먹이) | ⬜ |
-| **M5** | **탑승 · 비행** — 마운트 조향, 충돌 처리, 안전 하차 | ⬜ |
-| **M6** | **GUI** — 보관함, 상세, 부화/급여 | ⬜ |
-| **M7** | **등급 · 능력** — D~S 등급, 패시브/트리거/액티브 능력 | ⬜ |
-| **M8** | **획득 · 진화** — 알 아이템 우클릭, 랜덤 알, 진화 | ⬜ |
+| **M1** | **렌더링** — `/pet summon`, 캐리어 엔티티(보이지 않는 Mob), 트래커 격리 계층 | ✅ **코드 완료** |
+| **M2** | **이동 · 애니메이션** — 추종 상태 머신, 텔레포트 폴백, 전이 시에만 애니메이션 호출 | ✅ **코드 완료** |
+| **M3** | **데이터 · 명령어** — YAML 저장소, 단일 스레드 비동기 I/O, `/pet` `/petadmin` | ✅ **코드 완료** |
+| **M4** | **생애주기** — 알 → 부화 → 아기 → 성체, 성장도(시간 + 먹이), 과급식 기믹 | ✅ **코드 완료** |
+| **M5** | **탑승 · 비행** — ArmorStand 마운트, Paper Input 조향, 서브스텝/벽 슬라이딩, 안전 하차 | ✅ **코드 완료** |
+| **M6** | **GUI** — 보관함, 상세, 등급·성장도 표시 | ✅ **코드 완료** |
+| **M7** | **등급 · 능력** — D~S 등급, 패시브/트리거 능력, 모디파이어 누적 방지 | ✅ **코드 완료** |
+| **M8** | **획득 · 진화** — 알 아이템 우클릭(PDC 식별), 고정/랜덤 알, 진화 | ✅ **코드 완료** |
 | **M9** | **폴리시** — 성능 실측, PlaceholderAPI, 문서 정리 | ⬜ |
 | **M10** | **Bedrock 지원** — 전체 모델 변환, 리소스팩 파이프라인, Bedrock 실기 테스트 | ⬜ |
 
-남은 기간 약 12주 (1인 파트타임 기준, 모델 제작 시간 제외).
+남은 작업은 대부분 **직접 서버에서 확인**하는 일이다. 코드 작성은 끝났다.
 
 > **Bedrock 검증은 M1에서 미리 한 번 한다.** 서버가 Bedrock 플레이어를 받으므로 [GeyserModelEngine](https://github.com/GeyserExtensionists/GeyserModelEngine)이 필요한데, 조합(BetterModel 3.4.1 + GME + MC 26.2)이 검증된 적 없다. **모델을 여러 개 만든 뒤에 안 되는 걸 알면 늦으므로**, M1에서 첫 모델이 자바에 뜨자마자 그 하나로 Bedrock 변환을 시험한다. 되면 M10에서 나머지를 처리하고, 안 되면 그때 대안을 찾는다.
 
@@ -43,51 +45,56 @@
 3. [수동 체크리스트](docs/DESIGN.md#테스트)를 통과한다
 4. README를 갱신하고 커밋·푸시한다
 
-### M0에서 확정된 것
+### 지금까지 확정된 것
 
-- **빌드가 실제로 통과한다** — JDK 25로 BetterModel 3.4.1 API에 대해 컴파일 검증 완료, 테스트 24개 통과
-- **BetterModel API 격리 계층** — `PetRenderer` / `PetRenderHandle` 인터페이스 뒤에 BetterModel을 숨겼다. `BetterModelRenderer` 가 그 API를 import하는 유일한 파일이다
-- **도메인 로직** — 등급(D~S), 생애주기(EGG~PIG), 성장도 지연 계산. Bukkit에 의존하지 않아 단위 테스트가 가능하다
+- **빌드가 통과한다** — JDK 25로 BetterModel 3.4.1 API에 대해 실제 컴파일, 단위 테스트 37개 통과
+- **캐리어 엔티티는 보이지 않는 `Mob`** — `ItemDisplay` 대신 고른 이유는 자체 히트박스가 있어서다. 모델에 히트박스 본(`b_`)이 없어도 우클릭이 먹는다
+- **BetterModel API 격리** — `BetterModelRenderer` 가 그 API를 import하는 유일한 파일이다
+- **탑승은 `ArmorStand` + Paper `Input`** — `allowFlight` 를 쓰지 않으므로 비행 권한이 샐 위험 자체가 없다
 
-### M1에서 결정할 것
+### 다음에 직접 확인할 것
 
-- **캐리어 엔티티** — 보이지 않는 `Mob` vs `ItemDisplay`. BetterModel이 양쪽 모두에 붙는 것은 확인됐고, 히트박스·이름표를 본 태그로 얻을지 별도 엔티티로 둘지가 쟁점
-- **트래커 누수 진단** — `/petadmin debug` 로 활성 펫 수와 엔진 트래커 수를 대조
-- **Bedrock 변환 가능 여부** — 모델 하나로 GeyserModelEngine 파이프라인을 끝까지 통과시켜 본다
+코드로는 더 할 게 없고, **테스트 서버에서 확인해야 하는 것들**이다.
+
+1. **모델이 실제로 뜨는가** — `.bbmodel` 하나를 넣고 `/petadmin egg`, 먹이, `/pet summon` 순으로
+2. **트래커 누수가 없는가** — `/petadmin debug` 의 세 숫자(활성 펫 / 캐리어 / 트래커)가 일치하는지
+3. **추종 이동이 자연스러운가** — 계단·언덕에서 끊기지 않는지, 텔레포트 폴백이 과하지 않은지
+4. **탑승·비행 조작감** — 벽 슬라이딩과 하차 안전 처리가 실제로 먹는지
+5. **Bedrock 변환** — 모델 하나로 GeyserModelEngine 파이프라인을 끝까지 통과시켜 본다
 
 ---
 
 ## 기능
 
-계획된 전체 기능. 체크된 것만 구현돼 있다.
+체크된 것은 **코드가 있고 빌드·테스트를 통과했다**는 뜻이다. 실제 서버 확인은 별개다.
 
 **펫 기르기**
-- [ ] 알 아이템 우클릭으로 펫 획득 (고정 알 / 가중치 랜덤 알)
-- [ ] 먹이를 줘서 부화
-- [ ] 성장도 — 시간 경과 1분당 +1, 먹이 +10
-- [ ] 알 → 아기 → 성체 생애주기
-- [ ] 과급식 시 돼지로 변하는 기믹
+- [x] 알 아이템 우클릭으로 펫 획득 (고정 알 / 가중치 랜덤 알)
+- [x] 먹이를 줘서 부화
+- [x] 성장도 — 시간 경과 1분당 +1, 먹이 +10
+- [x] 알 → 아기 → 성체 생애주기
+- [x] 과급식 시 돼지로 변하는 기믹
 
 **데리고 다니기**
-- [ ] 3D 모델 렌더링 (BetterModel)
-- [ ] 추종 이동 — 정지 / 걷기 / 달리기 / 텔레포트
-- [ ] 상태별 애니메이션 전환
+- [x] 3D 모델 렌더링 (BetterModel)
+- [x] 추종 이동 — 정지 / 걷기 / 달리기 / 텔레포트
+- [x] 상태별 애니메이션 전환
 
 **타고 다니기**
-- [ ] 지상 탑승
-- [ ] 비행 — A등급 이상에서 확률적으로, 연료 없이 무제한
-- [ ] 스니크 하차, 낙하 피해 방지
+- [x] 지상 탑승
+- [x] 비행 — A등급 이상에서 확률적으로, 연료 없이 무제한
+- [x] 스니크 하차, 낙하 피해 방지
 
 **성장과 능력**
 - [x] 등급 D~S — 등급이 오를수록 이동속도 상승, A등급부터 비행 가능
-- [ ] 패시브 능력 (상시 버프)
-- [ ] 트리거 능력 (이벤트 반응)
-- [ ] 액티브 능력 (쿨다운 발동)
-- [ ] 진화
+- [x] 패시브 능력 (상시 버프)
+- [x] 트리거 능력 (이벤트 반응)
+- [ ] 액티브 능력 (쿨다운 발동) — 인터페이스만 있고 구현체 없음
+- [x] 진화
 
 **관리**
-- [ ] 펫 보관함 GUI
-- [ ] 이름 변경 · 해방
+- [x] 펫 보관함 GUI
+- [x] 이름 변경 · 해방
 - [ ] PlaceholderAPI 연동
 
 ---
@@ -153,12 +160,11 @@
 
 ```
 plugins/BetterPets/
-├─ config.yml       일반 설정, 저장소, 기믹 on/off
-├─ messages.yml     사용자 노출 문자열
-├─ gui.yml          GUI 레이아웃
-├─ rarity.yml       등급별 수치
+├─ config.yml       성장·기믹·비행 설정
+├─ messages.yml     사용자 노출 문자열 (MiniMessage)
 ├─ eggs.yml         알 아이템 정의
-└─ pets/*.yml       펫 종류 정의
+├─ pets/*.yml       펫 종류 정의
+└─ playerdata/      플레이어별 펫 데이터 (자동 생성)
 ```
 
 펫 하나를 정의하는 예:
@@ -166,7 +172,7 @@ plugins/BetterPets/
 ```yaml
 # pets/dragon.yml
 id: dragon
-display-name: "&6드래곤"
+display-name: "<gold>드래곤"
 model: pet_dragon          # plugins/BetterModel/models/pet_dragon.bbmodel
 rarity: S
 growth-max: 100
@@ -221,7 +227,7 @@ mvn test                             # 단위 테스트만
 1. **`maven-shade-plugin` 은 3.6.2 이상**이어야 한다. 3.6.0은 번들 ASM이 낡아 Java 25 클래스를 못 읽고 `Unsupported class file major version 69` 로 실패한다.
 2. **셰이딩보다 Paper 라이브러리 로더가 낫다.** sqlite-jdbc를 셰이딩했더니 전 플랫폼 네이티브가 딸려와 jar가 16KB → 14MB가 됐다.
 
-현재 외부 런타임 의존성은 없다. 저장소 백엔드는 M3에서 정한다.
+**외부 런타임 의존성이 없다.** 저장소는 YAML을 쓴다 — 5명 규모에 DB는 과잉이고, 문제가 생겼을 때 사람이 직접 열어 고칠 수 있다.
 
 ---
 
@@ -233,11 +239,30 @@ kr.qmftm.betterpets
 ├─ domain/                 순수 로직. Bukkit 비의존이라 테스트 가능
 │   ├─ Rarity              등급 D~S
 │   ├─ LifeStage           EGG · HATCHING · BABY · ADULT · PIG
-│   └─ GrowthCurve         성장도 지연 계산
-└─ render/                 BetterModel 격리 계층
-    ├─ PetRenderer         인터페이스
-    ├─ PetRenderHandle     AutoCloseable 핸들
-    └─ BetterModelRenderer ★ BetterModel API를 import하는 유일한 파일
+│   ├─ GrowthCurve         성장도 지연 계산
+│   ├─ PetType             펫 종류 정의 (설정에서 로드)
+│   ├─ PetData             펫 개체 (저장 대상)
+│   └─ EggDefinition       알 아이템 정의, 가중치 추첨
+├─ render/                 BetterModel 격리 계층
+│   ├─ PetRenderer         인터페이스
+│   ├─ PetRenderHandle     AutoCloseable 핸들
+│   └─ BetterModelRenderer ★ BetterModel API를 import하는 유일한 파일
+├─ runtime/                살아 움직이는 부분
+│   ├─ CarrierFactory      캐리어 엔티티 스폰 · 고아 청소
+│   ├─ ActivePet           캐리어 + 트래커 + 상태 한 덩어리
+│   ├─ PetRegistry         소유자 → 소환된 펫
+│   ├─ MovementController  추종 상태 머신
+│   ├─ AnimationStateMachine  전이 시에만 animate() 호출
+│   ├─ RideController      ArmorStand 마운트, 서브스텝 충돌
+│   └─ PetTicker           전역 틱 루프 (추종 2틱 / 탑승 1틱)
+├─ service/                PetService · GrowthService · AbilityService
+├─ ability/                능력 인터페이스 + 등록소 + 구현체
+├─ storage/                PetRepository · YamlPetRepository · PetStore
+├─ config/                 PetCatalog (검증 포함) · Messages
+├─ item/                   PetItems — PDC 기반 알·먹이 식별
+├─ gui/                    Menus (홀더) · PetMenuFactory
+├─ command/                PetCommand · PetAdminCommand
+└─ listener/               Session · Interaction · Menu · AbilityTrigger
 ```
 
 계층 분리를 유지하는 이유가 있다. 같은 일을 하는 참고 플러그인은 12,816줄 중 69%가 단 두 파일에 몰려 있다. **한 파일이 800줄을 넘으면 분리 신호로 본다.**
