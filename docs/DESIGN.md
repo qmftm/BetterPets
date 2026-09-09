@@ -437,7 +437,24 @@ void tick() {
 
 원작의 핵심 기능이다. [참고 구현](#참고-구현-분석)에서 검증된 구조를 기본안으로 삼는다.
 
-### 마운트 방식
+### 탑승 방식 — 펫 종류마다 3가지
+
+`pets/*.yml` 의 `ride:` 값이다 (`RideMode`).
+
+| 값 | 뜻 |
+| --- | --- |
+| `NONE` | 탈 수 없다 |
+| `GROUND` | 걷는 탑승. 지형을 따라 달린다 |
+| `FLY` | 나는 탑승. 개체별 추첨에 성공해야 실제로 난다 |
+
+개체가 실제로 무엇을 할 수 있는지는 여기에 두 가지가 더 곱해진다:
+
+1. **생애주기** — 아기는 못 탄다. `ADULT` 여야 한다
+2. **비행 추첨** — `FLY` 종류라도 성체가 될 때 `fly-chance` 에 실패한 개체는 **걷는 탑승까지만** 된다 (`RideMode.effective`). 원작에서도 같은 종의 일부만 날탈이 되고 나머지는 지상 탈것으로 쓴다
+
+`fly-chance` 는 `FLY` 일 때만 의미가 있다. `FLY` 인데 확률이 0이면 어떤 개체도 날지 못하므로, 설정 검증이 이 조합을 경고한다.
+
+### 마운트 구현 방식
 
 | | 방식 | 판정 |
 | --- | --- | --- |
@@ -446,7 +463,7 @@ void tick() {
 
 ### 절차
 
-1. `ADULT` 이고 `rideable: true` 인 펫만 탑승 가능
+1. `ADULT` 이고 `ride` 가 `NONE` 이 아닌 펫만 탑승 가능
 2. 우클릭 → 지상 마운트는 즉시, **비행은 시간 창 내 두 번째 우클릭으로 확인** (실수 이륙 방지)
 3. 보이지 않는 `ArmorStand` 스폰 후 `addPassenger(player)`
    - `setVisible(false)` · `setGravity(false)` · `setInvulnerable(true)` · `setCollidable(false)` · `setSmall(true)` · `setBasePlate(false)` · `setPersistent(false)`
@@ -517,7 +534,7 @@ int steps = Math.max(1, (int) Math.ceil(dist / 0.45));
 public record PetType(
         String id, String displayName, String modelId, String eggModelId,
         Rarity rarity, AnimationSet animations, MovementProfile movement,
-        boolean rideable, double flyChance,
+        RideMode ride, double flyChance,   // NONE / GROUND / FLY
         List<AbilityDefinition> abilities,
         int growthMax, Map<String, Integer> nextStage   // 가중치. 비어 있으면 종류 유지
 ) {}

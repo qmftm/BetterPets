@@ -81,8 +81,8 @@
 - [x] 상태별 애니메이션 전환
 
 **타고 다니기**
-- [x] 지상 탑승
-- [x] 비행 — A등급 이상에서 확률적으로, 연료 없이 무제한
+- [x] 탑승 방식 3가지 — 펫 종류마다 `NONE`(불가) / `GROUND`(걷는 탑승) / `FLY`(나는 탑승)
+- [x] 비행 — `FLY` 종류가 확률로 확정, 실패하면 걷는 탑승. 연료 없이 무제한
 - [x] 스니크 하차, 낙하 피해 방지
 
 **성장과 능력**
@@ -176,8 +176,8 @@ model: pet_dragon          # plugins/BetterModel/models/pet_dragon.bbmodel
 rarity: S
 growth-max: 100
 
-rideable: true
-fly-chance: 0.35           # 부화 시 이 확률로 비행 능력 확정
+ride: FLY                  # NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승)
+fly-chance: 0.35           # FLY 종류가 실제로 날 확률. 실패하면 걷는 탑승
 
 animations:
   idle: idle

@@ -114,7 +114,8 @@ public final class GrowthService {
 
         if (data.growthStage() >= maxStage) {
             data.stage(LifeStage.ADULT);
-            if (type.rarity().canRollFlight()) {
+            // 나는 탑승 종류만 추첨한다. 실패하면 걷는 탑승으로 내려간다 (RideMode.effective).
+            if (type.rollsFlight()) {
                 data.canFly(ThreadLocalRandom.current().nextDouble() < type.flyChance());
             }
             return StageResult.GREW_UP;

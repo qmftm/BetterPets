@@ -9,7 +9,8 @@ model: pet_wolf
 rarity: C
 growth-max: 100
 
-rideable: false
+# 탑승 방식: NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승)
+ride: GROUND
 
 # 모델의 실제 애니메이션 이름과 매핑한다.
 # 생략하면 논리 이름(idle/walk/run)을 그대로 쓴다.

@@ -20,8 +20,8 @@ public record PetType(
     String eggModelId,          // nullable — 없으면 본 모델의 egg 애니메이션을 쓴다
     Rarity rarity,
     int growthMax,
-    boolean rideable,
-    double flyChance,
+    RideMode ride,
+    double flyChance,           // ride 가 FLY 일 때만 의미가 있다
     AnimationSet animations,
     MovementProfile movement,
     List<AbilityDefinition> abilities,
@@ -50,6 +50,11 @@ public record PetType(
      */
     public boolean hasNextStage() {
         return !nextStage.isEmpty();
+    }
+
+    /** 비행 추첨을 돌려야 하는 종류인가. {@link RideMode#FLY} 가 아니면 굴릴 이유가 없다. */
+    public boolean rollsFlight() {
+        return ride == RideMode.FLY;
     }
 
     /**

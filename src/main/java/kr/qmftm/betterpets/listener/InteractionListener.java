@@ -5,6 +5,7 @@ import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
+import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.MovementController;
@@ -160,15 +161,20 @@ public final class InteractionListener implements Listener {
         final PetData data = pet.data();
         final PetType type = pet.type();
 
-        if (!type.rideable() || !data.stage().rideable()) {
+        if (!type.ride().canRide()) {
             messages.send(player, "ride.not-rideable");
+            return;
+        }
+        if (!data.stage().rideable()) {
+            messages.send(player, "ride.too-young");
             return;
         }
         if (rides.isRiding(player)) {
             return;     // 비행 중 우클릭은 무시한다. 하차는 스니크 전용
         }
 
-        final boolean flying = data.canFly();
+        // FLY 종류라도 비행 추첨에 실패한 개체는 걷는 탑승까지만 된다.
+        final boolean flying = type.ride().effective(data.canFly()) == RideMode.FLY;
         if (flying) {
             final long now = System.currentTimeMillis();
             final Long armed = mountConfirms.get(player.getUniqueId());

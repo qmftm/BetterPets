@@ -109,8 +109,13 @@ public final class PetMenuFactory {
             lore.add(Messages.plain("<gray>성장도 <white>" + pet.growth() + "<dark_gray>/" + max));
             lore.add(Messages.plain("<dark_gray>" + bar(growth.progressOf(pet))));
         }
-        if (pet.canFly()) {
-            lore.add(Messages.plain("<aqua>비행 가능"));
+        if (type != null && type.ride().canRide()) {
+            // 성체가 되어야 실제로 탈 수 있고, FLY 종류라도 추첨에 실패했으면 걷는 탑승이다.
+            final var effective = type.ride().effective(pet.canFly());
+            final String label = pet.stage().rideable()
+                ? effective.displayName()
+                : effective.displayName() + " <dark_gray>(성체부터)";
+            lore.add(Messages.plain("<gray>탑승 <white>" + label));
         }
         if (pet.active()) {
             lore.add(Messages.plain("<green>소환 중"));

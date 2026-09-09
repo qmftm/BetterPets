@@ -5,6 +5,7 @@ import kr.qmftm.betterpets.ability.AbilityRegistry;
 import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.Rarity;
+import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.render.PetRenderer;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -85,6 +86,11 @@ public final class PetCatalog {
                 continue;
             }
 
+            final RideMode ride = readRideMode(file.getName(), yaml);
+            if (ride == null) {
+                continue;
+            }
+
             final PetType type = new PetType(
                 id,
                 yaml.getString("display-name", id),
@@ -92,7 +98,7 @@ public final class PetCatalog {
                 yaml.getString("egg-model"),
                 rarity.get(),
                 yaml.getInt("growth-max", 100),
-                yaml.getBoolean("rideable", false),
+                ride,
                 yaml.getDouble("fly-chance", rarity.get().flyChance()),
                 readAnimations(yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
@@ -104,6 +110,30 @@ public final class PetCatalog {
                 problems.add(file.getName() + ": id '" + id + "' 가 중복입니다.");
             }
         }
+    }
+
+    /**
+     * {@code ride:} 를 읽는다. 값이 없으면 {@link RideMode#NONE} 이다.
+     *
+     * @return 해석한 값. 오타 등으로 해석에 실패했으면 null (호출부가 이 펫을 건너뛴다)
+     */
+    private RideMode readRideMode(final String fileName, final YamlConfiguration yaml) {
+        // 예전 스키마를 그대로 둔 파일이 조용히 "탑승 불가"가 되면 원인을 찾기 어렵다.
+        if (yaml.contains("rideable")) {
+            problems.add(fileName + ": 'rideable' 은 'ride' 로 바뀌었습니다."
+                + " NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승) 중 하나를 쓰세요.");
+        }
+        final String raw = yaml.getString("ride");
+        if (raw == null || raw.isBlank()) {
+            return RideMode.NONE;
+        }
+        final Optional<RideMode> parsed = RideMode.parse(raw);
+        if (parsed.isEmpty()) {
+            problems.add(fileName + ": ride 가 잘못됐습니다 ('" + raw
+                + "'). NONE / GROUND / FLY 중 하나여야 합니다.");
+            return null;
+        }
+        return parsed.get();
     }
 
     private PetType.AnimationSet readAnimations(final ConfigurationSection section) {
@@ -217,6 +247,13 @@ public final class PetCatalog {
                 if (!types.containsKey(key)) {
                     problems.add("펫 '" + type.id() + "': next-stage 의 '" + key + "' 가 없는 펫입니다.");
                 }
+            }
+            // FLY 인데 확률이 0이면 어떤 개체도 날지 못하고 전부 걷는 탑승이 된다.
+            // 의도한 것일 수도 있지만 대개는 fly-chance 를 빠뜨린 실수다.
+            if (type.rollsFlight() && type.flyChance() <= 0.0) {
+                problems.add("펫 '" + type.id() + "': ride 가 FLY 인데 fly-chance 가 0 입니다."
+                    + " 이대로면 항상 걷는 탑승이 됩니다 (등급 " + type.rarity().name()
+                    + " 의 기본 비행 확률은 " + type.rarity().flyChance() + ").");
             }
             for (final String required : PetType.AnimationSet.REQUIRED) {
                 if (!type.animations().mapping().containsKey(required)) {

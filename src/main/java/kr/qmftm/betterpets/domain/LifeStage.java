@@ -44,7 +44,7 @@ public enum LifeStage {
 
     /**
      * 이 상태에서 탑승할 수 있는가.
-     * 펫 종류의 {@code rideable} 설정과 AND 로 묶여야 최종 판정이 된다 —
+     * 펫 종류의 {@link RideMode} 와 AND 로 묶여야 최종 판정이 된다 —
      * 성체라고 해서 모든 펫을 탈 수 있는 것은 아니다.
      */
     public boolean rideable() {
