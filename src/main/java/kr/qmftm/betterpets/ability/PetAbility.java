@@ -17,9 +17,7 @@ public interface PetAbility {
         /** 소환 중 상시 적용. */
         PASSIVE,
         /** 특정 이벤트에 반응. */
-        TRIGGER,
-        /** 쿨다운 기반 수동 발동. */
-        ACTIVE
+        TRIGGER
     }
 
     /** 설정에서 이 능력을 가리키는 id. */
