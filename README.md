@@ -21,7 +21,7 @@
 | 단계 | 내용 | 상태 |
 | :---: | --- | :---: |
 | **M0** | **프로젝트 뼈대** — Maven 빌드, `paper-plugin.yml`, 진입점, 렌더 격리 계층, 도메인(등급·생애주기·성장도) | ✅ **완료** |
-| **M1** | **렌더링** — `/pet summon` 으로 모델 소환/해제, 캐리어 엔티티 확정, 트래커 누수 0 검증 | 🔨 **진행 예정** |
+| **M1** | **렌더링** — `/pet summon` 으로 모델 소환/해제, 캐리어 엔티티 확정, 트래커 누수 0 검증<br>**+ Bedrock 변환 1회 시험** (아래 참고) | 🔨 **진행 예정** |
 | **M2** | **이동 · 애니메이션** — 추종 상태 머신, 텔레포트 폴백, 애니메이션 전이 | ⬜ |
 | **M3** | **데이터 · 명령어** — 저장소, 비동기 I/O, 전체 명령어와 권한 | ⬜ |
 | **M4** | **생애주기** — 알 → 부화 → 아기 → 성체, 성장도(시간 + 먹이) | ⬜ |
@@ -30,8 +30,11 @@
 | **M7** | **등급 · 능력** — D~S 등급, 패시브/트리거/액티브 능력 | ⬜ |
 | **M8** | **획득 · 진화** — 알 아이템 우클릭, 랜덤 알, 진화 | ⬜ |
 | **M9** | **폴리시** — 성능 실측, PlaceholderAPI, 문서 정리 | ⬜ |
+| **M10** | **Bedrock 지원** — 전체 모델 변환, 리소스팩 파이프라인, Bedrock 실기 테스트 | ⬜ |
 
-남은 기간 약 11주 (1인 파트타임 기준, 모델 제작 시간 제외).
+남은 기간 약 12주 (1인 파트타임 기준, 모델 제작 시간 제외).
+
+> **Bedrock 검증은 M1에서 미리 한 번 한다.** 서버가 Bedrock 플레이어를 받으므로 [GeyserModelEngine](https://github.com/GeyserExtensionists/GeyserModelEngine)이 필요한데, 조합(BetterModel 3.4.1 + GME + MC 26.2)이 검증된 적 없다. **모델을 여러 개 만든 뒤에 안 되는 걸 알면 늦으므로**, M1에서 첫 모델이 자바에 뜨자마자 그 하나로 Bedrock 변환을 시험한다. 되면 M10에서 나머지를 처리하고, 안 되면 그때 대안을 찾는다.
 
 ### 각 단계의 완료 조건
 
@@ -50,6 +53,7 @@
 
 - **캐리어 엔티티** — 보이지 않는 `Mob` vs `ItemDisplay`. BetterModel이 양쪽 모두에 붙는 것은 확인됐고, 히트박스·이름표를 본 태그로 얻을지 별도 엔티티로 둘지가 쟁점
 - **트래커 누수 진단** — `/petadmin debug` 로 활성 펫 수와 엔진 트래커 수를 대조
+- **Bedrock 변환 가능 여부** — 모델 하나로 GeyserModelEngine 파이프라인을 끝까지 통과시켜 본다
 
 ---
 
@@ -96,6 +100,15 @@
 | Java | **25** | 아래 주의 참고 |
 | [BetterModel](https://hangar.papermc.io/toxicity188/BetterModel) | **3.4.1+** | 필수. 없으면 플러그인이 비활성화된다 |
 | PlaceholderAPI | — | 선택 |
+
+**Bedrock 플레이어를 받는다면** 아래가 추가로 필요하다. Bedrock 클라이언트는 BetterModel의 커스텀 모델을 그대로 볼 수 없다.
+
+| 위치 | 플러그인 |
+| --- | --- |
+| `plugins/` | [GeyserModelEngine](https://github.com/GeyserExtensionists/GeyserModelEngine), geyserutils-spigot, packetevents |
+| `plugins/[Geyser]/extensions/` | GeyserModelEngineExtension, geyserutils-geyser |
+
+모델도 Bedrock용으로 따로 내보내야 한다 — [MODELING.md](docs/MODELING.md#bedrockgeyser-대응) 참고.
 
 > ⚠️ **Java 25가 필수다.** BetterModel 3.x는 모든 버전이 클래스 파일 major 69(Java 25)로 배포되므로, JDK 24 이하에서는 BetterModel 자체가 로드되지 않는다. 서버와 빌드 머신 모두 JDK 25가 필요하다.
 

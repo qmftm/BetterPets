@@ -7,6 +7,7 @@ BetterPets가 기대하는 `.bbmodel` 규격. BlockBench로 펫 모델을 만들
 - [본 태그](#본-태그)
 - [권장 구성](#권장-구성)
 - [배치와 등록](#배치와-등록)
+- [Bedrock(Geyser) 대응](#bedrockgeyser-대응)
 - [저작권](#저작권)
 
 ---
@@ -22,6 +23,12 @@ BetterPets가 기대하는 `.bbmodel` 규격. BlockBench로 펫 모델을 만들
 - [ ] 비행 펫이면 `fly` 애니메이션이 있다
 - [ ] 파일을 `plugins/BetterModel/models/` 에 넣었다
 - [ ] `pets/*.yml` 의 `model:` 값이 파일명(확장자 제외)과 같다
+
+**Bedrock 플레이어를 받는다면 추가로:**
+
+- [ ] 텍스처가 **한 장**이다 (멀티 텍스처는 변환이 까다롭다)
+- [ ] 애니메이션 텍스처를 쓰지 않았다
+- [ ] Bedrock용으로 따로 내보냈다 → [Bedrock(Geyser) 대응](#bedrockgeyser-대응)
 
 ---
 
@@ -157,6 +164,59 @@ model: pet_wolf      # ← plugins/BetterModel/models/pet_wolf.bbmodel
 설정에서 존재하지 않는 모델을 참조하면 로드 시 경고한다. 오타는 이때 잡힌다.
 
 리소스팩은 BetterModel이 생성하며, 배포 경로는 BetterModel 설정을 따른다.
+
+---
+
+## Bedrock(Geyser) 대응
+
+Bedrock 클라이언트는 BetterModel이 쓰는 item-display 방식의 커스텀 모델을 **볼 수 없다.** 자바 플레이어에게는 드래곤이 보이는 자리에 Bedrock 플레이어에게는 아무것도 안 보인다.
+
+[GeyserModelEngine](https://github.com/GeyserExtensionists/GeyserModelEngine)이 이걸 메워준다. BetterModel을 **공식 지원한다** — README에 "converts ModelEngine/BetterModel models for bedrock players" 라고 명시돼 있고, 소스에도 `BetterModelHandler` 가 따로 있다.
+
+### 모델 작업이 두 갈래가 된다
+
+같은 `.bbmodel` 로 **두 번 내보내야** 한다.
+
+| 대상 | 방법 | 결과물 위치 |
+| --- | --- | --- |
+| Java | `.bbmodel` 그대로 | `plugins/BetterModel/models/` |
+| Bedrock | BlockBench 전용 packer로 내보내기 | GME 확장의 `input/` 폴더 |
+
+Bedrock 내보내기 절차:
+
+1. [GeyserModelEngineBlockbenchPacker](https://github.com/GeyserExtensionists/GeyserModelEngineBlockbenchPacker) 플러그인을 BlockBench에 설치
+2. `.bbmodel` 을 열고 `File → Export → Export GeyserModelEngine Model`
+3. 나온 zip을 풀어 `input/` 폴더에 넣는다 — **모델당 폴더 하나씩**
+4. Geyser를 리로드하면 리소스팩이 자동 생성·적용된다
+
+### 모델을 만들 때 지킬 제약
+
+변환을 염두에 두면 나중에 고생이 줄어든다.
+
+| 제약 | 이유 |
+| --- | --- |
+| **텍스처는 한 장으로** | 멀티 텍스처는 packer 플러그인을 거쳐야만 변환된다 |
+| **애니메이션 텍스처 피하기** | 위와 같다 |
+| 본 구조를 단순하게 | 변환 대상이 적을수록 문제가 적다 |
+
+Java 전용으로 만들었다가 나중에 Bedrock을 붙이면 텍스처를 다시 작업해야 할 수 있다. **처음부터 단순하게 만드는 편이 낫다.**
+
+### 알아둘 함정
+
+> ⚠️ **리소스팩은 모델 "개수"가 바뀔 때만 재생성된다.**
+>
+> 모델을 수정만 하고 개수는 그대로면 반영되지 않는다. `generated_pack` 폴더를 지워서 강제 재생성해야 한다. 모델을 고쳤는데 Bedrock에서 그대로라면 이걸 의심할 것.
+
+### 필요한 플러그인
+
+플러그인 하나가 아니라 스택 전체를 깔아야 한다.
+
+| 위치 | 플러그인 |
+| --- | --- |
+| `plugins/` | GeyserModelEngine, geyserutils-spigot, packetevents |
+| `plugins/[Geyser]/extensions/` | GeyserModelEngineExtension, geyserutils-geyser |
+
+Floodgate를 쓴다면 `send-floodgate-data: true` 설정과 `key.pem` 복사도 필요하다.
 
 ---
 

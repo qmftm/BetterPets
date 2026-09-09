@@ -7,6 +7,7 @@ BetterPets의 아키텍처, 검증된 API, 조사 근거, 리스크. 사용 안�
 - [BetterModel API — 검증된 사양](#bettermodel-api--검증된-사양)
 - [원작 시스템 분석](#원작-시스템-분석)
 - [참고 구현 분석](#참고-구현-분석)
+- [Bedrock 지원 — Geyser 연동](#bedrock-지원--geyser-연동)
 - [펫 생애주기](#펫-생애주기)
 - [행동 설계](#행동-설계)
 - [탑승과 비행](#탑승과-비행)
@@ -256,6 +257,68 @@ BetterModel이 좌석 마운트를 네이티브로 지원하지만, [참고 구�
 그쪽은 펫 1마리당 `ItemDisplay`(본체) + `Interaction`(클릭) + `TextDisplay`(이름표) 3개를 쓰고, 탑승 시 `ArmorStand` 가 더 붙는다. BetterModel이 **선택 사항**이라 없을 때 플레이어 머리로 대체 렌더링해야 하기 때문이다.
 
 우리는 BetterModel에 **하드 의존**하므로 본 태그로 히트박스(`b_`)와 이름표(`tag_`)를 얻어 엔티티를 줄일 수 있다. 다만 **BetterModel이 `ItemDisplay` 에도 정상적으로 붙는 것**이 확인됐으므로, 캐리어를 `Mob` 으로 할지 `ItemDisplay` 로 할지는 **M1에서 실측해 정한다.**
+
+---
+
+## Bedrock 지원 — Geyser 연동
+
+**이 서버는 Bedrock 플레이어를 받는다.** 그런데 Bedrock 클라이언트는 BetterModel이 쓰는 item-display 기반 커스텀 모델을 **볼 수 없다.** 자바 플레이어에게 드래곤이 보이는 자리에 Bedrock 플레이어에게는 아무것도 안 보인다.
+
+### GeyserModelEngine
+
+[`GeyserExtensionists/GeyserModelEngine`](https://github.com/GeyserExtensionists/GeyserModelEngine)이 이 간극을 메운다. **BetterModel을 공식 지원한다.**
+
+소스에서 확인한 것 (최신 커밋 2026-08-27, 활발히 관리됨):
+
+- README: *"This plugin converts ModelEngine/BetterModel models for bedrock players!"*
+- 전용 클래스가 실재한다 — `BetterModelHandler`, `BetterModelListener`, `BetterModelTaskHandler`, `BetterModelPropertyHandler`, `BetterModelModel`, `BetterModelEntityData`
+- 런타임에 엔진을 감지한다:
+
+```java
+} else if (Bukkit.getPluginManager().getPlugin("BetterModel") != null) {
+    this.modelHandler = new BetterModelHandler(plugin);
+    plugin.getLogger().info("Using BetterModel handler!");
+}
+```
+
+- `paper-plugin.yml` 에서 ModelEngine과 BetterModel 둘 다 `required: false` 로 선언하고 있는 쪽을 골라 쓴다
+
+### 버전 호환성 — 검증한 것과 못 한 것
+
+GeyserModelEngine은 `bettermodel-bukkit-api:2.2.0` 에 대해 빌드된다. 우리는 **3.4.1** 이다.
+
+**확인함** — 이들이 import하는 BetterModel 클래스 15개가 3.4.1에 **전부 존재한다**:
+
+```
+AnimationIterator · RenderedBone · BetterModelBukkit · BukkitAdapter · BukkitLocation
+BlueprintAnimation · RenderPipeline · BaseEntity · CreateEntityTrackerEvent · ModelDisplay
+PlatformAdapter · EntityTracker · ModelScaler · Tracker · BonePredicate
+```
+
+**확인 못 함** — 메서드 시그니처까지는 대조하지 않았다. 클래스가 있어도 메서드가 바뀌었으면 `NoSuchMethodError` 가 난다. 실제로 붙여봐야 안다.
+
+**또 하나** — GeyserModelEngine의 `api-version` 은 `1.21` 이고 우리는 `26.2` 다. Paper가 하위 api-version을 허용하지만 26.2에서 검증됐는지는 불확실하다.
+
+Java 타깃은 21이라 Java 25 JVM에서 도는 데는 문제가 없다.
+
+### 검증 시점 — 일찍 해야 한다
+
+> **M1에서 첫 모델이 자바에 뜨자마자 그 하나로 Bedrock 변환을 시험한다.**
+
+이유는 단순하다. 모델을 여러 개 만든 뒤에 변환이 안 되는 걸 알면 텍스처부터 다시 작업해야 한다. 조합(BetterModel 3.4.1 + GME + MC 26.2)이 검증된 적 없으므로, **되돌리기 싼 시점에 확인한다.**
+
+되면 M10에서 나머지 모델을 처리한다. 안 되면 대안을 찾는다 — GME에 이슈를 올리거나, BetterModel 버전을 2.2.0으로 내리거나(Java 21로 내려갈 수 있어 오히려 제약이 풀린다), Bedrock 플레이어에게는 대체 표현을 주거나.
+
+### 운영 부담
+
+| 항목 | 내용 |
+| --- | --- |
+| 플러그인 스택 | 4개 추가 (GME, geyserutils-spigot, packetevents + Geyser 확장 2개) |
+| 모델 작업 | **두 번 내보내기.** Java용 `.bbmodel` + Bedrock용 packer 내보내기 |
+| 텍스처 제약 | 멀티 텍스처·애니메이션 텍스처는 packer 플러그인 필수 |
+| 함정 | 리소스팩은 모델 **개수**가 바뀔 때만 재생성. 수정만 하면 반영 안 됨 |
+
+모델 제작 지침은 [MODELING.md](MODELING.md#bedrockgeyser-대응)에 정리했다.
 
 ---
 
@@ -623,6 +686,8 @@ plugins/BetterPets/
 | R4 | `AttributeModifier` 누적 | 중 | 높음 | 부착 전 항상 제거 + 접속 시 청소 + 반복 테스트 |
 | R5 | 원작 사양 오해 | 중 | 중 | 검색 요약 기반이며 **원문 대조를 못 했다.** 다르면 밸런싱 수치부터 조정 |
 | R6 | 모델 제작 지연으로 M2/M5 블로킹 | 중 | 중 | M1과 병렬 착수. 탑승 모델은 M5 전까지 |
+| R12 | **Bedrock 변환 실패** — BetterModel 3.4.1 + GME(2.2.0 빌드) + MC 26.2 조합이 미검증 | 높음 | 중 | **M1에서 모델 1개로 조기 검증.** 실패 시 BetterModel 2.2.0 하향 등 대안 검토 ([Geyser 연동](#bedrock-지원--geyser-연동)) |
+| R13 | Bedrock 모델 작업이 두 배 | 중 | 높음 | 텍스처 한 장 원칙을 처음부터 지켜 변환을 단순하게 유지 |
 | R7 | 성능 | 낮음 | 낮음 | 5명 규모라 강등. 기본 원칙만 지키고 M9에서 1회 확인 |
 | R8 | 유령 마운트 잔존 | 중 | 중 | 태그 + PDC 식별, 기동 시 청소, 매 틱 생존 검사 |
 | R9 | GUI 아이템 복제 취약점 | 높음 | 낮음 | `setCancelled(true)` 선행 + 코드 리뷰 |
