@@ -10,8 +10,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.UUID;
-
 /**
  * 전역 틱 루프.
  *
@@ -74,16 +72,16 @@ public final class PetTicker {
 
             // 소유자가 없으면 소환된 채로 둘 이유가 없다. 즉시 정리한다.
             if (owner == null || !owner.isOnline()) {
-                registry.remove(pet.ownerId());
+                registry.remove(pet.ownerId(), pet.petId());
                 continue;
             }
             if (pet.isClosed()) {
-                registry.remove(pet.ownerId());
+                registry.remove(pet.ownerId(), pet.petId());
                 continue;
             }
             // 캐리어가 어떤 이유로든 사라졌다면(청크 언로드, 외부 플러그인) 정리한다.
             if (pet.carrier().isDead() || !pet.carrier().isValid()) {
-                registry.remove(pet.ownerId());
+                registry.remove(pet.ownerId(), pet.petId());
                 continue;
             }
             // 월드가 갈리면 추종으로는 못 따라간다. 즉시 옮긴다.
@@ -103,7 +101,9 @@ public final class PetTicker {
             if (owner == null) {
                 continue;
             }
-            if (!rides.isRiding(owner)) {
+            // 여러 마리를 소환해 뒀을 수 있다. 실제로 타고 있는 그 한 마리만 처리한다 —
+            // 이 확인이 없으면 같이 나와 있는 펫들이 전부 마운트로 순간이동한다.
+            if (!rides.isRiding(owner, pet.petId())) {
                 continue;
             }
             if (rides.tick(owner)) {
@@ -124,7 +124,7 @@ public final class PetTicker {
      */
     private void applyTimeGrowth(final Player owner, final PetData data) {
         if (data.stage() != LifeStage.BABY) {
-            return;     // 알은 먹이로만, 성체는 더 자라지 않는다
+            return;     // 성체와 돼지는 더 자라지 않는다
         }
         final int before = data.growth();
         growth.refresh(data);
@@ -142,16 +142,6 @@ public final class PetTicker {
             store.saveAsync(data);
             pets.refreshIfTypeChanged(owner, data);
         }
-    }
-
-    /** 진단용. 우리가 세는 활성 펫 수. */
-    public int activeCount() {
-        return registry.size();
-    }
-
-    /** 진단용 — 소유자 UUID 로 소환 여부 확인. */
-    public boolean hasActive(final UUID ownerId) {
-        return registry.of(ownerId).isPresent();
     }
 
     /** 성장도 지연 계산의 상수를 노출한다. GUI 에서 "다음 성장까지"를 보여줄 때 쓴다. */

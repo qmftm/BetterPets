@@ -5,6 +5,7 @@ import kr.qmftm.betterpets.command.PetAdminCommand;
 import kr.qmftm.betterpets.command.PetCommand;
 import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.PetCatalog;
+import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.listener.AbilityTriggerListener;
@@ -95,11 +96,16 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getString("gimmick.overfeed.becomes", "pig"),
             getConfig().getInt("growth.max-stage", 1));
 
+        final PetLimits limits = new PetLimits(
+            getConfig().getInt("pets.max-owned", 20),
+            getConfig().getInt("pets.max-active", 1));
+
         final AbilityService abilities = new AbilityService(this, abilityRegistry);
-        pets = new PetService(catalog, store, renderer, carriers, registry, rides, abilities, growth);
+        pets = new PetService(
+            catalog, store, renderer, carriers, registry, rides, abilities, growth, limits);
 
         final PetItems items = new PetItems(this);
-        final PetMenuFactory menus = new PetMenuFactory(catalog, growth);
+        final PetMenuFactory menus = new PetMenuFactory(catalog, growth, registry, limits);
 
         // 기동 시 청소. 정상 종료였다면 지울 게 없고, 크래시였다면 여기서 정리된다.
         final int orphanCarriers = carriers.purgeOrphans(this);

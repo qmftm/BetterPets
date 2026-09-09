@@ -76,7 +76,9 @@ public final class YamlPetRepository implements PetRepository {
         yaml.set(path + ".growth", pet.growth());
         yaml.set(path + ".growth-stage", pet.growthStage());
         yaml.set(path + ".can-fly", pet.canFly());
-        yaml.set(path + ".active", pet.active());
+        // active 는 저장하지 않는다. 런타임 상태라서 기동 시엔 언제나 false 다 —
+        // 예전 파일에 남아 있는 값도 아래 read 가 무시한다.
+        yaml.set(path + ".active", null);
         yaml.set(path + ".acquired-at", pet.acquiredAt());
         yaml.set(path + ".updated-at", pet.updatedAt());
 
@@ -119,7 +121,8 @@ public final class YamlPetRepository implements PetRepository {
             node.getInt("growth"),
             node.getInt("growth-stage", 1),
             node.getBoolean("can-fly"),
-            node.getBoolean("active"),
+            false,      // 소환 상태는 저장 대상이 아니다. 기동 직후엔 아무것도 소환돼 있지 않다
+
             node.getLong("acquired-at", now),
             node.getLong("updated-at", now)
         );

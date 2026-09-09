@@ -96,8 +96,16 @@ public final class PetData {
         if (value != canFly) { canFly = value; dirty = true; }
     }
 
+    /**
+     * 소환 중 표시.
+     *
+     * <p><b>저장하지 않는다 — 그래서 dirty 를 세우지 않는다.</b> 소환 상태는 런타임
+     * 사실이라 파일에 남길 게 못 된다. 남겨두면 서버가 비정상 종료됐을 때
+     * {@code active: true} 인 채로 굳어, 다음 접속에서 소환하지도 않은 펫이
+     * 보관함에 "소환 중"으로 보인다.
+     */
     public void active(final boolean value) {
-        if (value != active) { active = value; dirty = true; }
+        if (value != active) { active = value; }
     }
 
     /**

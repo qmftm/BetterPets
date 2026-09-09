@@ -14,6 +14,7 @@ BetterPets의 아키텍처, 검증된 API, 조사 근거, 리스크. 사용 안�
 - [데이터와 영속화](#데이터와-영속화)
 - [등급과 능력](#등급과-능력)
 - [획득 경로](#획득-경로)
+- [보유·소환 한도](#보유소환-한도)
 - [설정 파일](#설정-파일)
 - [성능](#성능)
 - [테스트](#테스트)
@@ -58,7 +59,7 @@ Presentation   /pet · /petadmin · PetBoxMenu · listener/*
        ↓
 Application    PetService · GrowthService · RideService · AbilityService
        ↓
-Domain         Rarity · LifeStage · GrowthCurve · PetType · PetData
+Domain         Rarity · LifeStage · GrowthCurve · PetType · PetData · PetLimits
        ↓
 Runtime        ActivePet · PetRegistry · PetTicker
                MovementController (GROUND / FLY / RIDDEN)
@@ -553,7 +554,7 @@ public final class PetData {
     private int growth;
     private int growthStage;       // 1부터 시작
     private boolean canFly;        // 성체가 될 때 확률로 확정
-    private boolean active;
+    private boolean active;        // 런타임 전용. 저장하지 않는다 (아래 참고)
 }
 ```
 
@@ -568,7 +569,6 @@ pets:
     growth: 42
     growth-stage: 2        # 최대 단계에 못 미쳤으면 여러 번 오를 수 있다
     can-fly: false
-    active: true
     acquired-at: 1700000000000
     updated-at: 1700000600000     # 성장도 지연 계산의 기준
 ```
@@ -579,7 +579,8 @@ pets:
 - **모든 파일 I/O는 그 실행자 위에서.** 메인 스레드에서 디스크 접근 금지
 - **캐시는 단순하게** — 접속 시 로드 → 메모리 읽기/쓰기 → 변경 시 즉시 비동기 저장
 - **서버 종료 시 실행자를 동기 대기**(`awaitTermination`). 안 하면 마지막 쓰기를 잃는다
-- **소유자당 활성 펫 1마리는 코드로 강제한다** (`PetService.markActive`) — DB 제약이 없으니 여기서 직접 막는다
+- **`active` 는 저장하지 않는다.** 소환 여부는 런타임 사실이라 파일에 남길 게 못 된다. 남겨두면 서버가 비정상 종료됐을 때 `active: true` 인 채로 굳어, 다음 접속에서 소환하지도 않은 펫이 보관함에 "소환 중"으로 보인다. 진실은 언제나 `PetRegistry` 에 있다
+- **동시 소환 마릿수는 `PetService.summon` 이 강제한다** — DB 제약이 없으니 여기서 직접 막는다. 한도는 `config.yml` 의 `pets.max-active`, 보유 한도는 `pets.max-owned` 다 (아래 참고)
 - **다른 백엔드가 필요해지면** `PetRepository` 인터페이스만 새로 구현하면 된다. SQLite로 가더라도 셰이딩 대신 **Paper 라이브러리 로더**를 쓴다 (README의 빌드 절 참고)
 
 ---
@@ -680,11 +681,31 @@ feeds:
 
 ---
 
+## 보유·소환 한도
+
+한 명이 가질 수 있는 마릿수(`pets.max-owned`)와 동시에 소환해 둘 수 있는 마릿수(`pets.max-active`)를 `config.yml` 에서 정한다. **0 은 무제한**이다 — 음수를 무제한으로 쓰면 `-1` 을 의도한 사람과 오타를 구분할 수 없어서 0 으로 통일했다 (`PetLimits`).
+
+| 한도 | 넘겼을 때 |
+| --- | --- |
+| `max-owned` | 지급 자체를 거절한다. **알 아이템은 소비하지 않는다** — 아이템을 잃는 게 제일 나쁜 결과다 |
+| `max-active` | 거절하지 않고 **가장 먼저 소환했던 펫을 돌려보낸다** |
+
+동시 소환을 거절하지 않는 이유는 기본값이 1이기 때문이다. 거절하면 한 마리만 두고 쓰는 서버에서 소환할 때마다 먼저 해제해야 한다. "오래된 것부터 밀어낸다"는 규칙은 한도를 올려도 그대로 성립하고, 한도 1에서는 예전의 "소환하면 교체"와 정확히 같은 동작이 된다. GUI 는 누르기 전에 그 사실을 소환 버튼 로어로 알려준다.
+
+**`max-active` 를 올릴 때 따라오는 것들**
+
+- `PetRegistry` 가 소유자당 여러 마리를 **소환 순서대로** 들고 있어야 한다 (`CopyOnWriteArrayList`) — "가장 오래된 것"이 순서에 기대고 있어서다
+- 탑승은 여전히 한 번에 한 마리다. 대신 `Ride` 가 **어느 펫인지**(`petId`)를 들고 있어야 한다. 없으면 틱 루프가 같이 나와 있는 펫을 전부 마운트로 순간이동시킨다
+- 능력치 모디파이어 키가 **능력별이 아니라 개체별**이어야 한다(`ability_<능력>_<펫id>`). 능력별 키면 둘째 펫이 첫째 것을 덮어쓰고, 둘째를 해제할 때 첫째 것까지 사라진다. 개체별 키라서 여러 마리의 보너스는 **겹쳐서** 적용된다
+- 소환한 마릿수만큼 캐리어 엔티티와 렌더 트래커가 늘어난다. 5명 서버라도 1인 10마리면 트래커 50개다
+
+---
+
 ## 설정 파일
 
 ```
 plugins/BetterPets/
-├─ config.yml       성장·기믹·비행 설정
+├─ config.yml       보유/소환 한도 · 성장 · 기믹 · 비행 설정
 ├─ messages.yml     사용자 노출 문자열 (MiniMessage)
 ├─ items.yml        알 · 먹이 아이템 정의
 ├─ pets/*.yml       펫 종류 정의 (wolf · dragon · pig 예시 제공)

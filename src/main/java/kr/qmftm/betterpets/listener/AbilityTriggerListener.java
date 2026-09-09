@@ -10,8 +10,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 
-import java.util.Optional;
-
 /**
  * TRIGGER 능력에 이벤트를 전달한다.
  *
@@ -43,8 +41,10 @@ public final class AbilityTriggerListener implements Listener {
         }
     }
 
+    /** 소환 중인 펫 전부에게 넘긴다. 여러 마리를 데리고 다닐 수 있어서다. */
     private void dispatch(final Player player, final org.bukkit.event.Event event) {
-        final Optional<ActivePet> pet = registry.of(player.getUniqueId());
-        pet.ifPresent(active -> abilities.dispatch(player, active.data(), active.type(), event));
+        for (final ActivePet pet : registry.allOf(player.getUniqueId())) {
+            abilities.dispatch(player, pet.data(), pet.type(), event);
+        }
     }
 }

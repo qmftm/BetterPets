@@ -5,6 +5,7 @@ import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.render.PetRenderer;
+import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
@@ -86,7 +87,10 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "admin.unknown-pet-type", "id", args[2]);
             return;
         }
-        pets.grantPet(target, args[2]);
+        if (pets.grantPet(target, args[2]).isEmpty()) {
+            messages.send(sender, "admin.box-full", "player", target.getName());
+            return;
+        }
         messages.send(sender, "admin.given", "player", target.getName(), "type", args[2]);
     }
 
@@ -183,7 +187,14 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             .filter(pet -> !pet.carrier().isDead() && pet.carrier().isValid())
             .count();
 
-        sender.sendMessage(Component.text("활성 펫: " + active));
+        // active 는 서버 전체 합이다. 1인 한도와 직접 비교하면 안 되므로 따로 적는다.
+        final long owners = registry.all().stream().map(ActivePet::ownerId).distinct().count();
+        final var limits = pets.limits();
+        sender.sendMessage(Component.text("활성 펫: " + active + " (소유자 " + owners
+            + "명, 1인 동시 소환 한도 "
+            + (limits.activeUnlimited() ? "무제한" : limits.maxActive() + "마리")
+            + ", 1인 보유 한도 "
+            + (limits.ownedUnlimited() ? "무제한" : limits.maxOwned() + "마리") + ")"));
         sender.sendMessage(Component.text("살아있는 캐리어: " + carriers));
         sender.sendMessage(Component.text("BetterModel 트래커: " + trackers));
         sender.sendMessage(Component.text(

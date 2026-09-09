@@ -4,7 +4,9 @@ import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
+import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
+import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.GrowthService;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -15,6 +17,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /** 보관함·상세 GUI 를 조립한다. */
 public final class PetMenuFactory {
@@ -22,6 +25,7 @@ public final class PetMenuFactory {
     public static final int BOX_SIZE = 54;
     public static final int BOX_CONTENT = 45;          // 마지막 줄은 네비게이션
     public static final int SLOT_PREV = 45;
+    public static final int SLOT_SUMMARY = 49;         // 보유·소환 현황
     public static final int SLOT_NEXT = 53;
 
     public static final int DETAIL_SIZE = 27;
@@ -32,33 +36,74 @@ public final class PetMenuFactory {
 
     private final PetCatalog catalog;
     private final GrowthService growth;
+    private final PetRegistry registry;
+    private final PetLimits limits;
 
-    public PetMenuFactory(final PetCatalog catalog, final GrowthService growth) {
+    public PetMenuFactory(final PetCatalog catalog,
+                          final GrowthService growth,
+                          final PetRegistry registry,
+                          final PetLimits limits) {
         this.catalog = catalog;
         this.growth = growth;
+        this.registry = registry;
+        this.limits = limits;
     }
 
-    public Inventory box(final List<PetData> pets, final int page) {
-        final Menus.Box holder = new Menus.Box();
-        holder.page(page);
+    /**
+     * 보유 목록.
+     *
+     * <p>한 쪽에 {@value #BOX_CONTENT} 마리씩 보여주고, 마지막 줄에 쪽 넘김과
+     * 현황({@link #SLOT_SUMMARY})을 둔다. 보유 한도가 있는 서버에서는 "몇 마리를
+     * 더 받을 수 있는지"가 알을 까기 전에 보여야 한다.
+     */
+    public Inventory box(final UUID ownerId, final List<PetData> pets, final int page) {
+        // 마지막 쪽에서 펫을 놓아주면 그 쪽이 통째로 비어버린다. 빈 화면 대신
+        // 존재하는 마지막 쪽으로 접어준다.
+        final int lastPage = Math.max(0, (pets.size() - 1) / BOX_CONTENT);
+        final int shown = Math.max(0, Math.min(page, lastPage));
 
-        final Inventory inventory = Bukkit.createInventory(
-            holder, BOX_SIZE, Messages.plain("<dark_gray>펫 보관함 <gray>(" + (page + 1) + ")"));
+        final Menus.Box holder = new Menus.Box();
+        holder.page(shown);
+
+        final Inventory inventory = Bukkit.createInventory(holder, BOX_SIZE, Messages.plain(
+            "<dark_gray>펫 보관함 <gray>" + (shown + 1) + "<dark_gray>/" + (lastPage + 1)));
         holder.inventory(inventory);
 
-        final int from = page * BOX_CONTENT;
+        final int from = shown * BOX_CONTENT;
         for (int i = 0; i < BOX_CONTENT && from + i < pets.size(); i++) {
             final PetData pet = pets.get(from + i);
             inventory.setItem(i, icon(pet));
             holder.slots.put(i, pet);
         }
-        if (page > 0) {
+        if (shown > 0) {
             inventory.setItem(SLOT_PREV, simple(Material.ARROW, "<gray>이전 쪽"));
         }
         if (from + BOX_CONTENT < pets.size()) {
             inventory.setItem(SLOT_NEXT, simple(Material.ARROW, "<gray>다음 쪽"));
         }
+        inventory.setItem(SLOT_SUMMARY, summary(ownerId, pets.size()));
         return inventory;
+    }
+
+    /** 보유·소환 현황 아이콘. 목록 아래에 항상 떠 있다. */
+    private ItemStack summary(final UUID ownerId, final int owned) {
+        final ItemStack stack = new ItemStack(Material.BOOK);
+        final ItemMeta meta = stack.getItemMeta();
+        meta.displayName(Messages.plain("<yellow>내 펫"));
+
+        final int active = registry.countOf(ownerId);
+        final List<Component> lore = new ArrayList<>();
+        lore.add(Messages.plain("<gray>보유 <white>" + limits.ownedLabel(owned)));
+        lore.add(Messages.plain("<gray>소환 중 <white>" + limits.activeLabel(active)));
+        if (!limits.canOwnMore(owned)) {
+            lore.add(Messages.plain("<red>보유 한도가 찼습니다. 놓아줘야 더 받습니다."));
+        }
+        if (owned == 0) {
+            lore.add(Messages.plain("<dark_gray>알을 우클릭해 펫을 얻으세요."));
+        }
+        meta.lore(lore);
+        stack.setItemMeta(meta);
+        return stack;
     }
 
     public Inventory detail(final PetData pet) {
@@ -71,12 +116,31 @@ public final class PetMenuFactory {
         holder.inventory(inventory);
 
         inventory.setItem(4, icon(pet));
-        inventory.setItem(SLOT_SUMMON, simple(Material.LEAD,
-            pet.active() ? "<red>소환 해제" : "<green>소환하기"));
+        inventory.setItem(SLOT_SUMMON, summonButton(pet));
         inventory.setItem(SLOT_RENAME, simple(Material.NAME_TAG, "<yellow>이름 변경"));
         inventory.setItem(SLOT_RELEASE, simple(Material.BARRIER, "<red>놓아주기"));
         inventory.setItem(SLOT_BACK, simple(Material.ARROW, "<gray>돌아가기"));
         return inventory;
+    }
+
+    /**
+     * 상세 화면의 소환 버튼.
+     *
+     * <p>동시 소환 한도가 차 있으면 "가장 오래된 펫이 돌아간다"는 사실을 <b>누르기 전에</b>
+     * 알려준다. 누른 뒤에 채팅으로 통보하면 이미 되돌릴 수 없다.
+     */
+    private ItemStack summonButton(final PetData pet) {
+        if (pet.active()) {
+            return simple(Material.LEAD, "<red>소환 해제");
+        }
+        final ItemStack stack = simple(Material.LEAD, "<green>소환하기");
+        if (!limits.canSummonMore(registry.countOf(pet.ownerId()))) {
+            final ItemMeta meta = stack.getItemMeta();
+            meta.lore(List.of(Messages.plain(
+                "<yellow>동시 소환 한도가 찼습니다. <gray>가장 먼저 부른 펫이 돌아갑니다.")));
+            stack.setItemMeta(meta);
+        }
+        return stack;
     }
 
     /** 펫 하나를 나타내는 아이콘. 등급·생애주기·성장도를 한눈에 보여준다. */
@@ -115,8 +179,11 @@ public final class PetMenuFactory {
                 : effective.displayName() + " <dark_gray>(성체부터)";
             lore.add(Messages.plain("<gray>탑승 <white>" + label));
         }
+        lore.add(Messages.plain("<dark_gray>id " + pet.petId().toString().substring(0, 8)));
         if (pet.active()) {
             lore.add(Messages.plain("<green>소환 중"));
+            // 목록에서 한눈에 구분되게 반짝이게 한다. 로어 한 줄보다 눈에 먼저 들어온다.
+            meta.setEnchantmentGlintOverride(true);
         }
         meta.lore(lore);
         stack.setItemMeta(meta);

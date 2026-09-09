@@ -64,7 +64,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     }
 
     private void openBox(final Player player) {
-        player.openInventory(menus.box(sorted(player.getUniqueId()), 0));
+        player.openInventory(menus.box(player.getUniqueId(), sorted(player.getUniqueId()), 0));
     }
 
     private void summon(final Player player, final String[] args) {
@@ -80,13 +80,20 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         final PetService.SummonResult result = pets.summon(player, target.get());
         switch (result) {
             case OK -> messages.send(player, "pet.summoned");
+            case OK_REPLACED -> messages.send(player, "pet.summoned-replaced");
             case MODEL_MISSING -> messages.send(player, "pet.model-missing");
             case UNKNOWN_TYPE -> messages.send(player, "pet.unknown-type");
         }
     }
 
+    /** 소환 중인 펫을 전부 돌려보낸다. 한 마리만 넣고 싶으면 보관함에서 고른다. */
     private void dismiss(final Player player) {
-        messages.send(player, pets.dismiss(player) ? "pet.dismissed" : "pet.none-active");
+        final int count = pets.dismissAll(player);
+        if (count == 0) {
+            messages.send(player, "pet.none-active");
+        } else {
+            messages.send(player, "pet.dismissed-count", "count", String.valueOf(count));
+        }
     }
 
     private void dismount(final Player player) {
@@ -98,23 +105,43 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    /**
+     * {@code /pet rename [펫id] <이름>}.
+     *
+     * <p>펫 id 는 생략할 수 있다 — 한 마리만 소환 중이면 그 펫을 고른다. 여러 마리를
+     * 데리고 다닐 수 있게 되면서 "소환 중인 펫"이 한 마리라는 보장이 사라졌으므로,
+     * 그때는 id 를 받아야 어느 쪽을 바꿀지 정해진다. 보관함의 이름 변경 버튼이
+     * id 가 박힌 명령을 그대로 안내한다.
+     */
     private void rename(final Player player, final String[] args) {
         if (args.length < 2) {
             messages.send(player, "command.rename-usage");
             return;
         }
-        final Optional<PetData> active = store.activePet(player.getUniqueId());
-        if (active.isEmpty()) {
-            messages.send(player, "pet.none-active");
-            return;
+        // 첫 인자가 소유한 펫의 id 앞자리이고 이름이 뒤에 더 있으면 그쪽을 대상으로 본다.
+        Optional<PetData> target = args.length >= 3 ? resolve(player, args[1]) : Optional.empty();
+        final int nameFrom = target.isPresent() ? 2 : 1;
+
+        if (target.isEmpty()) {
+            final List<PetData> active = store.activePets(player.getUniqueId());
+            if (active.isEmpty()) {
+                messages.send(player, "pet.none-active");
+                return;
+            }
+            if (active.size() > 1) {
+                messages.send(player, "pet.rename-pick");
+                return;
+            }
+            target = Optional.of(active.getFirst());
         }
-        final String name = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
+
+        final String name = String.join(" ", java.util.Arrays.copyOfRange(args, nameFrom, args.length));
         if (name.length() > 32) {
             messages.send(player, "pet.name-too-long");
             return;
         }
-        active.get().nickname(name);
-        store.saveAsync(active.get());
+        target.get().nickname(name);
+        store.saveAsync(target.get());
         messages.send(player, "pet.renamed", "name", name);
     }
 
@@ -148,7 +175,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 .filter(option -> option.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
                 .toList();
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("summon")) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("summon")
+            || args[0].equalsIgnoreCase("rename"))) {
             return store.owned(player.getUniqueId()).stream()
                 .map(pet -> pet.petId().toString().substring(0, 8))
                 .toList();

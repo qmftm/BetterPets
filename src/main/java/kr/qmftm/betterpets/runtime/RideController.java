@@ -50,22 +50,37 @@ public final class RideController {
         this.ownerKey = new NamespacedKey(plugin, "ride_owner");
     }
 
-    /** 진행 중인 탑승 하나. */
+    /**
+     * 진행 중인 탑승 하나.
+     *
+     * <p>플레이어가 동시에 탈 수 있는 건 어차피 한 마리라 탑승은 소유자별로 하나다.
+     * 대신 <b>어느 펫에 탔는지</b>({@link #petId})를 들고 있어야 한다 — 여러 마리를
+     * 소환해 둔 상태에서 틱 루프가 엉뚱한 펫을 마운트에 붙여버리지 않으려면 필요하다.
+     */
     public static final class Ride {
+        private final UUID petId;
         private final ArmorStand mount;
         private final boolean flying;
         private final double speed;
         private volatile Input input;
 
-        private Ride(final ArmorStand mount, final boolean flying, final double speed) {
+        private Ride(final UUID petId, final ArmorStand mount, final boolean flying, final double speed) {
+            this.petId = petId;
             this.mount = mount;
             this.flying = flying;
             this.speed = speed;
         }
 
+        public UUID petId() { return petId; }
         public ArmorStand mount() { return mount; }
         public boolean flying() { return flying; }
         void input(final Input value) { input = value; }
+    }
+
+    /** 이 플레이어가 그 펫에 타고 있는가. */
+    public boolean isRiding(final Player player, final UUID petId) {
+        final Ride ride = rides.get(player.getUniqueId());
+        return ride != null && ride.petId.equals(petId);
     }
 
     public boolean isRiding(final Player player) {
@@ -81,7 +96,8 @@ public final class RideController {
      *
      * @return 성공 여부. 실패 시 마운트를 남기지 않는다
      */
-    public boolean start(final Player player, final Location at, final boolean flying, final double speed) {
+    public boolean start(final Player player, final UUID petId, final Location at,
+                         final boolean flying, final double speed) {
         if (rides.containsKey(player.getUniqueId())) {
             return false;
         }
@@ -107,7 +123,7 @@ public final class RideController {
             mount.remove();
             return false;
         }
-        rides.put(player.getUniqueId(), new Ride(mount, flying, speed));
+        rides.put(player.getUniqueId(), new Ride(petId, mount, flying, speed));
         return true;
     }
 

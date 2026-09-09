@@ -45,6 +45,8 @@ public final class ActivePet implements AutoCloseable {
     }
 
     public UUID ownerId() { return ownerId; }
+    /** 이 개체의 펫 id. 레지스트리가 소유자별로 여러 마리를 구분하는 키다. */
+    public UUID petId() { return data.petId(); }
     public PetData data() { return data; }
     public PetType type() { return type; }
     public Mob carrier() { return carrier; }
@@ -71,6 +73,11 @@ public final class ActivePet implements AutoCloseable {
      *
      * <p>순서가 중요하다. 트래커를 먼저 닫아야 캐리어가 사라진 뒤에도 엔진이
      * 죽은 엔티티를 참조하지 않는다.
+     *
+     * <p>여기서 {@code active} 를 내리는 이유는, 레지스트리가
+     * {@code PetService.dismiss} 를 거치지 않고 바로 정리하는 경로가 있기 때문이다
+     * (캐리어 사망, 월드 언로드, 서버 종료). 그 경로를 빼먹으면 소환되지도 않은 펫이
+     * 보관함에 계속 "소환 중"으로 보인다. 모든 정리가 지나가는 길목이 여기다.
      */
     @Override
     public void close() {
@@ -78,6 +85,7 @@ public final class ActivePet implements AutoCloseable {
             return;
         }
         closed = true;
+        data.active(false);
         handle.close();
         if (!carrier.isDead()) {
             carrier.remove();

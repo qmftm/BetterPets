@@ -84,9 +84,13 @@ public final class PetStore {
         return owned == null ? Optional.empty() : Optional.ofNullable(owned.get(petId));
     }
 
-    /** 현재 장착 중인 펫. 소유자당 최대 하나다. */
-    public Optional<PetData> activePet(final UUID ownerId) {
-        return owned(ownerId).stream().filter(PetData::active).findFirst();
+    /**
+     * 지금 소환 중인 펫들. {@code pets.max-active} 에 따라 여러 마리일 수 있다.
+     *
+     * <p>이 플래그는 저장되지 않는 런타임 상태다 — 접속 직후에는 언제나 비어 있다.
+     */
+    public List<PetData> activePets(final UUID ownerId) {
+        return owned(ownerId).stream().filter(PetData::active).toList();
     }
 
     public void add(final PetData pet) {

@@ -2,6 +2,7 @@ package kr.qmftm.betterpets.service;
 
 import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.domain.PetData;
+import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.render.PetRenderHandle;
 import kr.qmftm.betterpets.render.PetRenderer;
@@ -14,6 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,6 +35,7 @@ public final class PetService {
     private final RideController rides;
     private final AbilityService abilities;
     private final GrowthService growth;
+    private final PetLimits limits;
 
     public PetService(final PetCatalog catalog,
                       final PetStore store,
@@ -41,7 +44,8 @@ public final class PetService {
                       final PetRegistry registry,
                       final RideController rides,
                       final AbilityService abilities,
-                      final GrowthService growth) {
+                      final GrowthService growth,
+                      final PetLimits limits) {
         this.catalog = catalog;
         this.store = store;
         this.renderer = renderer;
@@ -50,16 +54,29 @@ public final class PetService {
         this.rides = rides;
         this.abilities = abilities;
         this.growth = growth;
+        this.limits = limits;
+    }
+
+    /** 설정된 보유·동시 소환 한도. GUI 표시와 지급 판정이 같은 값을 본다. */
+    public PetLimits limits() {
+        return limits;
     }
 
     public enum SummonResult {
         OK,
+        /** 소환했지만 동시 소환 한도가 차 있어서 가장 오래된 펫을 돌려보냈다. */
+        OK_REPLACED,
         UNKNOWN_TYPE,
         MODEL_MISSING
     }
 
     /**
-     * 펫을 소환한다. 이미 소환 중이면 교체한다.
+     * 펫을 소환한다.
+     *
+     * <p>동시 소환 한도({@code pets.max-active})가 차 있으면 <b>가장 먼저 소환했던 펫을
+     * 돌려보내고</b> 자리를 만든다. 거절하지 않는 이유는 기본값이 1이기 때문이다 —
+     * 거절하면 한 마리만 두고 쓰는 서버에서 소환할 때마다 먼저 해제해야 한다.
+     * 한도를 올린 서버에서도 같은 규칙(오래된 것부터)이 그대로 적용된다.
      */
     public SummonResult summon(final Player owner, final PetData data) {
         final PetType type = catalog.type(data.typeId()).orElse(null);
@@ -68,7 +85,9 @@ public final class PetService {
         }
         growth.refresh(data);
 
-        dismiss(owner);     // 기존 것을 먼저 정리한다. 교체 시 흘리지 않기 위해서다
+        // 같은 펫을 다시 소환하는 경우(종류 변경 등)는 자리를 새로 차지하지 않는다.
+        // 먼저 정리해야 트래커와 캐리어를 흘리지 않는다.
+        dismiss(owner, data.petId());
 
         final Location at = spawnLocation(owner);
         final Mob carrier = carriers.spawn(at, data.petId());
@@ -80,52 +99,78 @@ public final class PetService {
             return SummonResult.MODEL_MISSING;
         }
 
+        // 자리 만들기는 모델이 붙은 뒤에 한다. 먼저 비웠다가 모델이 없어 실패하면
+        // 플레이어는 멀쩡히 나와 있던 펫만 잃는다.
+        boolean replaced = false;
+        if (!limits.canSummonMore(registry.countOf(owner.getUniqueId()))) {
+            final List<ActivePet> current = registry.allOf(owner.getUniqueId());
+            if (!current.isEmpty()) {
+                dismiss(owner, current.getFirst().petId());
+                replaced = true;
+            }
+        }
+
         final ActivePet pet = new ActivePet(owner.getUniqueId(), data, type, carrier, handle.get());
         pet.applyRarityTint();
         registry.put(pet);
 
-        markActive(owner, data);
+        data.active(true);
         abilities.equip(owner, data, type);
-        return SummonResult.OK;
+        return replaced ? SummonResult.OK_REPLACED : SummonResult.OK;
     }
 
-    /** 소환 해제. 소환 중이 아니면 아무 일도 하지 않는다. */
-    public boolean dismiss(final Player owner) {
-        final Optional<ActivePet> current = registry.of(owner.getUniqueId());
-        if (current.isEmpty()) {
+    /** 한 마리를 해제한다. 소환 중이 아니면 아무 일도 하지 않는다. */
+    public boolean dismiss(final Player owner, final UUID petId) {
+        final ActivePet pet = registry.of(owner.getUniqueId(), petId).orElse(null);
+        if (pet == null) {
             return false;
         }
-        final ActivePet pet = current.get();
-
-        // 순서가 중요하다. 탑승 중이면 먼저 내려야 플레이어가 공중에 남지 않는다.
-        if (rides.isRiding(owner)) {
+        // 순서가 중요하다. 그 펫에 타고 있었다면 먼저 내려야 플레이어가 공중에 남지 않는다.
+        if (rides.isRiding(owner, petId)) {
             rides.stop(owner);
         }
         abilities.unequip(owner, pet.data(), pet.type());
         pet.data().active(false);
         store.saveAsync(pet.data());
 
-        registry.remove(owner.getUniqueId());
+        registry.remove(owner.getUniqueId(), petId);
         return true;
+    }
+
+    /** 소환 중인 펫을 전부 해제한다. 퇴장과 {@code /pet dismiss} 경로다. */
+    public int dismissAll(final Player owner) {
+        int count = 0;
+        for (final ActivePet pet : registry.allOf(owner.getUniqueId())) {
+            if (dismiss(owner, pet.petId())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     /** 퇴장·종료 경로. 플레이어 객체 없이도 정리할 수 있어야 한다. */
     public void releaseQuietly(final UUID ownerId) {
-        registry.remove(ownerId);
+        registry.removeAll(ownerId);
     }
 
-    /** 펫을 지급한다. 알 아이템을 깠을 때와 관리자 지급이 같은 경로를 탄다. */
-    public PetData grantPet(final Player owner, final String typeId) {
+    /**
+     * 펫을 지급한다. 알 아이템을 깠을 때와 관리자 지급이 같은 경로를 탄다.
+     *
+     * @return 새 펫. 보유 한도({@code pets.max-owned})가 찼으면 비어 있다 —
+     *         <b>호출부는 이때 알 아이템을 소비하면 안 된다</b>
+     */
+    public Optional<PetData> grantPet(final Player owner, final String typeId) {
+        if (!limits.canOwnMore(store.owned(owner.getUniqueId()).size())) {
+            return Optional.empty();
+        }
         final PetData data = PetData.newBaby(owner.getUniqueId(), typeId, System.currentTimeMillis());
         store.add(data);
-        return data;
+        return Optional.of(data);
     }
 
     /** 펫을 놓아준다. 소환 중이면 먼저 해제한다. */
     public void release(final Player owner, final PetData data) {
-        if (data.active()) {
-            dismiss(owner);
-        }
+        dismiss(owner, data.petId());
         store.remove(data);
     }
 
@@ -143,26 +188,17 @@ public final class PetService {
      * @return 모델을 다시 붙였으면 true
      */
     public boolean refreshIfTypeChanged(final Player owner, final PetData data) {
-        final ActivePet current = registry.of(owner.getUniqueId()).orElse(null);
-        if (current == null || !current.data().petId().equals(data.petId())) {
-            return false;   // 소환 중이 아니거나, 소환된 건 다른 펫이다
+        final ActivePet current = registry.of(owner.getUniqueId(), data.petId()).orElse(null);
+        if (current == null) {
+            return false;   // 소환 중이 아니다
         }
         if (current.type().id().equals(data.typeId())) {
             return false;   // 종류가 그대로다
         }
-        return summon(owner, data) == SummonResult.OK;
-    }
-
-    /** 소유자당 활성 펫은 하나. DB 제약 대신 여기서 강제한다. */
-    private void markActive(final Player owner, final PetData data) {
-        for (final PetData other : store.owned(owner.getUniqueId())) {
-            if (!other.petId().equals(data.petId()) && other.active()) {
-                other.active(false);
-                store.saveAsync(other);
-            }
-        }
-        data.active(true);
-        store.saveAsync(data);
+        // 이미 소환 중인 펫을 다시 소환하는 것이라 한도를 새로 잡아먹지 않는다 —
+        // summon 이 같은 petId 를 먼저 해제하고 그 자리에 다시 넣는다.
+        final SummonResult result = summon(owner, data);
+        return result == SummonResult.OK || result == SummonResult.OK_REPLACED;
     }
 
     private Location spawnLocation(final Player owner) {

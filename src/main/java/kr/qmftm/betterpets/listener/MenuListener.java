@@ -76,11 +76,11 @@ public final class MenuListener implements Listener {
 
     private void handleBox(final Player player, final Menus.Box box, final int slot) {
         if (slot == PetMenuFactory.SLOT_PREV) {
-            player.openInventory(menus.box(sorted(player.getUniqueId()), box.page() - 1));
+            openBox(player, box.page() - 1);
             return;
         }
         if (slot == PetMenuFactory.SLOT_NEXT) {
-            player.openInventory(menus.box(sorted(player.getUniqueId()), box.page() + 1));
+            openBox(player, box.page() + 1);
             return;
         }
         final PetData pet = box.petAt(slot);
@@ -94,12 +94,13 @@ public final class MenuListener implements Listener {
         switch (slot) {
             case PetMenuFactory.SLOT_SUMMON -> {
                 if (pet.active()) {
-                    pets.dismiss(player);
+                    pets.dismiss(player, pet.petId());
                     messages.send(player, "pet.dismissed");
                 } else {
                     final PetService.SummonResult result = pets.summon(player, pet);
                     switch (result) {
                         case OK -> messages.send(player, "pet.summoned");
+                        case OK_REPLACED -> messages.send(player, "pet.summoned-replaced");
                         case MODEL_MISSING -> messages.send(player, "pet.model-missing");
                         case UNKNOWN_TYPE -> messages.send(player, "pet.unknown-type");
                     }
@@ -108,17 +109,23 @@ public final class MenuListener implements Listener {
             }
             case PetMenuFactory.SLOT_RENAME -> {
                 player.closeInventory();
-                messages.send(player, "pet.rename-hint");
+                // 어느 펫인지 id 를 박아서 알려준다. 여러 마리를 소환해 둔 상태에서
+                // "/pet rename <이름>" 만 안내하면 어느 쪽이 바뀔지 알 수 없다.
+                messages.send(player, "pet.rename-hint",
+                    "id", pet.petId().toString().substring(0, 8));
             }
             case PetMenuFactory.SLOT_RELEASE -> {
                 pets.release(player, pet);
                 messages.send(player, "pet.released");
-                player.openInventory(menus.box(sorted(player.getUniqueId()), 0));
+                openBox(player, 0);
             }
-            case PetMenuFactory.SLOT_BACK ->
-                player.openInventory(menus.box(sorted(player.getUniqueId()), 0));
+            case PetMenuFactory.SLOT_BACK -> openBox(player, 0);
             default -> { /* 빈 칸 */ }
         }
+    }
+
+    private void openBox(final Player player, final int page) {
+        player.openInventory(menus.box(player.getUniqueId(), sorted(player.getUniqueId()), page));
     }
 
     private List<PetData> sorted(final UUID ownerId) {

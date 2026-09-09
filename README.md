@@ -91,7 +91,8 @@
 - [x] 트리거 능력 (이벤트 반응)
 
 **관리**
-- [x] 펫 보관함 GUI
+- [x] 펫 보관함 GUI — 가진 펫 전부를 등급·상태·성장도와 함께 한 화면에서 본다 (한 쪽에 45마리, 쪽 넘김)
+- [x] 최대 보유 · 최대 동시 소환 마릿수를 `config.yml` 에서 설정 (0 = 무제한)
 - [x] 이름 변경 · 해방
 - [ ] PlaceholderAPI 연동
 
@@ -136,15 +137,15 @@
 | --- | --- | --- |
 | `/pet` | `betterpets.use` | 보관함 GUI |
 | `/pet summon <petId>` | `betterpets.use` | 소환 |
-| `/pet dismiss` | `betterpets.use` | 해제 |
+| `/pet dismiss` | `betterpets.use` | 소환 중인 펫 전부 해제 (한 마리만 넣으려면 보관함에서) |
 | `/pet dismount` | `betterpets.use` | 하차 |
-| `/pet rename <이름>` | `betterpets.use` | 이름 변경 |
+| `/pet rename [petId] <이름>` | `betterpets.use` | 이름 변경. 여러 마리를 소환 중이면 `petId` 가 필요하다 |
 | `/petadmin give <플레이어> <타입>` | `betterpets.admin` | 펫 지급 |
 | `/petadmin egg <플레이어> <알> [개수]` | `betterpets.admin` | 알 아이템 지급 |
 | `/petadmin feed <플레이어> <먹이> [개수]` | `betterpets.admin` | 먹이 아이템 지급 |
 | `/petadmin growth <플레이어> <petId> <양>` | `betterpets.admin` | 성장도 지급 |
 | `/petadmin reload` | `betterpets.admin` | 설정 리로드 |
-| `/petadmin debug` | `betterpets.admin` | 트래커 누수 진단 |
+| `/petadmin debug` | `betterpets.admin` | 트래커 누수 진단 · 현재 한도 확인 |
 
 ## 권한
 
@@ -159,12 +160,29 @@
 
 ```
 plugins/BetterPets/
-├─ config.yml       성장·기믹·비행 설정
+├─ config.yml       보유/소환 한도 · 성장 · 기믹 · 비행 설정
 ├─ messages.yml     사용자 노출 문자열 (MiniMessage)
 ├─ items.yml        알 · 먹이 아이템 정의
 ├─ pets/*.yml       펫 종류 정의 (wolf · dragon · pig 예시 제공)
 └─ playerdata/      플레이어별 펫 데이터 (자동 생성)
 ```
+
+### 보유·소환 한도
+
+```yaml
+# config.yml
+pets:
+  max-owned: 20    # 한 명이 가질 수 있는 마릿수. 0 = 무제한
+  max-active: 1    # 동시에 소환해 둘 수 있는 마릿수. 0 = 무제한
+```
+
+- **보유 한도가 차면 알을 우클릭해도 아이템이 소비되지 않는다.** 안내만 나가고 알은 그대로 남는다.
+- **동시 소환 한도가 찬 상태에서 새로 소환하면 가장 먼저 부른 펫이 돌아간다.** 그래서 기본값 1은
+  "소환하면 교체"로 동작한다 — 거절하지 않는다.
+- `max-active` 를 올리면 소환한 마릿수만큼 캐리어 엔티티와 렌더 트래커가 늘고, 성체 펫의
+  능력치 보너스도 **마리 수만큼 겹쳐서** 붙는다.
+
+### 펫 종류
 
 펫 하나를 정의하는 예:
 
@@ -239,6 +257,7 @@ kr.qmftm.betterpets
 │   ├─ Rarity              등급 D~S
 │   ├─ LifeStage           BABY · ADULT · PIG
 │   ├─ GrowthCurve         성장도 지연 계산
+│   ├─ PetLimits           보유·동시 소환 한도 (0 = 무제한)
 │   ├─ PetType             펫 종류 정의 (설정에서 로드)
 │   ├─ PetData             펫 개체 (저장 대상)
 │   └─ EggDefinition       알 아이템 정의, 가중치 추첨
@@ -249,7 +268,7 @@ kr.qmftm.betterpets
 ├─ runtime/                살아 움직이는 부분
 │   ├─ CarrierFactory      캐리어 엔티티 스폰 · 고아 청소
 │   ├─ ActivePet           캐리어 + 트래커 + 상태 한 덩어리
-│   ├─ PetRegistry         소유자 → 소환된 펫
+│   ├─ PetRegistry         소유자 → 소환된 펫들 (소환 순서 유지)
 │   ├─ MovementController  추종 상태 머신
 │   ├─ AnimationStateMachine  전이 시에만 animate() 호출
 │   ├─ RideController      ArmorStand 마운트, 서브스텝 충돌

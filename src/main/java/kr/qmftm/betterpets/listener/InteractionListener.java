@@ -97,7 +97,12 @@ public final class InteractionListener implements Listener {
             return;
         }
 
-        pets.grantPet(player, typeId);
+        // 보유 한도가 찼으면 알을 먹어치우지 않는다. 아이템을 잃는 게 제일 나쁜 결과다.
+        if (pets.grantPet(player, typeId).isEmpty()) {
+            messages.send(player, "pet.box-full",
+                "max", String.valueOf(pets.limits().maxOwned()));
+            return;
+        }
         held.setAmount(held.getAmount() - 1);   // 성공한 뒤에만 소비한다
 
         final PetType type = pets.catalog().type(typeId).orElseThrow();
@@ -201,7 +206,7 @@ public final class InteractionListener implements Listener {
         }
 
         final double speed = type.rarity().rideSpeed();
-        if (rides.start(player, pet.carrier().getLocation(), flying, speed)) {
+        if (rides.start(player, pet.petId(), pet.carrier().getLocation(), flying, speed)) {
             pet.movement().mode(MovementController.Mode.RIDDEN);
             messages.send(player, flying ? "ride.started-flying" : "ride.started-ground");
         } else {

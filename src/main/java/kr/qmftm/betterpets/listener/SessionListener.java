@@ -47,7 +47,7 @@ public final class SessionListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(final PlayerQuitEvent event) {
         final var player = event.getPlayer();
-        pets.dismiss(player);                       // 트래커·캐리어·능력 정리
+        pets.dismissAll(player);                    // 트래커·캐리어·능력 정리
         pets.releaseQuietly(player.getUniqueId());  // 혹시 남았으면 한 번 더
         store.unload(player.getUniqueId());         // 변경분 저장 후 캐시에서 제거
     }
@@ -61,7 +61,7 @@ public final class SessionListener implements Listener {
         final World world = event.getWorld();
         for (final ActivePet pet : registry.all()) {
             if (world.equals(pet.carrier().getWorld())) {
-                registry.remove(pet.ownerId());
+                registry.remove(pet.ownerId(), pet.petId());
             }
         }
     }
