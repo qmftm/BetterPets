@@ -1,0 +1,27 @@
+name: BetterPets
+version: '${project.version}'
+main: kr.qmftm.betterpets.BetterPetsPlugin
+description: 악어의 놀이터 스타일 펫 시스템 — BetterModel 기반
+api-version: '26.2'
+authors:
+  - qmftm
+
+dependencies:
+  server:
+    # 펫의 본체가 3D 모델이므로 BetterModel 은 선택 사항이 아니다.
+    BetterModel:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true
+
+permissions:
+  betterpets.use:
+    description: 펫 보관함 열기, 소환/해제 등 기본 기능
+    default: true
+  betterpets.admin:
+    description: 모든 관리자 명령
+    default: op

@@ -21,7 +21,6 @@
 
     <paper.version>26.2.build.121-stable</paper.version>
     <bettermodel.version>3.4.1</bettermodel.version>
-    <sqlite.version>3.50.1.0</sqlite.version>
     <junit.version>5.13.0</junit.version>
   </properties>
 
@@ -56,14 +55,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- 셰이딩 대상.
-         동접 5명 규모라 커넥션 풀(HikariCP)은 과잉이다.
-         단일 커넥션 + 단일 스레드 실행자로 직렬화한다. -->
-    <dependency>
-      <groupId>org.xerial</groupId>
-      <artifactId>sqlite-jdbc</artifactId>
-      <version>${sqlite.version}</version>
-    </dependency>
+    <!-- 저장소 의존성은 M3 에서 추가한다. 지금 넣지 않는 이유는 아래 build 주석 참고. -->
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -77,18 +69,19 @@
     <finalName>${project.name}-${project.version}</finalName>
 
     <resources>
+      <!-- paper-plugin.yml 만 ${project.version} 치환을 받는다 -->
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
         <includes>
-          <include>plugin.yml</include>
+          <include>paper-plugin.yml</include>
         </includes>
       </resource>
       <resource>
         <directory>src/main/resources</directory>
         <filtering>false</filtering>
         <excludes>
-          <exclude>plugin.yml</exclude>
+          <exclude>paper-plugin.yml</exclude>
         </excludes>
       </resource>
     </resources>
@@ -112,39 +105,19 @@
         <version>3.5.2</version>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.6.0</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals><goal>shade</goal></goals>
-            <configuration>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-              <minimizeJar>false</minimizeJar>
-              <relocations>
-                <!-- 다른 플러그인의 동일 라이브러리와 충돌하지 않도록 재배치한다 -->
-                <relocation>
-                  <pattern>org.sqlite</pattern>
-                  <shadedPattern>kr.qmftm.betterpets.lib.sqlite</shadedPattern>
-                </relocation>
-              </relocations>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                    <exclude>module-info.class</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+      <!--
+        M3(저장소)에서 외부 라이브러리를 들일 때 읽을 것 — 실측으로 확인한 두 가지:
+
+        1) maven-shade-plugin 은 반드시 3.6.2 이상을 쓴다.
+           3.6.0 은 번들 ASM 이 낡아 Java 25 클래스(major 69)를 읽지 못하고
+           "Unsupported class file major version 69" 로 패키징 단계에서 실패한다.
+
+        2) 그런데 셰이딩보다 Paper 의 라이브러리 로더가 낫다.
+           sqlite-jdbc 를 셰이딩했더니 전 플랫폼 네이티브가 딸려와 jar 가
+           15KB -> 14MB 로 불었다. Paper 는 플러그인별로 클래스로더를 격리해
+           라이브러리를 받아주므로 재배치(relocation)도 필요 없다.
+           paper-plugin.yml 에서는 PluginLoader 를 지정하는 방식이다.
+      -->
     </plugins>
   </build>
 </project>

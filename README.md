@@ -9,7 +9,7 @@
 | BetterModel | **3.4.1** (MIT) |
 | 빌드 | **Maven** |
 | **서버 규모** | **최대 5명** — 설계 전반의 기준 (3장) |
-| 상태 | 기획 확정, 구현 착수 전 |
+| 상태 | **M0 완료** — 빌드·테스트 통과. M1(렌더링) 대기 |
 | 예상 기간 | 약 11주 (1인 파트타임) |
 
 ---
@@ -240,9 +240,17 @@ BetterModel 3.4.1 **소스 JAR을 직접 내려받아 검증한** 값이다.
 빌드 도구는 **Maven**이다. 루트의 [`pom.xml`](pom.xml) 참고.
 
 ```bash
-mvn clean package        # target/BetterPets-0.1.0-SNAPSHOT.jar
-mvn test                 # 단위 테스트만
+export JAVA_HOME=/path/to/jdk-25      # ★ JDK 25 필수
+mvn clean package                     # target/BetterPets-0.1.0-SNAPSHOT.jar
+mvn test                              # 단위 테스트만
 ```
+
+**빌드하며 실측으로 확인한 것 두 가지** (M3에서 저장소 라이브러리를 들일 때 필요):
+
+1. **`maven-shade-plugin` 은 3.6.2 이상**이어야 한다. 3.6.0은 번들 ASM이 낡아 Java 25 클래스(major 69)를 못 읽고 `Unsupported class file major version 69` 로 패키징에서 실패한다.
+2. **셰이딩보다 Paper 라이브러리 로더가 낫다.** sqlite-jdbc를 셰이딩했더니 전 플랫폼 네이티브가 딸려와 jar가 **16KB → 14MB** 로 불었다. Paper는 플러그인별로 클래스로더를 격리하므로 재배치도 필요 없다.
+
+그래서 M0 시점에는 외부 런타임 의존성이 없다. 저장소 백엔드 결정은 M3로 미뤘다.
 
 핵심 설정:
 
@@ -1048,7 +1056,7 @@ M9에서 Spark로 한 번 실측한다. 목표치는 **추정이며 측정된 �
 
 | M | 마일스톤 | 산출물 | 예상 |
 | --- | --- | --- | --- |
-| **M0** | 프로젝트 뼈대 | **Maven `pom.xml`** · plugin.yml · 패키지 구조 · **JDK 25 + BetterModel 컴파일 확인** | 3일 |
+| ~~**M0**~~ | ✅ **프로젝트 뼈대 — 완료** | `pom.xml` · `paper-plugin.yml` · 진입점 · 렌더 격리 계층 · 도메인(등급/생애주기/성장도) · **JDK 25 실제 빌드 성공, 테스트 24개 통과** | 완료 |
 | **M1** | 렌더링 수직 슬라이스 | `/pet summon`으로 모델 소환/해제 · `BetterModelBridge` · **트래커 누수 0 검증** | 1.5주 |
 | **M2** | 이동 + 애니메이션 | 지상 추종 상태 머신 · 텔레포트 폴백 · 애니메이션 상태 머신 | 2주 |
 | **M3** | 데이터 + 명령어 | `PetRepository`(SQLite) · 단일 스레드 실행자 · 명령어/권한 | 1주 |
