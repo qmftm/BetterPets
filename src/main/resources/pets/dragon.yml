@@ -39,5 +39,8 @@ abilities:
     chance-base: 0.05
     chance-per-growth: 0.002
 
+# next-stage 를 정의하지 않았으므로 드래곤은 단계가 올라도 계속 드래곤이다.
+# docs/DESIGN.md 의 "성장 단계" 절 참고.
+
 acquire:
   gacha-weight: 1

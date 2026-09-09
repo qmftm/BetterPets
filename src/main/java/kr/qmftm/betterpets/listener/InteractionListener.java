@@ -139,6 +139,9 @@ public final class InteractionListener implements Listener {
 
         switch (result) {
             case HATCHED -> messages.send(player, "feed.hatched");
+            case STAGE_UP -> messages.send(player, "feed.stage-up",
+                "stage", String.valueOf(data.growthStage()),
+                "max", String.valueOf(growth.maxStage()));
             case GREW_UP -> messages.send(player, "feed.grew-up");
             case BECAME_PIG -> messages.send(player, "feed.became-pig");
             case FED -> messages.send(player, "feed.fed",

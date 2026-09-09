@@ -1,6 +1,7 @@
 package kr.qmftm.betterpets.domain;
 
-import java.util.List;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.random.RandomGenerator;
 
@@ -23,7 +24,10 @@ public record EggDefinition(
 ) {
 
     public EggDefinition {
-        weights = Map.copyOf(weights);
+        // Map.copyOf 는 아니다 — 그건 JVM 마다 랜덤한 순서로 반복시킨다.
+        // Weighted.pick 은 순서에 따라 구간을 나누므로, 설정 파일에 적은 순서
+        // (LinkedHashMap 이 보존하는 순서)를 그대로 지켜야 결과가 재현 가능하다.
+        weights = Collections.unmodifiableMap(new LinkedHashMap<>(weights));
     }
 
     public boolean isRandom() {
@@ -36,27 +40,6 @@ public record EggDefinition(
      * @return 펫 종류 id. 랜덤 알인데 가중치가 비었거나 전부 0 이하면 null
      */
     public String roll(final RandomGenerator random) {
-        if (!isRandom()) {
-            return gives;
-        }
-        final List<Map.Entry<String, Integer>> entries = weights.entrySet().stream()
-            .filter(e -> e.getValue() != null && e.getValue() > 0)
-            .toList();
-        if (entries.isEmpty()) {
-            return null;
-        }
-        long total = 0;
-        for (final var entry : entries) {
-            total += entry.getValue();
-        }
-        long pick = random.nextLong(total);
-        for (final var entry : entries) {
-            pick -= entry.getValue();
-            if (pick < 0) {
-                return entry.getKey();
-            }
-        }
-        // 부동소수점이 아니라 정수 누적이므로 여기 도달하지 않지만, 방어적으로 마지막을 준다.
-        return entries.get(entries.size() - 1).getKey();
+        return isRandom() ? Weighted.pick(weights, random, null) : gives;
     }
 }

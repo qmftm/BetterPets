@@ -74,6 +74,7 @@ public final class YamlPetRepository implements PetRepository {
         yaml.set(path + ".nickname", pet.nickname());
         yaml.set(path + ".stage", pet.stage().name());
         yaml.set(path + ".growth", pet.growth());
+        yaml.set(path + ".growth-stage", pet.growthStage());
         yaml.set(path + ".can-fly", pet.canFly());
         yaml.set(path + ".active", pet.active());
         yaml.set(path + ".acquired-at", pet.acquiredAt());
@@ -116,6 +117,7 @@ public final class YamlPetRepository implements PetRepository {
             node.getString("nickname"),
             LifeStage.parse(node.getString("stage")).orElse(LifeStage.EGG),
             node.getInt("growth"),
+            node.getInt("growth-stage", 1),
             node.getBoolean("can-fly"),
             node.getBoolean("active"),
             node.getLong("acquired-at", now),

@@ -341,7 +341,7 @@ Java 타깃은 21이라 Java 25 JVM에서 도는 데는 문제가 없다.
 | `EGG` | 획득 시 | ❌ | ❌ | ❌ |
 | `HATCHING` | 먹이 급여 시작 | ❌ | ❌ | ❌ |
 | `BABY` | 부화 완료 | ✅ | ❌ | ❌ |
-| `ADULT` | 성장도 상한 도달 | ✅ | ✅ | ✅ |
+| `ADULT` | 최대 단계에서 성장도 상한 도달 | ✅ | ✅ | ✅ |
 | `PIG` | 아기 상태에서 단시간 과급식 | ✅ | ✅ | ❌ |
 
 ### 성장도
@@ -355,6 +355,25 @@ Java 타깃은 21이라 Java 25 JVM에서 도는 데는 문제가 없다.
 **성장도는 `updated_at` 기준으로 지연 계산한다.** 1분마다 전체 펫을 순회하며 +1 하는 대신, 읽을 때 경과 시간을 환산하고 저장 시점에만 반영한다. 주기 작업이 없어져 구현도 더 단순하다.
 
 > ⚠️ **함정** — 계산 후 기준 시각을 무조건 `now` 로 밀면 1분에 못 미친 나머지 시간이 매번 버려진다. 저장이 잦으면 펫이 영원히 자라지 않는다. `GrowthCurve.project()` 가 새 성장도와 **새 기준 시각을 함께** 돌려주는 이유다. 이 경우는 테스트로 고정돼 있다.
+
+### 성장 단계 — 성장도가 차도 곧바로 성체가 되지 않을 수 있다
+
+원작에는 없던 확장이다. 성장도가 상한(`growth-max`)에 닿았을 때, **설정된 최대 단계(`growth.max-stage`, 전역)** 에 아직 못 미쳤으면 곧바로 성체가 되는 대신 **다음 성장 단계로 넘어간다**:
+
+1. 펫 종류의 `next-stage` 가중치 맵으로 다음 형태를 추첨한다 — 알의 랜덤 뽑기와 같은 알고리즘(`Weighted.pick`)이다. 맵이 비어 있으면 종류는 그대로 두고 단계 수만 오른다
+2. `growthStage` 를 1 올린다
+3. 성장도를 0으로 되돌리고 다시 채운다 (기준 시각도 함께 갱신 — `applyGrowth` 계약)
+
+이 과정을 최대 단계에 이를 때까지 반복한 뒤에야 `ADULT` 로 전이하고, **그 뒤로는 더 자라지 않는다.** `max-stage` 기본값은 **1**이다 — 성장도가 차면 바로 성체가 되는 예전 동작과 정확히 같다. 서버가 다단계 확률적 진화를 원하면 이 값을 올리고 `pets/*.yml` 에 `next-stage` 를 채운다.
+
+```yaml
+# pets/wolf.yml
+next-stage:
+  wolf: 70       # 70% 확률로 그대로 늑대 유지
+  dragon: 30     # 30% 확률로 드래곤으로 (같은 종류가 아니어도 된다)
+```
+
+> ⚠️ **가중치 맵의 반복 순서가 결과에 영향을 준다** (확률 자체는 아니다 — 어느 항목이 어느 수치 구간을 차지하는지가 순서에 좌우될 뿐). `Map.copyOf` 는 JVM 마다 순서를 랜덤하게 흩기 때문에 `EggDefinition.weights` 와 `PetType.nextStage` 는 둘 다 **순서를 보존하는 맵**(`LinkedHashMap` 래핑)으로 저장한다. 이걸 놓쳤다가 실제로 테스트가 간헐적으로 깨졌다 — `WeightedTest` 에 재현 테스트로 남겨뒀다.
 
 ---
 
@@ -500,7 +519,7 @@ public record PetType(
         Rarity rarity, AnimationSet animations, MovementProfile movement,
         boolean rideable, double flyChance,
         List<AbilityDefinition> abilities,
-        int growthMax, String evolvesInto
+        int growthMax, Map<String, Integer> nextStage   // 가중치. 비어 있으면 종류 유지
 ) {}
 
 public final class PetData {
@@ -510,40 +529,36 @@ public final class PetData {
     private String nickname;
     private LifeStage stage;
     private int growth;
+    private int growthStage;       // 1부터 시작
     private boolean canFly;        // 부화 시 확률로 확정
     private boolean active;
 }
 ```
 
-```sql
-CREATE TABLE IF NOT EXISTS bp_pet (
-    pet_id      CHAR(36)     NOT NULL PRIMARY KEY,
-    owner_id    CHAR(36)     NOT NULL,
-    type_id     VARCHAR(64)  NOT NULL,
-    nickname    VARCHAR(32)  NULL,
-    stage       VARCHAR(16)  NOT NULL DEFAULT 'EGG',
-    growth      INT          NOT NULL DEFAULT 0,
-    can_fly     TINYINT      NOT NULL DEFAULT 0,
-    active      TINYINT      NOT NULL DEFAULT 0,
-    acquired_at BIGINT       NOT NULL,
-    updated_at  BIGINT       NOT NULL     -- 성장도 지연 계산의 기준
-);
-CREATE INDEX IF NOT EXISTS idx_bp_pet_owner ON bp_pet (owner_id);
+**M3에서 SQLite가 아니라 YAML로 결정됐다.** 5명 규모에 DB는 과잉이고, 파일 하나면 사람이 직접 열어 고칠 수 있다는 실질적 장점이 있다 — 참고 구현(betterpets-paper)도 YAML이 기본이다. `YamlPetRepository` 가 플레이어 한 명당 `playerdata/<uuid>.yml` 파일 하나를 쓴다:
 
--- 소유자당 활성 펫 1마리를 DB에서 강제한다
-CREATE UNIQUE INDEX IF NOT EXISTS idx_bp_pet_active
-    ON bp_pet (owner_id) WHERE active = 1;
+```yaml
+pets:
+  <petId>:
+    type: dragon
+    nickname: 화룡이
+    stage: BABY
+    growth: 42
+    growth-stage: 2        # 최대 단계에 못 미쳤으면 여러 번 오를 수 있다
+    can-fly: false
+    active: true
+    acquired-at: 1700000000000
+    updated-at: 1700000600000     # 성장도 지연 계산의 기준
 ```
 
 **원칙**
 
-- **SQLite 단일 커넥션 + 단일 스레드 실행자.** 커넥션 풀 없음 — 단일 스레드가 SQLite 잠금 문제를 애초에 없앤다
-- **모든 DB I/O는 그 실행자 위에서.** 메인 스레드에서 JDBC 호출 금지
+- **단일 스레드 실행자로 I/O를 직렬화한다.** 커넥션 풀 없음 — 경합 자체가 없다
+- **모든 파일 I/O는 그 실행자 위에서.** 메인 스레드에서 디스크 접근 금지
 - **캐시는 단순하게** — 접속 시 로드 → 메모리 읽기/쓰기 → 변경 시 즉시 비동기 저장
 - **서버 종료 시 실행자를 동기 대기**(`awaitTermination`). 안 하면 마지막 쓰기를 잃는다
-- **MySQL 구현체는 만들지 않는다.** 인터페이스는 유지하므로 필요해지면 추가
-
-> **M3에서 결정할 것** — 5명 규모면 YAML도 충분하다. 참고 구현도 YAML이 기본이다. SQLite를 쓴다면 셰이딩 대신 **Paper 라이브러리 로더**를 쓴다 (README의 빌드 절 참고).
+- **소유자당 활성 펫 1마리는 코드로 강제한다** (`PetService.markActive`) — DB 제약이 없으니 여기서 직접 막는다
+- **다른 백엔드가 필요해지면** `PetRepository` 인터페이스만 새로 구현하면 된다. SQLite로 가더라도 셰이딩 대신 **Paper 라이브러리 로더**를 쓴다 (README의 빌드 절 참고)
 
 ---
 

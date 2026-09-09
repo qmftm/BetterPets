@@ -97,7 +97,7 @@ public final class PetCatalog {
                 readAnimations(yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
                 readAbilities(file.getName(), yaml.getMapList("abilities"), abilities),
-                yaml.getString("evolves-into"),
+                readWeights(yaml.getConfigurationSection("next-stage")),
                 yaml.getInt("acquire.gacha-weight", 0)
             );
             if (types.putIfAbsent(id, type) != null) {
@@ -175,22 +175,30 @@ public final class PetCatalog {
                 problems.add("eggs.yml/" + id + ": 알 수 없는 material '" + materialName + "'");
                 continue;
             }
-            final Map<String, Integer> weights = new LinkedHashMap<>();
-            final ConfigurationSection weightNode = node.getConfigurationSection("weights");
-            if (weightNode != null) {
-                for (final String key : weightNode.getKeys(false)) {
-                    weights.put(key, weightNode.getInt(key));
-                }
-            }
             eggs.put(id, new EggDefinition(
                 id,
                 node.getString("display-name", id),
                 materialName,
                 node.getString("item-model"),
                 node.getString("gives"),
-                weights
+                readWeights(node.getConfigurationSection("weights"))
             ));
         }
+    }
+
+    /**
+     * {@code id: 가중치} 형태의 섹션을 맵으로 읽는다.
+     *
+     * <p>알의 랜덤 뽑기(weights)와 펫의 다음 성장 단계(next-stage)가 같은 형식을 쓴다.
+     */
+    private Map<String, Integer> readWeights(final ConfigurationSection section) {
+        final Map<String, Integer> weights = new LinkedHashMap<>();
+        if (section != null) {
+            for (final String key : section.getKeys(false)) {
+                weights.put(key, section.getInt(key));
+            }
+        }
+        return weights;
     }
 
     /**
@@ -205,9 +213,10 @@ public final class PetCatalog {
                 problems.add("펫 '" + type.id() + "': 모델 '" + type.modelId()
                     + "' 을 BetterModel 에서 찾을 수 없습니다.");
             }
-            if (type.canEvolve() && !types.containsKey(type.evolvesInto())) {
-                problems.add("펫 '" + type.id() + "': evolves-into 가 가리키는 '"
-                    + type.evolvesInto() + "' 가 없습니다.");
+            for (final String key : type.nextStage().keySet()) {
+                if (!types.containsKey(key)) {
+                    problems.add("펫 '" + type.id() + "': next-stage 의 '" + key + "' 가 없는 펫입니다.");
+                }
             }
             for (final String required : PetType.AnimationSet.REQUIRED) {
                 if (!type.animations().mapping().containsKey(required)) {

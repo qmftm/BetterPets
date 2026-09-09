@@ -100,6 +100,11 @@ public final class PetMenuFactory {
         lore.add(Messages.plain("<gray>상태 <white>" + stageLabel(pet.stage())));
 
         if (pet.stage() != LifeStage.ADULT && pet.stage() != LifeStage.PIG) {
+            // max-stage 가 1(기본값)이면 단계 개념이 의미가 없으니 줄을 하나 아낀다.
+            if (growth.maxStage() > 1) {
+                lore.add(Messages.plain("<gray>성장 단계 <white>"
+                    + pet.growthStage() + "<dark_gray>/" + growth.maxStage()));
+            }
             final int max = growth.maxOf(pet);
             lore.add(Messages.plain("<gray>성장도 <white>" + pet.growth() + "<dark_gray>/" + max));
             lore.add(Messages.plain("<dark_gray>" + bar(growth.progressOf(pet))));

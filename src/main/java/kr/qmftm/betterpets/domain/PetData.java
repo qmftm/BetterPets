@@ -21,6 +21,7 @@ public final class PetData {
     private String nickname;        // nullable
     private LifeStage stage;
     private int growth;
+    private int growthStage;        // 1부터 시작. 성장도가 찰 때마다 오를 수 있다
     private boolean canFly;
     private boolean active;
     private long updatedAt;
@@ -33,6 +34,7 @@ public final class PetData {
                    final String nickname,
                    final LifeStage stage,
                    final int growth,
+                   final int growthStage,
                    final boolean canFly,
                    final boolean active,
                    final long acquiredAt,
@@ -43,6 +45,7 @@ public final class PetData {
         this.nickname = nickname;
         this.stage = stage;
         this.growth = growth;
+        this.growthStage = Math.max(1, growthStage);
         this.canFly = canFly;
         this.active = active;
         this.acquiredAt = acquiredAt;
@@ -52,7 +55,7 @@ public final class PetData {
     /** 새로 획득한 알. */
     public static PetData newEgg(final UUID ownerId, final String typeId, final long now) {
         return new PetData(UUID.randomUUID(), ownerId, typeId, null,
-            LifeStage.EGG, 0, false, false, now, now);
+            LifeStage.EGG, 0, 1, false, false, now, now);
     }
 
     public UUID petId() { return petId; }
@@ -61,6 +64,7 @@ public final class PetData {
     public String nickname() { return nickname; }
     public LifeStage stage() { return stage; }
     public int growth() { return growth; }
+    public int growthStage() { return growthStage; }
     public boolean canFly() { return canFly; }
     public boolean active() { return active; }
     public long acquiredAt() { return acquiredAt; }
@@ -80,6 +84,12 @@ public final class PetData {
 
     public void stage(final LifeStage value) {
         if (value != stage) { stage = value; dirty = true; }
+    }
+
+    /** 성장 단계를 직접 지정한다. 1 미만으로는 떨어지지 않는다. */
+    public void growthStage(final int value) {
+        final int normalized = Math.max(1, value);
+        if (normalized != growthStage) { growthStage = normalized; dirty = true; }
     }
 
     public void canFly(final boolean value) {

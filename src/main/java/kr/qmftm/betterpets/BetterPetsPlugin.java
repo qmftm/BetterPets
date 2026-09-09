@@ -90,7 +90,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getInt("growth.feed-amount", 10),
             getConfig().getBoolean("gimmick.overfeed.enabled", true),
             getConfig().getInt("gimmick.overfeed.count", 10),
-            getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L);
+            getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L,
+            getConfig().getInt("growth.max-stage", 1));
 
         final AbilityService abilities = new AbilityService(this, abilityRegistry);
         pets = new PetService(catalog, store, renderer, carriers, registry, rides, abilities, growth);

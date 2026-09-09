@@ -2,6 +2,8 @@ package kr.qmftm.betterpets.domain;
 
 import kr.qmftm.betterpets.ability.AbilityDefinition;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,12 +25,15 @@ public record PetType(
     AnimationSet animations,
     MovementProfile movement,
     List<AbilityDefinition> abilities,
-    String evolvesInto,         // nullable
+    Map<String, Integer> nextStage,   // 비어 있으면 다음 단계에서도 같은 종류를 유지한다
     int gachaWeight
 ) {
 
     public PetType {
         abilities = List.copyOf(abilities);
+        // Map.copyOf 는 아니다 — Weighted.pick 이 순서에 따라 구간을 나누므로,
+        // 설정 파일에 적은 순서를 그대로 지켜야 재현 가능하다. EggDefinition 과 동일한 이유.
+        nextStage = Collections.unmodifiableMap(new LinkedHashMap<>(nextStage));
         growthMax = Math.max(1, growthMax);
         flyChance = Math.max(0.0, Math.min(1.0, flyChance));
     }
@@ -38,8 +43,13 @@ public record PetType(
         return eggModelId == null || eggModelId.isBlank() ? modelId : eggModelId;
     }
 
-    public boolean canEvolve() {
-        return evolvesInto != null && !evolvesInto.isBlank();
+    /**
+     * 다음 성장 단계에서 종류가 바뀔 수 있는가.
+     *
+     * <p>{@code false} 면 성장 단계가 올라도 같은 종류를 유지한 채 성장도만 다시 채운다.
+     */
+    public boolean hasNextStage() {
+        return !nextStage.isEmpty();
     }
 
     /**

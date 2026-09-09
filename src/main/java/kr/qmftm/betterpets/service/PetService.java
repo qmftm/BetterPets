@@ -133,31 +133,6 @@ public final class PetService {
         store.remove(data);
     }
 
-    /**
-     * 진화. 종류를 바꾸고 모델을 갈아끼운다.
-     *
-     * @return 진화했으면 true
-     */
-    public boolean evolve(final Player owner, final PetData data) {
-        final PetType type = catalog.type(data.typeId()).orElse(null);
-        if (type == null || !type.canEvolve()) {
-            return false;
-        }
-        if (catalog.type(type.evolvesInto()).isEmpty()) {
-            return false;
-        }
-        final boolean wasActive = data.active();
-        if (wasActive) {
-            dismiss(owner);
-        }
-        data.typeId(type.evolvesInto());
-        store.saveAsync(data);
-        if (wasActive) {
-            summon(owner, data);
-        }
-        return true;
-    }
-
     /** 소유자당 활성 펫은 하나. DB 제약 대신 여기서 강제한다. */
     private void markActive(final Player owner, final PetData data) {
         for (final PetData other : store.owned(owner.getUniqueId())) {

@@ -20,13 +20,37 @@ class PetDataTest {
     }
 
     @Test
-    @DisplayName("새 펫은 알 상태에서 시작한다")
+    @DisplayName("새 펫은 알 상태, 성장 단계 1에서 시작한다")
     void newPetStartsAsEgg() {
         final PetData data = PetData.newEgg(UUID.randomUUID(), "wolf", T0);
         assertEquals(LifeStage.EGG, data.stage());
         assertEquals(0, data.growth());
+        assertEquals(1, data.growthStage());
         assertFalse(data.active());
         assertFalse(data.canFly());
+    }
+
+    @Test
+    @DisplayName("성장 단계는 1 미만으로 떨어지지 않는다")
+    void growthStageFloorsAtOne() {
+        final PetData data = sample();
+        data.growthStage(0);
+        assertEquals(1, data.growthStage());
+
+        data.growthStage(-5);
+        assertEquals(1, data.growthStage());
+    }
+
+    @Test
+    @DisplayName("성장 단계가 실제로 바뀔 때만 dirty 가 선다")
+    void growthStageDirtyOnlyOnChange() {
+        final PetData data = sample();
+
+        data.growthStage(1);   // 이미 1
+        assertFalse(data.isDirty());
+
+        data.growthStage(2);
+        assertTrue(data.isDirty());
     }
 
     @Test
