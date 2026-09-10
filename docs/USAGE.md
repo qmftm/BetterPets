@@ -267,12 +267,25 @@ ride:
 broadcast:
   enabled: true
   min-rarity: A          # 이 등급 이상만. D 로 두면 채팅이 밀려요
-  min-growth-stage: 1
+  min-growth-stage: 1    # 이 성장 단계 이상만
   on-obtain: true        # 알에서 나왔을 때
   on-grown: true         # 다 자랐을 때
   on-stage-up: false     # 성장 단계가 올랐을 때
   sound: true
 ```
+
+등급과 성장 단계를 **둘 다** 넘겨야 알림이 나갑니다.
+
+> `min-growth-stage` 를 `growth.max-stage` 보다 크게 두면 어떤 펫도 그 단계에
+> 닿을 수 없어서 알림이 하나도 안 나가요. `enabled: false` 와 증상이 똑같아 원인을
+> 찾기 어려운 조합이라, 기동할 때 경고로 알려드립니다.
+
+`min-growth-stage` 를 2 이상으로 올리면 **획득 알림(`on-obtain`)은 나가지 않아요** —
+알에서 갓 나온 펫은 언제나 1단계니까요. 그때는 `on-stage-up` 을 켜서 "일정 단계를
+넘겼다"를 알리시는 게 맞습니다.
+
+**주인에게 가는 알림은 이 문턱과 무관해요.** 자기 펫이 자랐다는 건 등급과 상관없이
+본인이 알아야 하니까요. 문턱은 서버 전체 방송에만 걸립니다.
 
 ### 🌐 언어
 

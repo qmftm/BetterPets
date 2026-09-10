@@ -269,10 +269,23 @@ public final class BetterPetsPlugin extends JavaPlugin {
     }
 
     private BroadcastService.Rules readBroadcastRules() {
+        final boolean enabled = getConfig().getBoolean("broadcast.enabled", true);
+        final int minStage = getConfig().getInt("broadcast.min-growth-stage", 1);
+
+        // 성장 단계는 growth.max-stage 를 넘지 못한다. 문턱이 그보다 높으면 어떤 펫도
+        // 조건을 넘을 수 없어, 알림이 통째로 꺼진 것과 같아진다 — 껐다는 자각 없이.
+        // enabled: false 와 증상이 똑같아서, 로그가 없으면 원인을 찾을 길이 없다.
+        final int maxStage = Math.max(1, getConfig().getInt("growth.max-stage", 1));
+        if (enabled && minStage > maxStage) {
+            getLogger().warning("broadcast.min-growth-stage(" + minStage
+                + ") 가 growth.max-stage(" + maxStage + ") 보다 큽니다."
+                + " 성장 단계가 그 값에 닿을 수 없어 전체 알림이 하나도 나가지 않습니다.");
+        }
+
         return new BroadcastService.Rules(
-            getConfig().getBoolean("broadcast.enabled", true),
+            enabled,
             broadcastFloor(),
-            getConfig().getInt("broadcast.min-growth-stage", 1),
+            minStage,
             getConfig().getBoolean("broadcast.on-obtain", true),
             getConfig().getBoolean("broadcast.on-grown", true),
             getConfig().getBoolean("broadcast.on-stage-up", false),
