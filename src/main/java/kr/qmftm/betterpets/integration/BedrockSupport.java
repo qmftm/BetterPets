@@ -31,8 +31,6 @@ public final class BedrockSupport {
     private Method isFloodgatePlayer;
     private Object floodgateApi;
 
-    private boolean geyserPresent;
-
     public BedrockSupport(final Plugin plugin) {
         this.plugin = plugin;
     }
@@ -40,9 +38,9 @@ public final class BedrockSupport {
     /** 기동 시 한 번. 무엇이 붙었는지 로그로 남긴다. */
     public void detect() {
         final var manager = plugin.getServer().getPluginManager();
-        geyserPresent = manager.isPluginEnabled("Geyser-Spigot") || manager.isPluginEnabled("floodgate");
-
-        if (!geyserPresent) {
+        final boolean geyser =
+            manager.isPluginEnabled("Geyser-Spigot") || manager.isPluginEnabled("floodgate");
+        if (!geyser) {
             return;
         }
         try {
@@ -79,6 +77,14 @@ public final class BedrockSupport {
         try {
             return Boolean.TRUE.equals(isFloodgatePlayer.invoke(floodgateApi, player.getUniqueId()));
         } catch (final ReflectiveOperationException | RuntimeException error) {
+            // 한 번 실패하면 계속 실패한다(호출 사슬이 바뀐 것이다). 매번 조용히 false 를
+            // 돌려주면 왜 Bedrock 구분이 안 되는지 알 방법이 없고, 실패 비용만 계속 낸다.
+            // "실패하면 조용히 꺼진다"는 방침대로 한 번 알리고 실제로 끈다.
+            plugin.getLogger().warning(
+                "Floodgate 호출에 실패해 Bedrock 구분을 끕니다. 모든 플레이어를 자바로 취급합니다: "
+                    + error);
+            isFloodgatePlayer = null;
+            floodgateApi = null;
             return false;
         }
     }
