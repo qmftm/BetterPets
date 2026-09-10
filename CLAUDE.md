@@ -66,8 +66,10 @@ sqlite-jdbc 를 넣으면 jar 이 16KB → 14MB 가 된다. 저장은 YAML 로 �
   급여·시간 경과·`/petadmin growth` 세 경로 모두 이 마무리가 필요하다.
   같은 이유로 **알림에도 `pet.type()` 을 쓰면 안 된다** — 진화 전 이름을 부르게 된다.
 - **설정을 읽어 들고 있는 쪽은 `/petadmin reload` 때 다시 밀어 넣어야 한다.**
-  지금은 넷이다: `RideController.reloadTuning`, `PetService.limits`, `BroadcastService.rules`,
-  `DiscordBridge.reload`.
+  지금은 다섯이다: `RideController.reloadTuning`, `PetService.limits`,
+  `BroadcastService.rules`, `DiscordBridge.reload`, `GrowthService.tuning`.
+  **더 나은 답은 아예 들고 있지 않는 것이다** — `PetItems` 와 `InteractionListener` 는
+  값을 복사하는 대신 매번 물어보게 바꿨다. 그러면 이 목록에 오를 일이 없다.
   빠뜨리면 "설정을 다시 읽었습니다"가 거짓말이 된다.
 - **레지스트리에서 펫을 뺄 때 소유자가 접속 중이면 `registry.remove` 가 아니라
   `PetService.dismiss` 를 쓴다.** 레지스트리는 능력을 모른다. 직접 빼면 펫 없는

@@ -99,14 +99,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         carriers = new CarrierFactory(this);
         rides = new RideController(this);
 
-        final GrowthService growth = new GrowthService(
-            catalog,
-            getConfig().getInt("growth.feed-amount", 10),
-            getConfig().getBoolean("gimmick.overfeed.enabled", true),
-            getConfig().getInt("gimmick.overfeed.count", 10),
-            getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L,
-            getConfig().getString("gimmick.overfeed.becomes", "pig"),
-            getConfig().getInt("growth.max-stage", 1));
+        final GrowthService growth = new GrowthService(catalog, readGrowthTuning());
 
         bedrock = new BedrockSupport(this);
         bedrock.detect();
@@ -122,8 +115,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         pets = new PetService(
             catalog, store, renderer, carriers, registry, rides, abilities, growth, readLimits());
 
-        final PetItems items = new PetItems(this, catalog, messages,
-            getConfig().getInt("growth.feed-amount", 10));
+        final PetItems items = new PetItems(this, catalog, messages, growth);
         final PetMenuFactory menus = new PetMenuFactory(
             catalog, growth, registry, pets, abilityRegistry, messages);
 
@@ -139,7 +131,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         }
 
         registerListeners(items, menus, abilities, growth, broadcasts, catchUp);
-        registerCommands(items, menus, abilityRegistry, catchUp);
+        registerCommands(items, menus, abilityRegistry, catchUp, growth);
 
         ticker = new PetTicker(this, registry, rides, pets, catchUp);
         ticker.start();
@@ -197,7 +189,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
             new SessionListener(this, store, pets, registry, abilities, catchUp), this);
         manager.registerEvents(new InteractionListener(pets, store, items, registry, rides, growth,
             messages, broadcasts, bedrock,
-            getConfig().getBoolean("integrations.bedrock.skip-mount-confirm", true)), this);
+            () -> getConfig().getBoolean("integrations.bedrock.skip-mount-confirm", true)), this);
         manager.registerEvents(new MenuListener(pets, store, menus, messages, catchUp), this);
         manager.registerEvents(new AbilityTriggerListener(registry, abilities), this);
     }
@@ -205,7 +197,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
     private void registerCommands(final PetItems items,
                                   final PetMenuFactory menus,
                                   final AbilityRegistry abilityRegistry,
-                                  final GrowthCatchUp catchUp) {
+                                  final GrowthCatchUp catchUp,
+                                  final GrowthService growth) {
         bind("pet", new PetCommand(pets, store, menus, rides, messages, catchUp));
         bind("petadmin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
             messages, catchUp, () -> {
@@ -221,6 +214,10 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 discord.reload(
                     getConfig().getBoolean("integrations.discord.enabled", true),
                     getConfig().getString("integrations.discord.channel", "global"));
+                // 성장·기믹도 마찬가지였다. growth.max-stage 를 고치고 리로드해도
+                // 예전 값으로 돌았다 — 기동 코드는 리로드 때마다 overfeed.count 를
+                // 다시 읽어 경고까지 내면서, 정작 쓰는 쪽에는 안 밀어 넣고 있었다.
+                growth.tuning(readGrowthTuning());
             }));
     }
 
@@ -271,6 +268,17 @@ public final class BetterPetsPlugin extends JavaPlugin {
         return new PetLimits(
             getConfig().getInt("pets.max-owned", 20),
             getConfig().getInt("pets.max-active", 1));
+    }
+
+    /** 성장·기믹 설정. 기동과 리로드가 같은 함수를 쓴다. */
+    private GrowthService.Tuning readGrowthTuning() {
+        return new GrowthService.Tuning(
+            getConfig().getInt("growth.feed-amount", 10),
+            getConfig().getBoolean("gimmick.overfeed.enabled", true),
+            getConfig().getInt("gimmick.overfeed.count", 10),
+            getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L,
+            getConfig().getString("gimmick.overfeed.becomes", "pig"),
+            getConfig().getInt("growth.max-stage", 1));
     }
 
     private BroadcastService.Rules readBroadcastRules() {

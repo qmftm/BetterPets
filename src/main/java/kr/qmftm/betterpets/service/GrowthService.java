@@ -35,12 +35,36 @@ public final class GrowthService {
      * 필요한 건 조회 하나뿐이라 값이 맞지 않는다.
      */
     private final java.util.function.Function<String, Optional<PetType>> types;
-    private final int feedAmount;
-    private final boolean overfeedGimmick;
-    private final int overfeedCount;
-    private final long overfeedWindowMillis;
-    private final String overfeedBecomes;
-    private final int maxStage;
+
+    /**
+     * 성장·기믹 설정.
+     *
+     * <p>여섯 값을 생성자에서 붙박아 두고 있었다. {@code /petadmin reload} 로는 바꿀 수
+     * 없었다는 뜻이다 — {@code growth.max-stage} 도, 과급식 기믹도. 심지어 기동 코드는
+     * 리로드 때마다 {@code gimmick.overfeed.count} 를 다시 읽어 경고까지 냈으면서
+     * 정작 그 값을 쓰는 이쪽에는 밀어 넣지 않았다.
+     *
+     * <p>{@link kr.qmftm.betterpets.domain.PetLimits}·{@code BroadcastService.Rules} 와
+     * 같은 방식으로 묶는다 — 레코드 하나를 통째로 갈아끼우면 절반만 반영된 상태가
+     * 생기지 않는다.
+     */
+    private volatile Tuning tuning;
+
+    /** 설정 묶음. 값을 접는 규칙도 여기 둔다 — 접는 자리가 하나면 새는 경로가 없다. */
+    public record Tuning(int feedAmount,
+                         boolean overfeedGimmick,
+                         int overfeedCount,
+                         long overfeedWindowMillis,
+                         String overfeedBecomes,
+                         int maxStage) {
+        public Tuning {
+            // 0 이하로 두면 registerBurst 가 첫 급여에서 바로 참이 된다 — 먹이 한 번에
+            // 모든 펫이 돼지가 된다는 뜻이다. 끄고 싶으면 enabled: false 를 쓴다.
+            overfeedCount = Math.max(2, overfeedCount);
+            // 0 이하로 설정되면 아무도 성체가 될 수 없다. 최소 1로 막는다.
+            maxStage = Math.max(1, maxStage);
+        }
+    }
 
     /**
      * 펫별 과급식 카운터. 짧은 시간에 몰아 먹이면 돼지가 된다.
@@ -64,34 +88,28 @@ public final class GrowthService {
     private record FeedBurst(int count, long since) {}
 
     /** 운영용. 조회를 카탈로그에 맡긴다. */
-    public GrowthService(final PetCatalog catalog,
-                         final int feedAmount,
-                         final boolean overfeedGimmick,
-                         final int overfeedCount,
-                         final long overfeedWindowMillis,
-                         final String overfeedBecomes,
-                         final int maxStage) {
-        this(catalog::type, feedAmount, overfeedGimmick, overfeedCount,
-            overfeedWindowMillis, overfeedBecomes, maxStage);
+    public GrowthService(final PetCatalog catalog, final Tuning tuning) {
+        this(catalog::type, tuning);
     }
 
     public GrowthService(final java.util.function.Function<String, Optional<PetType>> types,
-                         final int feedAmount,
-                         final boolean overfeedGimmick,
-                         final int overfeedCount,
-                         final long overfeedWindowMillis,
-                         final String overfeedBecomes,
-                         final int maxStage) {
+                         final Tuning tuning) {
         this.types = types;
-        this.feedAmount = feedAmount;
-        this.overfeedGimmick = overfeedGimmick;
-        // 0 이하로 두면 registerBurst 가 첫 급여에서 바로 참이 된다 — 먹이 한 번에
-        // 모든 펫이 돼지가 된다는 뜻이다. 끄고 싶으면 enabled: false 를 쓴다.
-        this.overfeedCount = Math.max(2, overfeedCount);
-        this.overfeedWindowMillis = overfeedWindowMillis;
-        this.overfeedBecomes = overfeedBecomes;
-        // 0 이하로 설정되면 아무도 성체가 될 수 없다. 최소 1로 막는다.
-        this.maxStage = Math.max(1, maxStage);
+        this.tuning = tuning;
+    }
+
+    /** {@code /petadmin reload} 가 부른다. 통째로 갈아끼운다. */
+    public void tuning(final Tuning value) {
+        tuning = value;
+    }
+
+    public Tuning tuning() {
+        return tuning;
+    }
+
+    /** 먹이에 {@code growth} 를 적지 않았을 때 쓰는 전역 기본값. */
+    public int feedAmount() {
+        return tuning.feedAmount();
     }
 
     /**
@@ -140,9 +158,9 @@ public final class GrowthService {
     public FeedResult feed(final PetData data, final FeedDefinition feed) {
         final int max = maxOf(data);
         refresh(data);
-        data.addGrowth(feed.growthOr(feedAmount), max);
+        data.addGrowth(feed.growthOr(tuning.feedAmount()), max);
 
-        if (overfeedGimmick && registerBurst(data)) {
+        if (tuning.overfeedGimmick() && registerBurst(data)) {
             becomePig(data);
             bursts.remove(data.petId());
             return FeedResult.BECAME_PIG;
@@ -178,7 +196,7 @@ public final class GrowthService {
             return StageResult.NONE;
         }
 
-        if (data.growthStage() >= maxStage) {
+        if (data.growthStage() >= tuning.maxStage()) {
             data.stage(LifeStage.ADULT);
             // 나는 탑승 종류만 추첨한다. 실패하면 걷는 탑승으로 내려간다 (RideMode.effective).
             if (type.rollsFlight()) {
@@ -209,13 +227,14 @@ public final class GrowthService {
      */
     private void becomePig(final PetData data) {
         data.stage(LifeStage.PIG);
-        if (overfeedBecomes == null || overfeedBecomes.isBlank()) {
+        final String becomes = tuning.overfeedBecomes();
+        if (becomes == null || becomes.isBlank()) {
             return;
         }
-        if (types.apply(overfeedBecomes).isEmpty()) {
+        if (types.apply(becomes).isEmpty()) {
             return;
         }
-        data.typeId(overfeedBecomes);
+        data.typeId(becomes);
         // 돼지가 날아다니면 곤란하다. 나중에 돼지 종류를 FLY 로 바꿔도
         // 추첨 없이 비행이 딸려가지 않도록 여기서 지운다.
         data.canFly(false);
@@ -231,17 +250,17 @@ public final class GrowthService {
             pruneExpired(now);
         }
         final FeedBurst updated = bursts.compute(data.petId(), (key, existing) -> {
-            if (existing == null || now - existing.since() > overfeedWindowMillis) {
+            if (existing == null || now - existing.since() > tuning.overfeedWindowMillis()) {
                 return new FeedBurst(1, now);
             }
             return new FeedBurst(existing.count() + 1, existing.since());
         });
-        return updated.count() >= overfeedCount;
+        return updated.count() >= tuning.overfeedCount();
     }
 
     /** 창이 지난 항목을 지운다. 지나면 어차피 새 창으로 다시 시작하므로 값이 없다. */
     private void pruneExpired(final long now) {
-        bursts.entrySet().removeIf(entry -> now - entry.getValue().since() > overfeedWindowMillis);
+        bursts.entrySet().removeIf(entry -> now - entry.getValue().since() > tuning.overfeedWindowMillis());
     }
 
     /**
@@ -259,7 +278,7 @@ public final class GrowthService {
 
     /** 설정된 최대 성장 단계. GUI 에서 "성장 단계 N/max" 표시에 쓴다. */
     public int maxStage() {
-        return maxStage;
+        return tuning.maxStage();
     }
 
     public double progressOf(final PetData data) {

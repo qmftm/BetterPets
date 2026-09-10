@@ -5,6 +5,7 @@ import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.FeedDefinition;
+import kr.qmftm.betterpets.service.GrowthService;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -36,16 +37,22 @@ public final class PetItems {
     private final PetCatalog catalog;
     private final Messages messages;
 
-    /** {@code growth} 를 적지 않은 먹이가 쓸 값. 로어에 실제 값을 적으려면 필요하다. */
-    private final int defaultFeedAmount;
+    /**
+     * {@code growth} 를 적지 않은 먹이가 쓸 값을 물어볼 곳.
+     *
+     * <p>숫자를 복사해 들고 있었다. {@code /petadmin reload} 로 {@code growth.feed-amount}
+     * 를 바꿔도 아이템 로어에는 예전 값이 계속 적혔다는 뜻이다 — 그리고 실제 효과와
+     * 표시가 갈렸다. <b>들고 있으면 다시 밀어 넣어야 한다.</b> 물어보면 그럴 일이 없다.
+     */
+    private final GrowthService growth;
 
     public PetItems(final Plugin plugin, final PetCatalog catalog, final Messages messages,
-                    final int defaultFeedAmount) {
+                    final GrowthService growth) {
         this.eggKey = new NamespacedKey(plugin, "egg_id");
         this.feedKey = new NamespacedKey(plugin, "feed");
         this.catalog = catalog;
         this.messages = messages;
-        this.defaultFeedAmount = defaultFeedAmount;
+        this.growth = growth;
     }
 
     public ItemStack createEgg(final EggDefinition definition, final int amount) {
@@ -71,7 +78,7 @@ public final class PetItems {
         // 알과 대칭이다. 먹이도 성장도가 제각각인데 이름만 보고는 알 수 없다 —
         // "펫 우유"와 "고급 사료" 중 뭐가 나은지 물어볼 일이 없어야 한다.
         meta.lore(List.of(messages.item("feed.lore-growth",
-            "growth", String.valueOf(definition.growthOr(defaultFeedAmount)))));
+            "growth", String.valueOf(definition.growthOr(growth.feedAmount())))));
         applyItemModel(meta, definition.itemModel());
         // 먹이마다 성장도가 다르므로 어떤 먹이인지 id 로 남긴다.
         meta.getPersistentDataContainer()

@@ -55,7 +55,7 @@ class GrowthServiceTest {
                                          final int overfeedCount, final long windowMillis) {
         return new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            10, overfeed, overfeedCount, windowMillis, "pig", maxStage);
+            new GrowthService.Tuning(10, overfeed, overfeedCount, windowMillis, "pig", maxStage));
     }
 
     private static final FeedDefinition MILK =
@@ -72,6 +72,27 @@ class GrowthServiceTest {
     /** 하루 전에 얻어 그 뒤로 아무도 들여다보지 않은 펫. */
     private static PetData babyFrom(final String typeId, final long agoMillis) {
         return PetData.newBaby(OWNER, typeId, System.currentTimeMillis() - agoMillis);
+    }
+
+    @Test
+    @DisplayName("설정을 갈아끼우면 그 뒤 판정부터 새 값을 쓴다 — 리로드가 먹어야 한다")
+    void tuningIsSwappable() {
+        final GrowthService service = service(1);
+        assertEquals(1, service.maxStage());
+
+        service.tuning(new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 3));
+
+        assertEquals(3, service.maxStage(), "growth.max-stage 를 고치고 리로드하면 반영돼야 한다");
+        assertEquals(10, service.feedAmount());
+    }
+
+    @Test
+    @DisplayName("설정 묶음이 값을 접는다 — 접는 자리가 하나여야 새는 경로가 없다")
+    void tuningClampsBadValues() {
+        final var broken = new GrowthService.Tuning(10, true, 0, 60_000L, "pig", 0);
+
+        assertEquals(2, broken.overfeedCount(), "0 이면 첫 급여에 바로 돼지가 된다");
+        assertEquals(1, broken.maxStage(), "0 이면 아무도 성체가 될 수 없다");
     }
 
     @Test
