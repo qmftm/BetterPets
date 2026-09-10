@@ -4,9 +4,20 @@
 설계 근거는 [docs/DESIGN.md](docs/DESIGN.md), 모델 규격은 [docs/MODELING.md](docs/MODELING.md),
 진행 상황은 [docs/ROADMAP.md](docs/ROADMAP.md). 사용법은 [README](README.md).
 
-**README 는 플러그인 사용자를 위한 문서다.** 개발 진행 상황이나 설계 근거를 거기 쓰지 않는다 —
-각각 ROADMAP 과 DESIGN 으로 간다. 문체도 다르다: README 는 존댓말로 친근하게,
-DESIGN 과 CLAUDE.md 는 평서형으로 간결하게.
+**README 는 짧게 유지한다.** 답할 것은 셋뿐이다 — 이게 뭔지, 내 서버에 맞는지, 어디로 가면
+되는지. 명령어·권한·설정 표를 README 에 넣지 않는다. 잘 만든 플러그인들(LuckPerms, Chunky)이
+그렇게 한다: README 는 안내판이고 상세는 링크 너머에 있다.
+
+| 문서 | 담는 것 |
+| --- | --- |
+| `README.md` | 소개 · 설치 3단계 · 문서 링크 · 빌드 · 라이선스 |
+| `docs/USAGE.md` | 명령어 · 권한 · 설정 전체 · 연동 · 문제 해결 |
+| `docs/MODELING.md` | 모델 규격 |
+| `docs/DESIGN.md` | 설계와 그 근거 |
+| `docs/ROADMAP.md` | 진행 상황 |
+
+문체도 다르다. README 와 USAGE 는 **존댓말로 친근하게**, DESIGN 과 CLAUDE.md 는
+**평서형으로 간결하게**.
 
 ## 빌드
 
