@@ -80,11 +80,6 @@ public final class MovementController {
         return state;
     }
 
-    /** 탑승 중에는 추종을 하지 않는다. */
-    public boolean followsOwner() {
-        return mode != Mode.RIDDEN;
-    }
-
     public void tick(final Player owner) {
         if (mode == Mode.RIDDEN) {
             return;

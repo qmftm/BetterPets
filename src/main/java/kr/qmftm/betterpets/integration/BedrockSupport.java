@@ -65,11 +65,6 @@ public final class BedrockSupport {
         }
     }
 
-    /** Geyser 가 이 서버에 붙어 있는가. */
-    public boolean geyserPresent() {
-        return geyserPresent;
-    }
-
     /**
      * 이 플레이어가 Bedrock 클라이언트인가.
      *

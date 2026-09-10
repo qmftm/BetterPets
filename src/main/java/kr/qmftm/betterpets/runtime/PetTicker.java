@@ -1,6 +1,5 @@
 package kr.qmftm.betterpets.runtime;
 
-import kr.qmftm.betterpets.domain.GrowthCurve;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.service.BroadcastService;
@@ -167,10 +166,5 @@ public final class PetTicker {
                 broadcasts.onStageUp(owner, data, type);
             }
         });
-    }
-
-    /** 성장도 지연 계산의 상수를 노출한다. GUI 에서 "다음 성장까지"를 보여줄 때 쓴다. */
-    public static long millisPerGrowthPoint() {
-        return GrowthCurve.MILLIS_PER_POINT;
     }
 }

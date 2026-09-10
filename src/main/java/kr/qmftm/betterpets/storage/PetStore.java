@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -79,11 +78,6 @@ public final class PetStore {
         return owned == null ? List.of() : List.copyOf(owned.values());
     }
 
-    public Optional<PetData> find(final UUID ownerId, final UUID petId) {
-        final Map<UUID, PetData> owned = cache.get(ownerId);
-        return owned == null ? Optional.empty() : Optional.ofNullable(owned.get(petId));
-    }
-
     /**
      * 지금 소환 중인 펫들. {@code pets.max-active} 에 따라 여러 마리일 수 있다.
      *
@@ -126,14 +120,6 @@ public final class PetStore {
             return;
         }
         io.execute(() -> persist(List.of(pet)));
-    }
-
-    /** 소유자의 변경분 전체를 저장한다. */
-    public void saveOwnerAsync(final UUID ownerId) {
-        final List<PetData> dirty = owned(ownerId).stream().filter(PetData::isDirty).toList();
-        if (!dirty.isEmpty()) {
-            io.execute(() -> persist(dirty));
-        }
     }
 
     /**

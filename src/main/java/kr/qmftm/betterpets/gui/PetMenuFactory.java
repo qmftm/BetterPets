@@ -180,6 +180,12 @@ public final class PetMenuFactory {
             final int max = growth.maxOf(pet);
             lore.add(Messages.plain("<gray>성장도 <white>" + pet.growth() + "<dark_gray>/" + max));
             lore.add(Messages.plain("<dark_gray>" + bar(growth.progressOf(pet))));
+            // 시간만 흘려도 자란다는 걸 여기서 알 수 있어야 한다.
+            // 안 그러면 먹이를 줘야만 크는 줄 알고 계속 먹이러 다닌다.
+            final long until = growth.millisUntilNextPoint(pet);
+            if (until > 0) {
+                lore.add(Messages.plain("<dark_gray>다음 성장까지 " + humanize(until)));
+            }
         }
         if (type != null && type.ride().canRide()) {
             // 성체가 되어야 실제로 탈 수 있고, FLY 종류라도 추첨에 실패했으면 걷는 탑승이다.
@@ -206,6 +212,18 @@ public final class PetMenuFactory {
             case ADULT -> "성체";
             case PIG -> "돼지";
         };
+    }
+
+    /** 남은 시간을 사람이 읽는 형태로. 초 단위까지만 — 그보다 정밀할 이유가 없다. */
+    private static String humanize(final long millis) {
+        final long seconds = Math.max(0, millis / 1000L);
+        if (seconds < 60) {
+            return seconds + "초";
+        }
+        final long minutes = seconds / 60;
+        return minutes < 60
+            ? minutes + "분 " + (seconds % 60) + "초"
+            : (minutes / 60) + "시간 " + (minutes % 60) + "분";
     }
 
     /** 성장도 막대. 20칸을 채운다. */

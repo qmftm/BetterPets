@@ -50,7 +50,6 @@ public final class ActivePet implements AutoCloseable {
     public PetData data() { return data; }
     public PetType type() { return type; }
     public Mob carrier() { return carrier; }
-    public PetRenderHandle handle() { return handle; }
     public MovementController movement() { return movement; }
     public AnimationStateMachine animation() { return animation; }
     public boolean isClosed() { return closed; }
