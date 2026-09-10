@@ -51,22 +51,20 @@ public final class Messages {
         }
 
         final String code = normalizeLanguage(language);
-        if (code.equals(FALLBACK_LANGUAGE) && overlayFile(new File(dataFolder, "lang/" + code + ".yml"))) {
-            return;     // 기본 언어를 쓰면서 파일도 있는 흔한 경우
-        }
-        if (code.equals(FALLBACK_LANGUAGE)) {
-            return;
-        }
 
-        // 2) 선택된 언어. 디스크가 우선이고, 없으면 jar 안의 번역을 쓴다.
+        // 2) 디스크의 언어 파일이 가장 우선이다 — 관리자가 고친 문구가 거기 있다.
         if (overlayFile(new File(dataFolder, "lang/" + code + ".yml"))) {
             return;
         }
-        if (overlayResource(plugin, code)) {
-            return;
+        if (code.equals(FALLBACK_LANGUAGE)) {
+            return;     // 파일이 없어도 1) 에서 내장 기본값을 이미 깔았다
         }
-        plugin.getLogger().warning("language: " + code + " 에 해당하는 lang/" + code
-            + ".yml 이 없습니다. " + FALLBACK_LANGUAGE + " 로 표시합니다.");
+
+        // 3) 디스크에 없으면 jar 안에 동봉된 번역을 쓴다.
+        if (!overlayResource(plugin, code)) {
+            plugin.getLogger().warning("language: " + code + " 에 해당하는 lang/" + code
+                + ".yml 이 없습니다. " + FALLBACK_LANGUAGE + " 로 표시합니다.");
+        }
     }
 
     /**

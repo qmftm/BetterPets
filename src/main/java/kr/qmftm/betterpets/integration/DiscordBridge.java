@@ -3,6 +3,7 @@ package kr.qmftm.betterpets.integration;
 import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.logging.Level;
 
 /**
@@ -23,10 +24,9 @@ public final class DiscordBridge {
     private final boolean enabled;
     private final String channel;
 
-    /** {@code DiscordSRVApi#getTextChannelFromChannelName} 에 해당하는 메서드. 없으면 꺼진 것이다. */
+    /** DiscordSRV 인스턴스와 채널 조회 메서드. null 이면 연동이 꺼진 것이다. */
     private Object discordSrv;
     private Method channelLookup;
-    private Method sendMessage;
 
     public DiscordBridge(final Plugin plugin, final boolean enabled, final String channel) {
         this.plugin = plugin;
@@ -50,14 +50,15 @@ public final class DiscordBridge {
             // 채널 이름 → JDA TextChannel. DiscordSRV 가 채널 별칭을 여기서 풀어준다.
             channelLookup = type.getMethod("getDestinationTextChannelForGameChannelName", String.class);
 
-            final Object probe = channelLookup.invoke(discordSrv, this.channel);
-            if (probe == null) {
+            // 기동 시점에 채널이 실제로 잡히는지만 확인한다. sendMessage 메서드는
+            // 캐시하지 않는다 — JDA 가 돌려주는 구현 클래스가 매번 같다는 보장이 없고,
+            // 다르면 캐시해 둔 Method 가 IllegalArgumentException 을 낸다.
+            // 알림은 드물게 나가므로 그때마다 찾아도 비용이 되지 않는다.
+            if (channelLookup.invoke(discordSrv, this.channel) == null) {
                 plugin.getLogger().warning("DiscordSRV 에 '" + this.channel
                     + "' 채널이 없습니다. Discord 알림은 꺼둡니다.");
                 return disable();
             }
-            // JDA 의 MessageChannel#sendMessage(CharSequence) — 결과는 RestAction 이라 queue() 해야 나간다.
-            sendMessage = probe.getClass().getMethod("sendMessage", CharSequence.class);
             plugin.getLogger().info("DiscordSRV 연동됨. 알림 채널: " + this.channel);
             return true;
         } catch (final ReflectiveOperationException | RuntimeException error) {
@@ -70,13 +71,50 @@ public final class DiscordBridge {
     private boolean disable() {
         discordSrv = null;
         channelLookup = null;
-        sendMessage = null;
         return false;
+    }
+
+    /**
+     * 밖에서 부를 수 있는 메서드를 찾는다.
+     *
+     * <p><b>구현 클래스에서 바로 찾으면 안 된다.</b> JDA 가 돌려주는 객체는 대개
+     * package-private 클래스라, {@code getMethod} 가 공개 메서드를 찾아 주더라도
+     * {@code invoke} 가 {@link IllegalAccessException} 을 낸다. 공개 타입(인터페이스나
+     * 공개 상위 클래스)에서 선언된 것을 써야 한다.
+     *
+     * <p>구현 클래스부터 먼저 보는 이유는, 그 클래스가 공개라면 그게 가장 정확한
+     * 대상이기 때문이다. 아니면 상속 계층과 인터페이스를 훑는다.
+     */
+    static Method publicMethod(final Class<?> type, final String name, final Class<?>... args)
+        throws NoSuchMethodException {
+
+        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+            if (Modifier.isPublic(current.getModifiers())) {
+                try {
+                    return current.getMethod(name, args);
+                } catch (final NoSuchMethodException ignored) {
+                    // 이 계층엔 없다. 인터페이스 쪽에서 다시 찾는다.
+                }
+            }
+            for (final Class<?> face : current.getInterfaces()) {
+                try {
+                    return face.getMethod(name, args);
+                } catch (final NoSuchMethodException ignored) {
+                    // 다음 인터페이스로.
+                }
+            }
+        }
+        throw new NoSuchMethodException(type.getName() + "." + name + " 를 공개 타입에서 찾지 못했습니다");
     }
 
     /** 한 줄 보낸다. 연동이 없으면 아무 일도 하지 않는다. */
     public void send(final String text) {
-        if (discordSrv == null || sendMessage == null || text == null || text.isBlank()) {
+        if (discordSrv == null || text == null || text.isBlank()) {
+            return;
+        }
+        // 종료 중에 스케줄러를 건드리면 IllegalPluginAccessException 이 난다.
+        // 마지막 알림 한 줄 때문에 종료 로그를 더럽힐 이유가 없다.
+        if (!plugin.isEnabled()) {
             return;
         }
         // 네트워크 왕복이다. 메인 스레드에서 하지 않는다.
@@ -86,9 +124,12 @@ public final class DiscordBridge {
                 if (target == null) {
                     return;     // 채널이 사라졌다. 다음 호출에서 다시 시도한다
                 }
-                final Object action = sendMessage.invoke(target, text);
-                // RestAction#queue() — 이걸 부르지 않으면 요청이 만들어지기만 하고 안 나간다.
-                action.getClass().getMethod("queue").invoke(action);
+                // JDA 의 MessageChannel#sendMessage(CharSequence) — 결과는 RestAction 이라
+                // queue() 를 불러야 실제로 나간다. 이걸 빼면 요청이 만들어지기만 한다.
+                final Object action =
+                    publicMethod(target.getClass(), "sendMessage", CharSequence.class)
+                        .invoke(target, text);
+                publicMethod(action.getClass(), "queue").invoke(action);
             } catch (final ReflectiveOperationException | RuntimeException error) {
                 // 한 번 실패했다고 연동 전체를 내리지는 않는다. 순간적인 네트워크 문제일 수 있다.
                 plugin.getLogger().fine("Discord 전송 실패: " + error);
