@@ -8,7 +8,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,11 +66,38 @@ public final class YamlPetRepository implements PetRepository {
 
     @Override
     public void save(final PetData pet) {
-        final File file = fileOf(pet.ownerId());
-        final YamlConfiguration yaml = file.exists()
-            ? YamlConfiguration.loadConfiguration(file)
-            : new YamlConfiguration();
+        saveAll(List.of(pet));
+    }
 
+    /**
+     * 소유자별로 묶어 <b>파일당 한 번만</b> 읽고 쓴다.
+     *
+     * <p>한 마리씩 저장하면 같은 {@code <uuid>.yml} 을 마리 수만큼 파싱하고 직렬화한다.
+     * 20마리가 한꺼번에 더러워지는 경우(퇴장·종료)가 실제로 있어서, 그때 파일 하나를
+     * 20번 다시 쓰게 된다. 묶으면 한 번이다.
+     */
+    @Override
+    public void saveAll(final java.util.Collection<PetData> pets) {
+        if (pets.isEmpty()) {
+            return;
+        }
+        final Map<UUID, List<PetData>> byOwner = new LinkedHashMap<>();
+        for (final PetData pet : pets) {
+            byOwner.computeIfAbsent(pet.ownerId(), key -> new ArrayList<>()).add(pet);
+        }
+        for (final var entry : byOwner.entrySet()) {
+            final File file = fileOf(entry.getKey());
+            final YamlConfiguration yaml = file.exists()
+                ? YamlConfiguration.loadConfiguration(file)
+                : new YamlConfiguration();
+            for (final PetData pet : entry.getValue()) {
+                writeInto(yaml, pet);
+            }
+            write(file, yaml);
+        }
+    }
+
+    private void writeInto(final YamlConfiguration yaml, final PetData pet) {
         final String path = "pets." + pet.petId();
         yaml.set(path + ".type", pet.typeId());
         yaml.set(path + ".nickname", pet.nickname());
@@ -81,8 +110,6 @@ public final class YamlPetRepository implements PetRepository {
         yaml.set(path + ".active", null);
         yaml.set(path + ".acquired-at", pet.acquiredAt());
         yaml.set(path + ".updated-at", pet.updatedAt());
-
-        write(file, yaml);
     }
 
     @Override

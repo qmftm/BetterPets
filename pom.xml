@@ -21,6 +21,7 @@
 
     <paper.version>26.2.build.121-stable</paper.version>
     <bettermodel.version>3.4.1</bettermodel.version>
+    <placeholderapi.version>2.11.6</placeholderapi.version>
     <junit.version>5.13.0</junit.version>
   </properties>
 
@@ -38,6 +39,11 @@
       <id>nucleoid</id>
       <url>https://maven.nucleoid.xyz/</url>
     </repository>
+    <!-- PlaceholderAPI. 메이븐 센트럴에 없다. -->
+    <repository>
+      <id>extendedclip</id>
+      <url>https://repo.extendedclip.com/releases/</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -53,6 +59,30 @@
       <artifactId>bettermodel-bukkit-api</artifactId>
       <version>${bettermodel.version}</version>
       <scope>provided</scope>
+    </dependency>
+
+    <!--
+      PlaceholderAPI. 선택적 연동이지만 DiscordSRV 와 달리 컴파일 의존을 건다 —
+      PlaceholderExpansion 을 상속해야 해서 리플렉션으로는 등록조차 못 한다.
+      대신 provided 라 jar 에 들어가지 않고, PlaceholderAPI 가 없는 서버에서는
+      확장을 등록하지 않는다 (PetPlaceholders.register 가 먼저 확인한다).
+    -->
+    <dependency>
+      <groupId>me.clip</groupId>
+      <artifactId>placeholderapi</artifactId>
+      <version>${placeholderapi.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <!-- 이 둘은 paper-api 가 이미 준다. 버전이 갈리면 컴파일이 흔들린다. -->
+        <exclusion>
+          <groupId>org.spigotmc</groupId>
+          <artifactId>spigot-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bukkit</groupId>
+          <artifactId>bukkit</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- 저장소 의존성은 M3 에서 추가한다. 지금 넣지 않는 이유는 아래 build 주석 참고. -->

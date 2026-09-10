@@ -10,6 +10,7 @@ import kr.qmftm.betterpets.domain.Rarity;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
 import kr.qmftm.betterpets.integration.BedrockSupport;
 import kr.qmftm.betterpets.integration.DiscordBridge;
+import kr.qmftm.betterpets.integration.PetPlaceholders;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.listener.AbilityTriggerListener;
 import kr.qmftm.betterpets.listener.InteractionListener;
@@ -146,6 +147,9 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
         ticker = new PetTicker(this, registry, rides, growth, store, pets, broadcasts);
         ticker.start();
+
+        // 스코어보드·홀로그램에서 쓸 %betterpets_...%. 없으면 건너뛴다.
+        PetPlaceholders.tryRegister(this, store, registry, catalog, growth, limits);
 
         // 리로드로 들어온 경우 이미 접속해 있는 플레이어의 데이터를 읽어야 한다.
         for (final var online : getServer().getOnlinePlayers()) {

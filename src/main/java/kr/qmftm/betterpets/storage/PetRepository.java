@@ -19,6 +19,18 @@ public interface PetRepository {
 
     void save(PetData pet);
 
+    /**
+     * 여러 마리를 한 번에 저장한다.
+     *
+     * <p>기본 구현은 한 마리씩 부르지만, <b>파일 하나에 여럿을 담는 구현은 반드시
+     * 재정의해야 한다.</b> 안 그러면 같은 파일을 마리 수만큼 열고 닫는다.
+     */
+    default void saveAll(java.util.Collection<PetData> pets) {
+        for (final PetData pet : pets) {
+            save(pet);
+        }
+    }
+
     void delete(UUID petId);
 
     /** 종료 시 남은 것을 밀어낸다. 구현체가 버퍼를 쓴다면 여기서 flush 한다. */

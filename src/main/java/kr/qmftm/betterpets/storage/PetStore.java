@@ -160,14 +160,22 @@ public final class PetStore {
         cache.clear();
     }
 
+    /**
+     * 실제 쓰기. IO 스레드에서만 돈다.
+     *
+     * <p>한 마리씩 부르지 않고 묶어서 넘긴다 — YAML 구현이 소유자별로 파일 하나를
+     * 한 번만 읽고 쓴다. 한 마리씩이면 같은 파일을 마리 수만큼 다시 쓴다.
+     *
+     * <p>실패해도 {@code clearDirty} 를 하지 않는 게 중요하다. 더러운 채로 남아야
+     * 다음 저장 기회에 다시 시도된다 — 조용히 잃는 것보다 낫다.
+     */
     private void persist(final Collection<PetData> pets) {
-        for (final PetData pet : new ArrayList<>(pets)) {
-            try {
-                repository.save(pet);
-                pet.clearDirty();
-            } catch (final RuntimeException error) {
-                logger.log(Level.SEVERE, "펫 저장 실패: " + pet.petId(), error);
-            }
+        final List<PetData> batch = new ArrayList<>(pets);
+        try {
+            repository.saveAll(batch);
+            batch.forEach(PetData::clearDirty);
+        } catch (final RuntimeException error) {
+            logger.log(Level.SEVERE, "펫 저장 실패 (" + batch.size() + "마리)", error);
         }
     }
 }

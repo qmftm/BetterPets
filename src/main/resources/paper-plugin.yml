@@ -13,6 +13,7 @@ dependencies:
       load: BEFORE
       required: true
       join-classpath: true
+    # %betterpets_...% 확장. 상속이 필요해 유일하게 컴파일 의존을 건 연동이다.
     PlaceholderAPI:
       load: BEFORE
       required: false

@@ -32,7 +32,7 @@
 | **M7** | **등급 · 능력** — D~S 등급, 패시브/트리거 능력, 모디파이어 누적 방지 | ✅ **코드 완료** |
 | **M8** | **획득 · 진화** — 알 아이템 우클릭으로 펫 지급(PDC 식별), 고정/랜덤 알, 진화 | ✅ **코드 완료** |
 | **M9** | **폴리시** — 다국어, 전체 알림, DiscordSRV, 틱 루프 최적화 | ✅ **코드 완료** |
-| **M9.5** | **남은 폴리시** — 성능 실측(Spark), PlaceholderAPI | ⬜ |
+| **M9.5** | **남은 폴리시** — 성능 실측(Spark) | ⬜ |
 | **M10** | **Bedrock 지원** — 전체 모델 변환, 리소스팩 파이프라인, Bedrock 실기 테스트 | 🔶 **연동 코드만 완료** |
 
 남은 작업은 대부분 **직접 서버에서 확인**하는 일이다. 코드 작성은 끝났다.
@@ -96,7 +96,7 @@
 - [x] 희귀 펫 획득 · 성체 달성 시 서버 전체 알림 (등급·성장 단계 문턱은 설정)
 - [x] DiscordSRV 연동 — 같은 알림을 Discord 채널로 (없으면 조용히 꺼짐)
 - [x] Geyser/Floodgate 감지 — Bedrock 플레이어는 비행 이륙 확인을 건너뜀
-- [ ] PlaceholderAPI 연동
+- [x] PlaceholderAPI — `%betterpets_owned%` · `%betterpets_pet_name%` 등
 
 **관리**
 - [x] 펫 보관함 GUI — 가진 펫 전부를 등급·상태·성장도와 함께 한 화면에서 본다 (한 쪽에 45마리, 쪽 넘김)
@@ -204,6 +204,18 @@ integrations:
   bedrock:
     skip-mount-confirm: true
 ```
+
+**PlaceholderAPI** — 설정이 없다. 있으면 자동으로 붙는다.
+
+| 키 | 값 |
+| --- | --- |
+| `%betterpets_owned%` · `%betterpets_owned_max%` | 보유 마릿수 / 한도 (무제한이면 `∞`) |
+| `%betterpets_active%` · `%betterpets_active_max%` | 소환 중 / 동시 소환 한도 |
+| `%betterpets_pet_name%` | 소환 중인 첫 펫의 이름 |
+| `%betterpets_pet_rarity%` · `%betterpets_pet_stage%` | 등급 · 생애주기 |
+| `%betterpets_pet_growth%` · `%betterpets_pet_growth_max%` · `%betterpets_pet_growth_percent%` | 성장도 |
+
+소환 중인 펫이 없으면 `-` 를 준다. **모르는 키는 원문을 그대로 남긴다** — `-` 로 바꾸면 오타가 조용히 묻힌다.
 
 - **DiscordSRV** 는 리플렉션으로 붙는다 — 컴파일 의존이 없어서 DiscordSRV 없이도 빌드된다.
   플러그인이 없거나 채널을 못 찾으면 기동 로그에 한 줄 남기고 조용히 꺼진다. 전송은 비동기다.
@@ -320,7 +332,8 @@ kr.qmftm.betterpets
 │   └─ PetTicker           전역 틱 루프 (추종 2틱 / 탑승 1틱)
 ├─ integration/            선택적 외부 연동 (전부 리플렉션 — 없어도 돌아간다)
 │   ├─ DiscordBridge       DiscordSRV 채널로 알림 전송 (비동기)
-│   └─ BedrockSupport      Geyser/Floodgate 감지, Bedrock 플레이어 판별
+│   ├─ BedrockSupport      Geyser/Floodgate 감지, Bedrock 플레이어 판별
+│   └─ PetPlaceholders     %betterpets_...% (유일하게 컴파일 의존이 있는 연동)
 ├─ service/                PetService · GrowthService · AbilityService · BroadcastService
 ├─ ability/                능력 인터페이스 + 등록소 + 구현체
 ├─ storage/                PetRepository · YamlPetRepository · PetStore
