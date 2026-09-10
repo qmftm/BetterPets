@@ -31,12 +31,9 @@ abilities:
     base: 0.03
     per-growth: 0.0003
 
-# 다음 성장 단계에서 무엇이 될지 가중치로 정한다. 여기서는 정의하지 않았으므로
-# config.yml 의 growth.max-stage 를 2 이상으로 올려도 늑대는 계속 늑대로 남고
-# 단계 수만 늘어난다. 예시:
-# next-stage:
-#   wolf: 70       # 70% 확률로 그대로 늑대 유지
-#   dragon: 30     # 30% 확률로 드래곤으로 (같은 종류가 아니어도 된다)
+# next-stage 를 정의하지 않았으므로, growth.max-stage 를 2 이상으로 올려도
+# 늑대는 계속 늑대로 남고 단계 수만 늘어난다.
+# 실제로 다른 펫이 되는 예시는 pets/hatchling.yml 을 보라.
 
 acquire:
   gacha-weight: 50

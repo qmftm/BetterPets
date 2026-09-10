@@ -47,6 +47,7 @@ feed:
   became-pig: "<yellow>너무 많이 먹여서... 돼지가 됐습니다."
   already-grown: "<gray>이미 다 자란 펫입니다."
   unknown: "<red>설정에 없는 먹이입니다. 관리자에게 문의하세요."
+  lore-growth: "<gray>성장도 <white>+%growth%"
 
 ride:
   started-ground: "<green>탑승했습니다. <gray>바라보며 이동, 스니크로 하차."

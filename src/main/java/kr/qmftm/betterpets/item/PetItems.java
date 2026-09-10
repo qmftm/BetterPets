@@ -36,11 +36,16 @@ public final class PetItems {
     private final PetCatalog catalog;
     private final Messages messages;
 
-    public PetItems(final Plugin plugin, final PetCatalog catalog, final Messages messages) {
+    /** {@code growth} 를 적지 않은 먹이가 쓸 값. 로어에 실제 값을 적으려면 필요하다. */
+    private final int defaultFeedAmount;
+
+    public PetItems(final Plugin plugin, final PetCatalog catalog, final Messages messages,
+                    final int defaultFeedAmount) {
         this.eggKey = new NamespacedKey(plugin, "egg_id");
         this.feedKey = new NamespacedKey(plugin, "feed");
         this.catalog = catalog;
         this.messages = messages;
+        this.defaultFeedAmount = defaultFeedAmount;
     }
 
     public ItemStack createEgg(final EggDefinition definition, final int amount) {
@@ -63,6 +68,10 @@ public final class PetItems {
             material == null || !material.isItem() ? Material.MILK_BUCKET : material, clamp(amount));
         final ItemMeta meta = stack.getItemMeta();
         meta.displayName(Messages.plain(definition.displayName()));
+        // 알과 대칭이다. 먹이도 성장도가 제각각인데 이름만 보고는 알 수 없다 —
+        // "펫 우유"와 "고급 사료" 중 뭐가 나은지 물어볼 일이 없어야 한다.
+        meta.lore(List.of(messages.bare("feed.lore-growth",
+            "growth", String.valueOf(definition.growthOr(defaultFeedAmount)))));
         applyItemModel(meta, definition.itemModel());
         // 먹이마다 성장도가 다르므로 어떤 먹이인지 id 로 남긴다.
         meta.getPersistentDataContainer()

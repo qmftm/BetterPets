@@ -27,6 +27,13 @@ eggs:
     gives: dragon
     # item-model: "betterpets:egg_dragon"
 
+  # 성장 단계 예시용. config.yml 의 growth.max-stage 를 2 이상으로 두면
+  # 이 알에서 나온 새끼가 자라면서 늑대나 드래곤이 된다 (pets/hatchling.yml 참고).
+  hatchling_egg:
+    display-name: "<gray>이름 모를 알"
+    material: TURTLE_EGG
+    gives: hatchling
+
   random_egg:
     display-name: "<white>수상한 알"
     material: EGG

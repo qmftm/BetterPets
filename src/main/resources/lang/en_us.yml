@@ -47,6 +47,7 @@ feed:
   became-pig: "<yellow>You overfed it... it turned into a pig."
   already-grown: "<gray>This pet is already fully grown."
   unknown: "<red>That food is not in the config. Tell an admin."
+  lore-growth: "<gray>Growth <white>+%growth%"
 
 ride:
   started-ground: "<green>Mounted. <gray>Look where you want to go; sneak to dismount."

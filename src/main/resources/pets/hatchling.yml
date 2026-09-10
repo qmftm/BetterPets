@@ -1,0 +1,41 @@
+# 성장 단계 예시 — 자라면 다른 펫이 되는 종류.
+#
+# config.yml 의 growth.max-stage 가 1(기본값)이면 이 펫은 성장도가 차는 순간
+# 그냥 성체가 되고 next-stage 는 쓰이지 않는다. 2 이상으로 올려야 아래 추첨이
+# 돌아간다 — 그때 이 파일이 무엇을 할 수 있는지 보여준다.
+#
+# 알에서 이 펫이 나오게 하려면 items.yml 의 알에 gives: hatchling 을 적는다.
+
+id: hatchling
+display-name: "<gray>새끼"
+model: pet_hatchling
+rarity: D
+growth-max: 100
+
+# 아직 뭐가 될지 모르는 단계라 탈 수 없다.
+ride: NONE
+
+animations:
+  idle: idle
+  walk: walk
+  run: run
+  eat: eat
+
+movement:
+  follow-distance: 2.0
+  walk-speed: 0.22
+  run-speed: 0.38
+  teleport-distance: 24.0
+
+# 아기라 능력이 없다. 무엇이 되느냐에 따라 능력이 붙는다.
+
+# ★ 성장 단계가 오를 때 무엇이 될지. 가중치 비율이 그대로 확률이 된다.
+#   여기서는 늑대 70% · 드래곤 5% · 그대로 새끼 25% 다.
+#   자기 자신을 넣으면 "한 단계 더 기다린다"가 된다 — 단계를 늘리는 재미가 생긴다.
+next-stage:
+  wolf: 70
+  hatchling: 25
+  dragon: 5
+
+acquire:
+  gacha-weight: 0          # 랜덤 알에서는 안 나온다. 전용 알로만 준다
