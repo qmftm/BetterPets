@@ -12,6 +12,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 사용자에게 보이는 문자열을 한곳에 모은다.
@@ -28,6 +30,9 @@ public final class Messages {
 
     /** 최후의 기본값. jar 안에 항상 들어 있고, 모든 키가 채워져 있다. */
     public static final String FALLBACK_LANGUAGE = "ko_kr";
+
+    /** 플러그인이 채우는 자리. {@code %이름%} */
+    private static final Pattern PLACEHOLDER = Pattern.compile("%([a-zA-Z0-9_-]+)%");
 
     private static final MiniMessage MINI = MiniMessage.miniMessage();
 
@@ -129,13 +134,41 @@ public final class Messages {
         return MINI.deserialize(raw(key, placeholders));
     }
 
-    /** 치환까지 끝낸 원문. Discord 처럼 MiniMessage 를 모르는 곳에 넘길 때 쓴다. */
+    /**
+     * 치환까지 끝낸 원문. Discord 처럼 MiniMessage 를 모르는 곳에 넘길 때 쓴다.
+     *
+     * <p><b>한 번에 훑으며 바꾼다.</b> {@code replace} 를 자리마다 반복하면 앞서 넣은
+     * 값 안의 {@code %...%} 가 뒤 차례에 다시 치환된다. 값 중에는 <b>플레이어가 정한
+     * 것</b>도 있다 — 펫 이름을 {@code %rarity%} 로 지어두면 그 자리에 등급이 박힌다.
+     * 지금은 흉내 내기에 그치지만, 이런 건 나중에 더 나쁜 형태로 돌아온다.
+     *
+     * <p>모르는 자리는 손대지 않고 원문 그대로 남긴다. 그래야 번역에서 이름을 잘못
+     * 적었을 때 빈칸이 아니라 {@code %틀린이름%} 이 보여서 눈에 띈다.
+     */
     public String raw(final String key, final String... placeholders) {
-        String raw = values.getOrDefault(key, key);
-        for (int i = 0; i + 1 < placeholders.length; i += 2) {
-            raw = raw.replace("%" + placeholders[i] + "%", placeholders[i + 1]);
+        final String template = values.getOrDefault(key, key);
+        if (placeholders.length < 2 || template.indexOf('%') < 0) {
+            return template;
         }
-        return raw;
+        final Matcher matcher = PLACEHOLDER.matcher(template);
+        final StringBuilder out = new StringBuilder(template.length() + 16);
+        while (matcher.find()) {
+            final String replacement = lookup(matcher.group(1), placeholders);
+            matcher.appendReplacement(out,
+                Matcher.quoteReplacement(replacement == null ? matcher.group() : replacement));
+        }
+        matcher.appendTail(out);
+        return out.toString();
+    }
+
+    /** 자리 이름에 해당하는 값. 없으면 null — 호출부가 원문을 그대로 남긴다. */
+    private static String lookup(final String name, final String[] placeholders) {
+        for (int i = 0; i + 1 < placeholders.length; i += 2) {
+            if (name.equals(placeholders[i])) {
+                return placeholders[i + 1];
+            }
+        }
+        return null;
     }
 
     public void send(final CommandSender target, final String key, final String... placeholders) {

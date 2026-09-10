@@ -79,7 +79,7 @@ gimmick:
   # 아기 펫에게 짧은 시간 안에 먹이를 몰아주면 돼지로 변하는 이스터에그.
   overfeed:
     enabled: true
-    count: 10            # 이 횟수 이상
+    count: 10            # 이 횟수 이상 (2 미만은 2로 올려 씁니다 — 끄려면 enabled: false)
     window-seconds: 60   # 이 시간 안에
 
     # 어떤 펫 종류로 변할지. pets/ 에 있는 id 여야 한다.

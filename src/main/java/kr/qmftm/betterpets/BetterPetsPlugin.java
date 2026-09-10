@@ -222,6 +222,15 @@ public final class BetterPetsPlugin extends JavaPlugin {
             problems.forEach(problem -> getLogger().warning("  - " + problem));
         }
 
+        // 0 이하는 "첫 급여에 바로 돼지"가 된다. 코드가 2로 막지만, 관리자가 의도한
+        // 건 대개 '끄기'이므로 무엇이 일어나는지 알려준다.
+        final int overfeedCount = getConfig().getInt("gimmick.overfeed.count", 10);
+        if (getConfig().getBoolean("gimmick.overfeed.enabled", true) && overfeedCount < 2) {
+            getLogger().warning("gimmick.overfeed.count 가 " + overfeedCount
+                + " 입니다. 2 미만은 먹이 몇 번에 바로 돼지가 된다는 뜻이라 2로 올려 씁니다."
+                + " 기믹을 끄려면 gimmick.overfeed.enabled: false 로 하세요.");
+        }
+
         // 과급식 기믹이 가리키는 펫이 없으면 상태만 '돼지'가 되고 모습은 그대로 남는다.
         // 조용히 넘어가면 "돼지가 됐다는데 왜 드래곤이지"로 헤매게 된다.
         final String pigType = getConfig().getString("gimmick.overfeed.becomes", "pig");

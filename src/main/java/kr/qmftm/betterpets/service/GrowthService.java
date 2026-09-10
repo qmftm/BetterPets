@@ -85,7 +85,9 @@ public final class GrowthService {
         this.types = types;
         this.feedAmount = feedAmount;
         this.overfeedGimmick = overfeedGimmick;
-        this.overfeedCount = overfeedCount;
+        // 0 이하로 두면 registerBurst 가 첫 급여에서 바로 참이 된다 — 먹이 한 번에
+        // 모든 펫이 돼지가 된다는 뜻이다. 끄고 싶으면 enabled: false 를 쓴다.
+        this.overfeedCount = Math.max(2, overfeedCount);
         this.overfeedWindowMillis = overfeedWindowMillis;
         this.overfeedBecomes = overfeedBecomes;
         // 0 이하로 설정되면 아무도 성체가 될 수 없다. 최소 1로 막는다.
