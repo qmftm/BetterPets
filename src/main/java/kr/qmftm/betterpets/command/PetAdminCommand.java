@@ -25,6 +25,9 @@ import java.util.Optional;
 /** {@code /petadmin} — 관리자 명령. */
 public final class PetAdminCommand implements CommandExecutor, TabCompleter {
 
+    private static final List<String> SUBCOMMANDS =
+        List.of("give", "egg", "feed", "growth", "reload", "debug");
+
     private final PetService pets;
     private final PetStore store;
     private final PetCatalog catalog;
@@ -241,24 +244,37 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
                                       final @NotNull String label,
                                       final String @NotNull [] args) {
         if (args.length == 1) {
-            return List.of("give", "egg", "feed", "growth", "reload", "debug").stream()
-                .filter(option -> option.startsWith(args[0].toLowerCase(Locale.ROOT)))
-                .toList();
+            return matching(SUBCOMMANDS, args[0]);
         }
         if (args.length == 2 && !args[0].equalsIgnoreCase("reload") && !args[0].equalsIgnoreCase("debug")) {
-            return sender.getServer().getOnlinePlayers().stream().map(Player::getName).toList();
+            return matching(
+                sender.getServer().getOnlinePlayers().stream().map(Player::getName).toList(), args[1]);
         }
         if (args.length == 3) {
             if (args[0].equalsIgnoreCase("give")) {
-                return new ArrayList<>(catalog.types().keySet());
+                return matching(catalog.types().keySet(), args[2]);
             }
             if (args[0].equalsIgnoreCase("egg")) {
-                return new ArrayList<>(catalog.eggs().keySet());
+                return matching(catalog.eggs().keySet(), args[2]);
             }
             if (args[0].equalsIgnoreCase("feed")) {
-                return new ArrayList<>(catalog.feeds().keySet());
+                return matching(catalog.feeds().keySet(), args[2]);
             }
         }
         return List.of();
+    }
+
+    /**
+     * 입력한 앞자리로 걸러 정렬해 준다.
+     *
+     * <p>전부 돌려주면 펫 종류가 스무 개쯤 되는 서버에서 제안 목록이 화면을 덮고,
+     * 무엇을 더 쳐야 좁혀지는지 알 수 없다. {@code /pet} 쪽도 같은 문제가 있었다.
+     */
+    private static List<String> matching(final java.util.Collection<String> options, final String typed) {
+        final String needle = typed.toLowerCase(Locale.ROOT);
+        return options.stream()
+            .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(needle))
+            .sorted()
+            .toList();
     }
 }

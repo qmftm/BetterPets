@@ -12,7 +12,13 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * 소유자가 몹을 처치할 때 일정 확률로 드랍을 한 벌 더 준다.
  *
- * <p>확률은 {@code chance-base + chance-per-growth * 성장도} 에 등급 배율을 곱한 값이다.
+ * <p>확률은 {@code chance-base + chance-per-growth * 성장도} 다.
+ *
+ * <p><b>등급 배율은 곱하지 않는다.</b> 능력치 계열({@link AttributeAbility})은
+ * {@code AbilityContext.scaledValue()} 를 거치면서 등급 배율을 받는데 이쪽은 아니다.
+ * 확률에 1.0~1.7 배를 곱하면 상한(1.0)에 금방 붙어 등급 차이가 오히려 뭉개지고,
+ * 등급별 차이는 {@code pets/*.yml} 의 {@code chance-base} 로 이미 낼 수 있다.
+ * 밸런싱 판단이므로 바꾸고 싶으면 여기 한 줄이다.
  */
 public final class ExtraDropAbility implements PetAbility {
 
