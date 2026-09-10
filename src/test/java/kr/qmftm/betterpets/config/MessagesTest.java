@@ -83,6 +83,15 @@ class MessagesTest {
     }
 
     @Test
+    @DisplayName("자리 바로 뒤에 글자가 붙어도 잘린다 — 영어 시간 표기가 이 성질을 쓴다")
+    void placeholderCanBeFollowedByText() {
+        // en_us 의 time.seconds 가 "%s%s" 다. 앞의 %s% 만 자리로 읽고 뒤의 s 는 단위로 남아야
+        // "30s" 가 된다. 정규식이 욕심을 부리면 "%s%s" 를 통째로 삼켜 깨진다.
+        assertEquals("30s", fill("%s%s", "s", "30"));
+        assertEquals("5m 30s", fill("%m%m %s%s", "m", "5", "s", "30"));
+    }
+
+    @Test
     @DisplayName("자리를 하나도 안 주면 틀을 그대로 준다")
     void noPlaceholdersLeavesTemplateAlone() {
         assertEquals("%name%", fill("%name%"));

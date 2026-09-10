@@ -63,9 +63,15 @@ command:
   unknown: "<red>Unknown command. <gray>/pet"
   summon-usage: "<gray>/pet summon <first digits of petId>"
   rename-usage: "<gray>/pet rename <name>"
+  player-only: "<red>This command can only be used by a player."
 
 admin:
   player-not-found: "<red>Player not found."
+  usage: "<gray>/petadmin give|egg|feed|growth|reload|debug"
+  usage-give: "<gray>/petadmin give <player> <pet type>"
+  usage-egg: "<gray>/petadmin egg <player> <egg id> [amount]"
+  usage-feed: "<gray>/petadmin feed <player> <food id> [amount]"
+  usage-growth: "<gray>/petadmin growth <player> <first digits of petId> <amount>"
   unknown-pet-type: "<red>Unknown pet type: <white>%id%"
   unknown-egg: "<red>Unknown egg: <white>%id%"
   unknown-feed: "<red>Unknown food: <white>%id%"
@@ -89,3 +95,53 @@ help:
   dismount: "<gray>/pet dismount <dark_gray>— dismount"
   rename: "<gray>/pet rename [petId] <name> <dark_gray>— rename"
   list: "<gray>/pet list <dark_gray>— list in chat (click to summon)"
+
+# ── GUI ───────────────────────────────────────────────────────────
+# Box and detail screen text. These become item names and lore, so keep them short.
+gui:
+  box-title: "Pet Box %page%/%pages%"
+  detail-title: "%name%"
+  prev-page: "<gray>Previous page"
+  next-page: "<gray>Next page"
+
+  summary-title: "<yellow>My pets"
+  summary-owned: "<gray>Owned <white>%value%"
+  summary-active: "<gray>Out <white>%value%"
+  summary-full: "<red>You are at your pet limit. Release one to get more."
+  summary-empty: "<dark_gray>Right-click an egg to get a pet."
+
+  pet-rarity: "<gray>Rarity <white>%rarity% <dark_gray>(%name%)"
+  pet-stage: "<gray>Stage <white>%stage%"
+  pet-growth-stage: "<gray>Growth stage <white>%stage%<dark_gray>/%max%"
+  pet-growth: "<gray>Growth <white>%growth%<dark_gray>/%max%"
+  pet-growth-bar: "<dark_gray>%bar%"
+  pet-next-growth: "<dark_gray>Next growth in %time%"
+  pet-ride: "<gray>Riding <white>%mode%"
+  pet-ride-locked: "<gray>Riding <white>%mode% <dark_gray>(once grown)"
+  pet-id: "<dark_gray>id %id%"
+  pet-active: "<green>Out"
+
+  summon: "<green>Summon"
+  summon-limit: "<yellow>You are at your active limit. <gray>Your oldest pet will go back."
+  dismiss: "<red>Send back"
+  rename: "<yellow>Rename"
+  release: "<red>Release"
+  back: "<gray>Back"
+
+  abilities: "<light_purple>Abilities"
+  abilities-none: "<dark_gray>This pet has no abilities."
+  abilities-locked: "<yellow>Unlocks when fully grown."
+  abilities-locked-entry: "<dark_gray>· %ability%"
+  abilities-entry: "<gray>· <white>%ability% <dark_gray>+%value%"
+
+# Life stage names. The key is the LifeStage name in lowercase.
+stage:
+  baby: "Baby"
+  adult: "Adult"
+  pig: "Pig"
+
+# Remaining-time wording.
+time:
+  seconds: "%s%s"
+  minutes: "%m%m %s%s"
+  hours: "%h%h %m%m"

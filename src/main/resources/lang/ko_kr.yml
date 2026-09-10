@@ -63,9 +63,15 @@ command:
   unknown: "<red>알 수 없는 명령입니다. <gray>/pet"
   summon-usage: "<gray>/pet summon <펫id앞자리>"
   rename-usage: "<gray>/pet rename <이름>"
+  player-only: "<red>플레이어만 쓸 수 있는 명령입니다."
 
 admin:
   player-not-found: "<red>플레이어를 찾을 수 없습니다."
+  usage: "<gray>/petadmin give|egg|feed|growth|reload|debug"
+  usage-give: "<gray>/petadmin give <플레이어> <펫종류>"
+  usage-egg: "<gray>/petadmin egg <플레이어> <알id> [개수]"
+  usage-feed: "<gray>/petadmin feed <플레이어> <먹이id> [개수]"
+  usage-growth: "<gray>/petadmin growth <플레이어> <펫id앞자리> <양>"
   unknown-pet-type: "<red>알 수 없는 펫 종류: <white>%id%"
   unknown-egg: "<red>알 수 없는 알: <white>%id%"
   unknown-feed: "<red>알 수 없는 먹이: <white>%id%"
@@ -89,3 +95,53 @@ help:
   dismount: "<gray>/pet dismount <dark_gray>— 하차"
   rename: "<gray>/pet rename [펫id] <이름> <dark_gray>— 이름 변경"
   list: "<gray>/pet list <dark_gray>— 채팅으로 목록 보기 (클릭해서 소환)"
+
+# ── GUI ───────────────────────────────────────────────────────────
+# 보관함과 상세 화면의 문구. 아이템 이름·로어라 짧게 쓰는 게 좋다.
+gui:
+  box-title: "펫 보관함 %page%/%pages%"
+  detail-title: "%name%"
+  prev-page: "<gray>이전 쪽"
+  next-page: "<gray>다음 쪽"
+
+  summary-title: "<yellow>내 펫"
+  summary-owned: "<gray>보유 <white>%value%"
+  summary-active: "<gray>소환 중 <white>%value%"
+  summary-full: "<red>보유 한도가 찼습니다. 놓아줘야 더 받습니다."
+  summary-empty: "<dark_gray>알을 우클릭해 펫을 얻으세요."
+
+  pet-rarity: "<gray>등급 <white>%rarity% <dark_gray>(%name%)"
+  pet-stage: "<gray>상태 <white>%stage%"
+  pet-growth-stage: "<gray>성장 단계 <white>%stage%<dark_gray>/%max%"
+  pet-growth: "<gray>성장도 <white>%growth%<dark_gray>/%max%"
+  pet-growth-bar: "<dark_gray>%bar%"
+  pet-next-growth: "<dark_gray>다음 성장까지 %time%"
+  pet-ride: "<gray>탑승 <white>%mode%"
+  pet-ride-locked: "<gray>탑승 <white>%mode% <dark_gray>(성체부터)"
+  pet-id: "<dark_gray>id %id%"
+  pet-active: "<green>소환 중"
+
+  summon: "<green>소환하기"
+  summon-limit: "<yellow>동시 소환 한도가 찼습니다. <gray>가장 먼저 부른 펫이 돌아갑니다."
+  dismiss: "<red>소환 해제"
+  rename: "<yellow>이름 변경"
+  release: "<red>놓아주기"
+  back: "<gray>돌아가기"
+
+  abilities: "<light_purple>능력"
+  abilities-none: "<dark_gray>이 펫에게는 능력이 없습니다."
+  abilities-locked: "<yellow>성체가 되어야 발현됩니다."
+  abilities-locked-entry: "<dark_gray>· %ability%"
+  abilities-entry: "<gray>· <white>%ability% <dark_gray>+%value%"
+
+# 생애주기 이름. LifeStage 의 이름을 소문자로 바꾼 것이 키다.
+stage:
+  baby: "아기"
+  adult: "성체"
+  pig: "돼지"
+
+# 남은 시간 표기.
+time:
+  seconds: "%s%초"
+  minutes: "%m%분 %s%초"
+  hours: "%h%시간 %m%분"

@@ -54,7 +54,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                              final @NotNull String label,
                              final String @NotNull [] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("플레이어만 사용할 수 있습니다.");
+            messages.send(sender, "command.player-only");
             return true;
         }
         if (args.length == 0) {

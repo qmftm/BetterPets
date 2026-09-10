@@ -60,7 +60,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
                              final @NotNull String label,
                              final String @NotNull [] args) {
         if (args.length == 0) {
-            sender.sendMessage("/petadmin give|egg|feed|growth|reload|debug");
+            messages.send(sender, "admin.usage");
             return true;
         }
         switch (args[0].toLowerCase(Locale.ROOT)) {
@@ -70,14 +70,14 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             case "growth" -> growth(sender, args);
             case "reload" -> reload(sender);
             case "debug" -> debug(sender);
-            default -> sender.sendMessage("/petadmin give|egg|feed|growth|reload|debug");
+            default -> messages.send(sender, "admin.usage");
         }
         return true;
     }
 
     private void give(final CommandSender sender, final String[] args) {
         if (args.length < 3) {
-            sender.sendMessage("/petadmin give <플레이어> <펫종류>");
+            messages.send(sender, "admin.usage-give");
             return;
         }
         final Player target = sender.getServer().getPlayer(args[1]);
@@ -98,7 +98,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
 
     private void egg(final CommandSender sender, final String[] args) {
         if (args.length < 3) {
-            sender.sendMessage("/petadmin egg <플레이어> <알id> [개수]");
+            messages.send(sender, "admin.usage-egg");
             return;
         }
         final Player target = sender.getServer().getPlayer(args[1]);
@@ -118,7 +118,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
 
     private void feed(final CommandSender sender, final String[] args) {
         if (args.length < 3) {
-            sender.sendMessage("/petadmin feed <플레이어> <먹이id> [개수]");
+            messages.send(sender, "admin.usage-feed");
             return;
         }
         final Player target = sender.getServer().getPlayer(args[1]);
@@ -138,7 +138,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
 
     private void growth(final CommandSender sender, final String[] args) {
         if (args.length < 4) {
-            sender.sendMessage("/petadmin growth <플레이어> <펫id앞자리> <양>");
+            messages.send(sender, "admin.usage-growth");
             return;
         }
         final Player target = sender.getServer().getPlayer(args[1]);

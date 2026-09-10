@@ -48,14 +48,30 @@ public final class PetMenuFactory {
     private final PetRegistry registry;
     private final PetService pets;
 
+    /**
+     * GUI 문구도 번역 대상이다.
+     *
+     * <p>전에는 이 클래스가 한국어를 그대로 들고 있었다. {@code language: en_us} 로
+     * 바꾸면 채팅만 영어가 되고 <b>보관함은 한국어로 남았다</b> — 반쯤 번역된 화면이
+     * 아예 번역이 없는 것보다 나쁘다.
+     */
+    private final Messages messages;
+
     public PetMenuFactory(final PetCatalog catalog,
                           final GrowthService growth,
                           final PetRegistry registry,
-                          final PetService pets) {
+                          final PetService pets,
+                          final Messages messages) {
         this.catalog = catalog;
         this.growth = growth;
         this.registry = registry;
         this.pets = pets;
+        this.messages = messages;
+    }
+
+    /** 인벤토리 제목. MiniMessage 태그가 제목에 그대로 들어가지 않게 걷어낸다. */
+    private Component title(final String key, final String... placeholders) {
+        return Messages.plain(Tags.strip(messages.raw(key, placeholders)));
     }
 
     /**
@@ -99,8 +115,10 @@ public final class PetMenuFactory {
         final Menus.Box holder = new Menus.Box();
         holder.page(shown);
 
-        final Inventory inventory = Bukkit.createInventory(holder, BOX_SIZE, Messages.plain(
-            "<dark_gray>펫 보관함 <gray>" + (shown + 1) + "<dark_gray>/" + (lastPage + 1)));
+        final Inventory inventory = Bukkit.createInventory(holder, BOX_SIZE,
+            title("gui.box-title",
+                "page", String.valueOf(shown + 1),
+                "pages", String.valueOf(lastPage + 1)));
         holder.inventory(inventory);
 
         final int from = shown * BOX_CONTENT;
@@ -110,10 +128,10 @@ public final class PetMenuFactory {
             holder.slots.put(i, pet);
         }
         if (shown > 0) {
-            inventory.setItem(SLOT_PREV, simple(Material.ARROW, "<gray>이전 쪽"));
+            inventory.setItem(SLOT_PREV, simple(Material.ARROW, "gui.prev-page"));
         }
         if (from + BOX_CONTENT < pets.size()) {
-            inventory.setItem(SLOT_NEXT, simple(Material.ARROW, "<gray>다음 쪽"));
+            inventory.setItem(SLOT_NEXT, simple(Material.ARROW, "gui.next-page"));
         }
         inventory.setItem(SLOT_SUMMARY, summary(ownerId, pets.size()));
         return inventory;
@@ -123,17 +141,17 @@ public final class PetMenuFactory {
     private ItemStack summary(final UUID ownerId, final int owned) {
         final ItemStack stack = new ItemStack(Material.BOOK);
         final ItemMeta meta = stack.getItemMeta();
-        meta.displayName(Messages.plain("<yellow>내 펫"));
+        meta.displayName(line("gui.summary-title"));
 
         final int active = registry.countOf(ownerId);
         final List<Component> lore = new ArrayList<>();
-        lore.add(Messages.plain("<gray>보유 <white>" + limits().ownedLabel(owned)));
-        lore.add(Messages.plain("<gray>소환 중 <white>" + limits().activeLabel(active)));
+        lore.add(line("gui.summary-owned", "value", limits().ownedLabel(owned)));
+        lore.add(line("gui.summary-active", "value", limits().activeLabel(active)));
         if (!limits().canOwnMore(owned)) {
-            lore.add(Messages.plain("<red>보유 한도가 찼습니다. 놓아줘야 더 받습니다."));
+            lore.add(line("gui.summary-full"));
         }
         if (owned == 0) {
-            lore.add(Messages.plain("<dark_gray>알을 우클릭해 펫을 얻으세요."));
+            lore.add(line("gui.summary-empty"));
         }
         meta.lore(lore);
         stack.setItemMeta(meta);
@@ -146,15 +164,15 @@ public final class PetMenuFactory {
         final String name = pet.displayNameOr(type == null ? pet.typeId() : type.displayName());
 
         final Inventory inventory = Bukkit.createInventory(
-            holder, DETAIL_SIZE, Messages.plain("<dark_gray>" + Tags.strip(name)));
+            holder, DETAIL_SIZE, title("gui.detail-title", "name", Tags.strip(name)));
         holder.inventory(inventory);
 
         inventory.setItem(SLOT_ICON, icon(pet));
         inventory.setItem(SLOT_ABILITIES, abilityBook(pet, type));
         inventory.setItem(SLOT_SUMMON, summonButton(pet));
-        inventory.setItem(SLOT_RENAME, simple(Material.NAME_TAG, "<yellow>이름 변경"));
-        inventory.setItem(SLOT_RELEASE, simple(Material.BARRIER, "<red>놓아주기"));
-        inventory.setItem(SLOT_BACK, simple(Material.ARROW, "<gray>돌아가기"));
+        inventory.setItem(SLOT_RENAME, simple(Material.NAME_TAG, "gui.rename"));
+        inventory.setItem(SLOT_RELEASE, simple(Material.BARRIER, "gui.release"));
+        inventory.setItem(SLOT_BACK, simple(Material.ARROW, "gui.back"));
         return inventory;
     }
 
@@ -170,22 +188,22 @@ public final class PetMenuFactory {
     private ItemStack abilityBook(final PetData pet, final PetType type) {
         final ItemStack stack = new ItemStack(Material.ENCHANTED_BOOK);
         final ItemMeta meta = stack.getItemMeta();
-        meta.displayName(Messages.plain("<light_purple>능력"));
+        meta.displayName(line("gui.abilities"));
 
         final List<Component> lore = new ArrayList<>();
         if (type == null || type.abilities().isEmpty()) {
-            lore.add(Messages.plain("<dark_gray>이 펫에게는 능력이 없습니다."));
+            lore.add(line("gui.abilities-none"));
         } else if (!pet.stage().abilitiesActive()) {
             // 아기와 돼지는 능력이 없다. 왜 안 보이는지 알려줘야 한다.
-            lore.add(Messages.plain("<yellow>성체가 되어야 발현됩니다."));
-            lore.add(Messages.plain("<dark_gray>"));
+            lore.add(line("gui.abilities-locked"));
             type.abilities().forEach(ability ->
-                lore.add(Messages.plain("<dark_gray>· " + ability.id())));
+                lore.add(line("gui.abilities-locked-entry", "ability", ability.id())));
         } else {
             for (final var ability : type.abilities()) {
                 final double value = ability.scaled(pet.growth(), type.stats().moveSpeedMultiplier());
-                lore.add(Messages.plain("<gray>· <white>" + ability.id()
-                    + " <dark_gray>+" + String.format(java.util.Locale.ROOT, "%.2f", value)));
+                lore.add(line("gui.abilities-entry",
+                    "ability", ability.id(),
+                    "value", String.format(java.util.Locale.ROOT, "%.2f", value)));
             }
         }
         meta.lore(lore);
@@ -201,13 +219,12 @@ public final class PetMenuFactory {
      */
     private ItemStack summonButton(final PetData pet) {
         if (pet.active()) {
-            return simple(Material.LEAD, "<red>소환 해제");
+            return simple(Material.LEAD, "gui.dismiss");
         }
-        final ItemStack stack = simple(Material.LEAD, "<green>소환하기");
+        final ItemStack stack = simple(Material.LEAD, "gui.summon");
         if (!limits().canSummonMore(registry.countOf(pet.ownerId()))) {
             final ItemMeta meta = stack.getItemMeta();
-            meta.lore(List.of(Messages.plain(
-                "<yellow>동시 소환 한도가 찼습니다. <gray>가장 먼저 부른 펫이 돌아갑니다.")));
+            meta.lore(List.of(line("gui.summon-limit")));
             stack.setItemMeta(meta);
         }
         return stack;
@@ -226,38 +243,39 @@ public final class PetMenuFactory {
 
         final List<Component> lore = new ArrayList<>();
         if (type != null) {
-            lore.add(Messages.plain("<gray>등급 <white>" + type.rarity().name()
-                + " <dark_gray>(" + type.stats().displayName() + ")"));
+            lore.add(line("gui.pet-rarity",
+                "rarity", type.rarity().name(),
+                "name", Tags.strip(type.stats().displayName())));
         }
-        lore.add(Messages.plain("<gray>상태 <white>" + stageLabel(pet.stage())));
+        lore.add(line("gui.pet-stage", "stage", stageLabel(pet.stage())));
 
         if (pet.stage() != LifeStage.ADULT && pet.stage() != LifeStage.PIG) {
             // max-stage 가 1(기본값)이면 단계 개념이 의미가 없으니 줄을 하나 아낀다.
             if (growth.maxStage() > 1) {
-                lore.add(Messages.plain("<gray>성장 단계 <white>"
-                    + pet.growthStage() + "<dark_gray>/" + growth.maxStage()));
+                lore.add(line("gui.pet-growth-stage",
+                    "stage", String.valueOf(pet.growthStage()),
+                    "max", String.valueOf(growth.maxStage())));
             }
-            final int max = growth.maxOf(pet);
-            lore.add(Messages.plain("<gray>성장도 <white>" + pet.growth() + "<dark_gray>/" + max));
-            lore.add(Messages.plain("<dark_gray>" + bar(growth.progressOf(pet))));
+            lore.add(line("gui.pet-growth",
+                "growth", String.valueOf(pet.growth()),
+                "max", String.valueOf(growth.maxOf(pet))));
+            lore.add(line("gui.pet-growth-bar", "bar", bar(growth.progressOf(pet))));
             // 시간만 흘려도 자란다는 걸 여기서 알 수 있어야 한다.
             // 안 그러면 먹이를 줘야만 크는 줄 알고 계속 먹이러 다닌다.
             final long until = growth.millisUntilNextPoint(pet);
             if (until > 0) {
-                lore.add(Messages.plain("<dark_gray>다음 성장까지 " + humanize(until)));
+                lore.add(line("gui.pet-next-growth", "time", humanize(until)));
             }
         }
         if (type != null && type.ride().canRide()) {
             // 성체가 되어야 실제로 탈 수 있고, FLY 종류라도 추첨에 실패했으면 걷는 탑승이다.
             final var effective = type.ride().effective(pet.canFly());
-            final String label = pet.stage().rideable()
-                ? effective.displayName()
-                : effective.displayName() + " <dark_gray>(성체부터)";
-            lore.add(Messages.plain("<gray>탑승 <white>" + label));
+            lore.add(line(pet.stage().rideable() ? "gui.pet-ride" : "gui.pet-ride-locked",
+                "mode", Tags.strip(effective.displayName())));
         }
-        lore.add(Messages.plain("<dark_gray>id " + pet.petId().toString().substring(0, 8)));
+        lore.add(line("gui.pet-id", "id", pet.petId().toString().substring(0, 8)));
         if (pet.active()) {
-            lore.add(Messages.plain("<green>소환 중"));
+            lore.add(line("gui.pet-active"));
             // 목록에서 한눈에 구분되게 반짝이게 한다. 로어 한 줄보다 눈에 먼저 들어온다.
             meta.setEnchantmentGlintOverride(true);
         }
@@ -266,24 +284,24 @@ public final class PetMenuFactory {
         return stack;
     }
 
-    private static String stageLabel(final LifeStage stage) {
-        return switch (stage) {
-            case BABY -> "아기";
-            case ADULT -> "성체";
-            case PIG -> "돼지";
-        };
+    /** 생애주기 이름. enum 이름을 그대로 쓰면 영어가 튀어나온다. */
+    private String stageLabel(final LifeStage stage) {
+        return Tags.strip(messages.raw("stage." + stage.name().toLowerCase(java.util.Locale.ROOT)));
     }
 
     /** 남은 시간을 사람이 읽는 형태로. 초 단위까지만 — 그보다 정밀할 이유가 없다. */
-    private static String humanize(final long millis) {
+    private String humanize(final long millis) {
         final long seconds = Math.max(0, millis / 1000L);
         if (seconds < 60) {
-            return seconds + "초";
+            return Tags.strip(messages.raw("time.seconds", "s", String.valueOf(seconds)));
         }
         final long minutes = seconds / 60;
-        return minutes < 60
-            ? minutes + "분 " + (seconds % 60) + "초"
-            : (minutes / 60) + "시간 " + (minutes % 60) + "분";
+        if (minutes < 60) {
+            return Tags.strip(messages.raw("time.minutes",
+                "m", String.valueOf(minutes), "s", String.valueOf(seconds % 60)));
+        }
+        return Tags.strip(messages.raw("time.hours",
+            "h", String.valueOf(minutes / 60), "m", String.valueOf(minutes % 60)));
     }
 
     /** 성장도 막대. 20칸을 채운다. */
@@ -292,12 +310,22 @@ public final class PetMenuFactory {
         return "<green>" + "■".repeat(filled) + "<dark_gray>" + "■".repeat(20 - filled);
     }
 
-    private static ItemStack simple(final Material material, final String name) {
+    private ItemStack simple(final Material material, final String key) {
         final ItemStack stack = new ItemStack(material);
         final ItemMeta meta = stack.getItemMeta();
-        meta.displayName(Messages.plain(name));
+        meta.displayName(line(key));
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    /**
+     * 언어 파일의 한 줄을 아이템 이름·로어용 {@link Component} 로.
+     *
+     * <p>기울임을 끈다 — 바닐라가 아이템 로어를 기본으로 기울여 그리는데, 그대로 두면
+     * 우리가 쓴 서식과 섞여 지저분해진다. {@link Messages#plain(String)} 이 그 처리를 한다.
+     */
+    private Component line(final String key, final String... placeholders) {
+        return Messages.plain(messages.raw(key, placeholders));
     }
 
 }
