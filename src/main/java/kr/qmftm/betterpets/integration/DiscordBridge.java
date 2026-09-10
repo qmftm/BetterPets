@@ -21,17 +21,55 @@ import java.util.logging.Level;
 public final class DiscordBridge {
 
     private final Plugin plugin;
-    private final boolean enabled;
-    private final String channel;
+
+    /**
+     * 설정에서 온 값들. {@code final} 이 아닌 이유는 {@code /petadmin reload} 다.
+     *
+     * <p>생성자에서 붙박아 두고 있었다. 그래서 채널을 바꾸고 리로드해도 예전 채널로
+     * 계속 나갔고, {@code enabled: false} 로 꺼도 계속 나갔다 — "설정을 다시 읽었습니다"가
+     * 거짓말이 되는 자리가 하나 더 있었던 셈이다.
+     *
+     * <p>{@code volatile} 인 이유는 {@link #send} 가 비동기 스레드에서 읽기 때문이다.
+     * 리로드는 메인 스레드에서 일어나므로 둘이 겹칠 수 있다.
+     */
+    private volatile boolean enabled;
+    private volatile String channel;
 
     /** DiscordSRV 인스턴스와 채널 조회 메서드. null 이면 연동이 꺼진 것이다. */
-    private Object discordSrv;
-    private Method channelLookup;
+    private volatile Object discordSrv;
+    private volatile Method channelLookup;
+
+    /**
+     * 전송 실패를 한 번은 눈에 보이게 알렸는가.
+     *
+     * <p>전에는 전부 {@code fine} 으로 남겼다. 기본 로그 수준에서는 보이지 않으니,
+     * DiscordSRV 의 호출 사슬이 바뀌어 모든 알림이 실패해도 흔적이 없었다.
+     * 첫 실패만 경고로 올리고 그 뒤는 조용히 넘긴다 — 반복 실패로 로그를 덮지 않으면서
+     * "뭔가 잘못됐다"는 신호는 남는다.
+     */
+    private volatile boolean warnedOnSendFailure;
 
     public DiscordBridge(final Plugin plugin, final boolean enabled, final String channel) {
         this.plugin = plugin;
         this.enabled = enabled;
-        this.channel = channel == null || channel.isBlank() ? "global" : channel.trim();
+        this.channel = normalizeChannel(channel);
+    }
+
+    private static String normalizeChannel(final String raw) {
+        return raw == null || raw.isBlank() ? "global" : raw.trim();
+    }
+
+    /**
+     * {@code /petadmin reload} 가 부른다. 설정을 다시 받아 처음부터 연결한다.
+     *
+     * @return 연동이 살아 있으면 true
+     */
+    public boolean reload(final boolean enabledNow, final String channelNow) {
+        this.enabled = enabledNow;
+        this.channel = normalizeChannel(channelNow);
+        this.warnedOnSendFailure = false;   // 새 설정이니 실패도 다시 알릴 값어치가 있다
+        disable();                          // 예전 연결 상태를 버리고 다시 잡는다
+        return connect();
     }
 
     /** 꺼져 있거나 연결에 실패했으면 false. 기동 로그에 그대로 쓴다. */
@@ -132,7 +170,16 @@ public final class DiscordBridge {
                 publicMethod(action.getClass(), "queue").invoke(action);
             } catch (final ReflectiveOperationException | RuntimeException error) {
                 // 한 번 실패했다고 연동 전체를 내리지는 않는다. 순간적인 네트워크 문제일 수 있다.
-                plugin.getLogger().fine("Discord 전송 실패: " + error);
+                // 다만 첫 실패는 눈에 보여야 한다 — 호출 사슬이 바뀌어 전부 실패하는
+                // 상황과 일시적인 실패가 로그에서 똑같이 보이면 안 된다.
+                if (warnedOnSendFailure) {
+                    plugin.getLogger().fine("Discord 전송 실패: " + error);
+                } else {
+                    warnedOnSendFailure = true;
+                    plugin.getLogger().warning("Discord 전송에 실패했습니다."
+                        + " 계속되면 DiscordSRV 쪽을 확인하세요 (이 경고는 한 번만 남깁니다): "
+                        + error);
+                }
             }
         });
     }

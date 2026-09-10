@@ -211,11 +211,16 @@ public final class BetterPetsPlugin extends JavaPlugin {
             messages, catchUp, () -> {
                 reloadConfig();
                 reloadDefinitions(abilityRegistry);
-                // 아래 셋은 값을 들고 있는 쪽이라 다시 밀어 넣어야 반영된다.
+                // 아래 넷은 값을 들고 있는 쪽이라 다시 밀어 넣어야 반영된다.
                 // 빠뜨리면 "설정을 다시 읽었습니다" 가 거짓말이 된다.
                 rides.reloadTuning();
                 pets.limits(readLimits());
                 broadcasts.rules(readBroadcastRules());
+                // Discord 는 채널 이름을 붙박아 두고 있었다. 채널을 바꾸고 리로드해도
+                // 예전 채널로 계속 나갔고, enabled: false 로 꺼도 계속 나갔다.
+                discord.reload(
+                    getConfig().getBoolean("integrations.discord.enabled", true),
+                    getConfig().getString("integrations.discord.channel", "global"));
             }));
     }
 
