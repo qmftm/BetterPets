@@ -31,6 +31,7 @@ public final class BroadcastService {
     private final int minGrowthStage;
     private final boolean onObtain;
     private final boolean onGrown;
+    private final boolean onStageUp;
     private final boolean sound;
 
     public BroadcastService(final Server server,
@@ -41,6 +42,7 @@ public final class BroadcastService {
                             final int minGrowthStage,
                             final boolean onObtain,
                             final boolean onGrown,
+                            final boolean onStageUp,
                             final boolean sound) {
         this.server = server;
         this.messages = messages;
@@ -50,6 +52,7 @@ public final class BroadcastService {
         this.minGrowthStage = Math.max(1, minGrowthStage);
         this.onObtain = onObtain;
         this.onGrown = onGrown;
+        this.onStageUp = onStageUp;
         this.sound = sound;
     }
 
@@ -67,12 +70,26 @@ public final class BroadcastService {
         }
     }
 
+    /**
+     * 성장 단계가 올랐을 때.
+     *
+     * <p>{@code min-growth-stage} 가 실제로 쓸모 있는 곳이 여기다. 획득 시점의 단계는
+     * 언제나 1이라 문턱을 2 이상으로 두면 획득 알림은 아예 나가지 않는다 — 그건 문턱을
+     * 켠 사람의 의도가 아닐 것이다. "일정 단계를 넘겼다"를 알리려면 넘긴 순간이 필요하다.
+     */
+    public void onStageUp(final Player owner, final PetData data, final PetType type) {
+        if (onStageUp) {
+            announce("broadcast.stage-up", owner, data, type);
+        }
+    }
+
     private void announce(final String key, final Player owner, final PetData data, final PetType type) {
         if (!enabled || !qualifies(data, type)) {
             return;
         }
         final String[] placeholders = {
             "player", owner.getName(),
+            "stage", String.valueOf(data.growthStage()),
             "pet", strip(data.displayNameOr(type.displayName())),
             "rarity", type.rarity().name(),
             "rarity-name", strip(type.rarity().displayName()),

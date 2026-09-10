@@ -125,6 +125,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getInt("broadcast.min-growth-stage", 1),
             getConfig().getBoolean("broadcast.on-obtain", true),
             getConfig().getBoolean("broadcast.on-grown", true),
+            getConfig().getBoolean("broadcast.on-stage-up", false),
             getConfig().getBoolean("broadcast.sound", true));
 
         final AbilityService abilities = new AbilityService(this, abilityRegistry);

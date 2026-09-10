@@ -17,10 +17,14 @@ broadcast:
   min-rarity: A
 
   # 이 성장 단계 이상일 때만. 1 이면 단계 조건 없음.
+  #
+  # 주의: 알에서 갓 나온 펫은 언제나 1단계다. 2 이상으로 두면 on-obtain 알림은
+  # 사실상 꺼진다. "일정 단계를 넘겼을 때 알린다"가 목적이라면 on-stage-up 을 켠다.
   min-growth-stage: 1
 
   on-obtain: true      # 알에서 나왔을 때 (뽑기 자랑)
   on-grown: true       # 다 자랐을 때 (키운 결과)
+  on-stage-up: false   # 성장 단계가 올랐을 때. max-stage 가 1이면 일어나지 않는다
   sound: true          # 알림과 함께 효과음
 
 integrations:

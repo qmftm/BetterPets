@@ -71,3 +71,4 @@ admin:
 broadcast:
   obtained: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님이 <white>%rarity%<gray> 등급 <white>%pet%<gray> 을(를) 얻었습니다!"
   grown: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님의 <white>%rarity%<gray> 등급 <white>%pet%<gray> 이(가) 다 자랐습니다!"
+  stage-up: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님의 <white>%pet%<gray> 이(가) <white>%stage%<gray>단계가 됐습니다!"

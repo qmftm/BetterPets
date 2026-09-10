@@ -170,9 +170,12 @@ public final class InteractionListener implements Listener {
         pet.animation().overlay(kr.qmftm.betterpets.domain.PetType.AnimationSet.EAT);
 
         switch (result) {
-            case STAGE_UP -> messages.send(player, "feed.stage-up",
-                "stage", String.valueOf(data.growthStage()),
-                "max", String.valueOf(growth.maxStage()));
+            case STAGE_UP -> {
+                messages.send(player, "feed.stage-up",
+                    "stage", String.valueOf(data.growthStage()),
+                    "max", String.valueOf(growth.maxStage()));
+                broadcasts.onStageUp(player, data, pet.type());
+            }
             case GREW_UP -> {
                 messages.send(player, "feed.grew-up");
                 broadcasts.onGrown(player, data, pet.type());

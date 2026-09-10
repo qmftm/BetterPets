@@ -195,6 +195,7 @@ broadcast:
   min-growth-stage: 1
   on-obtain: true        # 알에서 나왔을 때
   on-grown: true         # 다 자랐을 때
+  on-stage-up: false     # 성장 단계가 올랐을 때 (max-stage 가 2 이상일 때만 일어난다)
   sound: true
 
 integrations:
@@ -216,6 +217,10 @@ integrations:
 | `%betterpets_pet_growth%` · `%betterpets_pet_growth_max%` · `%betterpets_pet_growth_percent%` | 성장도 |
 
 소환 중인 펫이 없으면 `-` 를 준다. **모르는 키는 원문을 그대로 남긴다** — `-` 로 바꾸면 오타가 조용히 묻힌다.
+
+> **`min-growth-stage` 를 2 이상으로 둘 때 주의.** 알에서 갓 나온 펫은 언제나 1단계라
+> `on-obtain` 알림이 사실상 꺼진다. "일정 단계를 넘겼을 때 알린다"가 목적이라면
+> `on-stage-up` 을 켜는 쪽이 맞다 — 넘긴 그 순간에 나간다.
 
 - **DiscordSRV** 는 리플렉션으로 붙는다 — 컴파일 의존이 없어서 DiscordSRV 없이도 빌드된다.
   플러그인이 없거나 채널을 못 찾으면 기동 로그에 한 줄 남기고 조용히 꺼진다. 전송은 비동기다.

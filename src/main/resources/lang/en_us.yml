@@ -71,3 +71,4 @@ admin:
 broadcast:
   obtained: "<gray>[<gold>Pets<gray>] <white>%player%<gray> obtained a <white>%rarity%<gray> <white>%pet%<gray>!"
   grown: "<gray>[<gold>Pets<gray>] <white>%player%<gray>'s <white>%rarity%<gray> <white>%pet%<gray> is fully grown!"
+  stage-up: "<gray>[<gold>Pets<gray>] <white>%player%<gray>'s <white>%pet%<gray> reached stage <white>%stage%<gray>!"

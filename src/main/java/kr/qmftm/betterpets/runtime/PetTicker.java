@@ -157,10 +157,16 @@ public final class PetTicker {
         }
         // 먹여서 자란 경우는 InteractionListener 가 알린다. 시간이 흘러 자란 경우가
         // 여기다 — 두 경로 모두 알려야 "가만히 뒀더니 조용히 성체가 됐다"가 없다.
-        if (result == GrowthService.StageResult.GREW_UP) {
-            pets.catalog().type(data.typeId())
-                .ifPresent(type -> broadcasts.onGrown(owner, data, type));
+        if (result == GrowthService.StageResult.NONE) {
+            return;
         }
+        pets.catalog().type(data.typeId()).ifPresent(type -> {
+            if (result == GrowthService.StageResult.GREW_UP) {
+                broadcasts.onGrown(owner, data, type);
+            } else {
+                broadcasts.onStageUp(owner, data, type);
+            }
+        });
     }
 
     /** 성장도 지연 계산의 상수를 노출한다. GUI 에서 "다음 성장까지"를 보여줄 때 쓴다. */
