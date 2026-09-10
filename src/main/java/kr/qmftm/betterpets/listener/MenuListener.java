@@ -58,7 +58,7 @@ public final class MenuListener implements Listener {
         if (holder instanceof Menus.Box box) {
             handleBox(player, box, event.getSlot());
         } else if (holder instanceof Menus.Detail detail) {
-            handleDetail(player, detail, event.getSlot());
+            handleDetail(player, detail, event.getSlot(), event.isShiftClick());
         }
     }
 
@@ -81,11 +81,16 @@ public final class MenuListener implements Listener {
         }
         final PetData pet = box.petAt(slot);
         if (pet != null) {
-            player.openInventory(menus.detail(pet));
+            // 보던 쪽을 넘겨준다. 상세에서 "돌아가기"가 그 쪽으로 되돌아가야
+            // 여러 마리를 훑어보는 동안 매번 다시 넘기지 않는다.
+            player.openInventory(menus.detail(pet, box.page()));
         }
     }
 
-    private void handleDetail(final Player player, final Menus.Detail detail, final int slot) {
+    private void handleDetail(final Player player,
+                              final Menus.Detail detail,
+                              final int slot,
+                              final boolean shift) {
         final PetData pet = detail.target();
         switch (slot) {
             case PetMenuFactory.SLOT_SUMMON -> {
@@ -111,11 +116,17 @@ public final class MenuListener implements Listener {
                     "id", pet.petId().toString().substring(0, 8));
             }
             case PetMenuFactory.SLOT_RELEASE -> {
+                // 되돌릴 수 없는 유일한 조작이다. 소환 버튼 네 칸 옆에 있어서
+                // 한 번 잘못 누르면 키우던 펫이 그대로 사라졌다.
+                if (!shift) {
+                    messages.send(player, "pet.release-confirm");
+                    return;
+                }
                 pets.release(player, pet);
                 messages.send(player, "pet.released");
-                openBox(player, 0);
+                openBox(player, detail.page());
             }
-            case PetMenuFactory.SLOT_BACK -> openBox(player, 0);
+            case PetMenuFactory.SLOT_BACK -> openBox(player, detail.page());
             default -> { /* 빈 칸 */ }
         }
     }

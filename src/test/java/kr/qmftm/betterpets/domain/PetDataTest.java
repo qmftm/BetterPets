@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PetDataTest {
@@ -106,6 +107,42 @@ class PetDataTest {
 
         data.nickname("   ");
         assertEquals("늑대", data.displayNameOr("늑대"), "공백뿐인 별명은 없는 것으로 본다");
+    }
+
+    @Test
+    @DisplayName("별명의 MiniMessage 태그는 저장 전에 걷어낸다 — 서식은 플레이어 몫이 아니다")
+    void nicknameStripsTags() {
+        final PetData data = sample();
+
+        data.nickname("<rainbow>왕</rainbow>");
+        assertEquals("왕", data.nickname());
+
+        data.nickname("<red>붉은 <bold>늑대");
+        assertEquals("붉은 늑대", data.nickname(), "여는 태그가 여럿이어도 전부 걷어낸다");
+
+        data.nickname("<gradient:red:blue>");
+        assertNull(data.nickname(), "태그만 남으면 별명이 없는 것으로 본다");
+    }
+
+    @Test
+    @DisplayName("파일에서 읽어 온 별명도 같은 문을 지난다")
+    void nicknameFromStorageIsSanitized() {
+        final PetData loaded = new PetData(UUID.randomUUID(), UUID.randomUUID(), "wolf",
+            "<red>옛날에 저장된 이름", LifeStage.BABY, 0, 1, false, false, 0L, 0L);
+
+        assertEquals("옛날에 저장된 이름", loaded.nickname(),
+            "이 방어가 생기기 전 파일이나 관리자가 손으로 고친 파일에도 태그가 있을 수 있다");
+    }
+
+    @Test
+    @DisplayName("같은 별명으로 다시 바꿔도 저장 대상이 되지 않는다")
+    void renamingToSameNameIsNotDirty() {
+        final PetData data = sample();
+        data.nickname("바둑이");
+        data.clearDirty();
+
+        data.nickname("바둑이");
+        assertFalse(data.isDirty());
     }
 
     @Test

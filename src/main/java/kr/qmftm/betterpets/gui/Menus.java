@@ -55,10 +55,21 @@ public final class Menus {
     public static final class Detail extends Holder {
         private final PetData target;
 
-        public Detail(final PetData target) {
+        /**
+         * 어느 쪽에서 들어왔는가.
+         *
+         * <p>"돌아가기"가 언제나 1쪽을 열고 있었다. 3쪽에서 펫 하나를 보고 나오면
+         * 처음으로 튕겨 나가서, 여러 마리를 훑어보는 동안 매번 다시 넘겨야 했다.
+         */
+        private final int page;
+
+        public Detail(final PetData target, final int page) {
             this.target = target;
+            this.page = Math.max(0, page);
         }
 
         public PetData target() { return target; }
+
+        public int page() { return page; }
     }
 }

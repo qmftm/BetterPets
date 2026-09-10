@@ -1,5 +1,7 @@
 package kr.qmftm.betterpets.domain;
 
+import kr.qmftm.betterpets.config.Tags;
+
 import java.util.UUID;
 
 /**
@@ -42,7 +44,7 @@ public final class PetData {
         this.petId = petId;
         this.ownerId = ownerId;
         this.typeId = typeId;
-        this.nickname = nickname;
+        this.nickname = sanitizeNickname(nickname);
         this.stage = stage;
         this.growth = growth;
         this.growthStage = Math.max(1, growthStage);
@@ -77,9 +79,40 @@ public final class PetData {
         if (!value.equals(typeId)) { typeId = value; dirty = true; }
     }
 
+    /**
+     * 별명을 정한다.
+     *
+     * <p><b>MiniMessage 태그를 걷어내고 저장한다.</b> 별명은 플레이어가 정하는 유일한
+     * 문자열인데, 보관함 아이콘이 그걸 그대로 파싱해 그리고 있었다 —
+     * {@code /pet rename <rainbow>왕} 이면 색을 공짜로 얻고, 닫히지 않은 태그를
+     * 넣으면 그 줄 아래 서식이 통째로 새어 나간다.
+     *
+     * <p>보여주는 자리마다 걷어내는 대신 <b>들어오는 문 하나에서</b> 막는다. 표시하는
+     * 곳은 앞으로도 늘어나지만(채팅·GUI·스코어보드·Discord), 저장되는 값이 이미 깨끗하면
+     * 그중 한 곳을 빠뜨려도 사고가 나지 않는다.
+     */
     public void nickname(final String value) {
-        nickname = value;
-        dirty = true;
+        final String cleaned = sanitizeNickname(value);
+        if (!java.util.Objects.equals(cleaned, nickname)) {
+            nickname = cleaned;
+            dirty = true;
+        }
+    }
+
+    /**
+     * 별명으로 저장해도 되는 형태로 다듬는다.
+     *
+     * <p>생성자에서도 부른다 — 이 방어가 생기기 전에 저장된 파일에 태그가 남아 있을 수
+     * 있고, 파일은 관리자가 손으로 고칠 수도 있다.
+     *
+     * @return 태그를 걷어낸 별명. 남는 게 없으면 {@code null}(= 별명 없음)
+     */
+    public static String sanitizeNickname(final String value) {
+        if (value == null) {
+            return null;
+        }
+        final String stripped = Tags.strip(value).trim();
+        return stripped.isEmpty() ? null : stripped;
     }
 
     public void stage(final LifeStage value) {

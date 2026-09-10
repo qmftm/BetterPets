@@ -24,6 +24,7 @@ pet:
   renamed: "<green>이름을 '<white>%name%<green>' 으로 바꿨습니다."
   name-too-long: "<red>이름은 32자를 넘을 수 없습니다."
   released: "<gray>펫을 놓아줬습니다."
+  release-confirm: "<yellow>정말 놓아주시겠습니까? <gray>되돌릴 수 없습니다 — <white>쉬프트<gray> 를 누른 채로 다시 클릭하세요."
   rename-hint: "<gray>/pet rename %id% <이름> 으로 바꿀 수 있습니다."
   rename-pick: "<yellow>여러 마리를 소환 중입니다. <gray>/pet rename <펫id> <이름> 으로 지정하세요."
   list-header: "<gray>보유한 펫 <white>%max%<gray> — 이름을 클릭하면 소환합니다."
@@ -126,6 +127,7 @@ gui:
   dismiss: "<red>소환 해제"
   rename: "<yellow>이름 변경"
   release: "<red>놓아주기"
+  release-hint: "<dark_gray>쉬프트 + 클릭 (되돌릴 수 없습니다)"
   back: "<gray>돌아가기"
 
   abilities: "<light_purple>능력"

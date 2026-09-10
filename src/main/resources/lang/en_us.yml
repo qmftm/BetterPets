@@ -24,6 +24,7 @@ pet:
   renamed: "<green>Renamed to '<white>%name%<green>'."
   name-too-long: "<red>Names cannot be longer than 32 characters."
   released: "<gray>You released the pet."
+  release-confirm: "<yellow>Release this pet for good? <gray>This cannot be undone — hold <white>Shift<gray> and click again."
   rename-hint: "<gray>Use /pet rename %id% <name> to rename it."
   rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."
   list-header: "<gray>Your pets <white>%max%<gray> — click a name to summon it."
@@ -126,6 +127,7 @@ gui:
   dismiss: "<red>Send back"
   rename: "<yellow>Rename"
   release: "<red>Release"
+  release-hint: "<dark_gray>Shift + click (cannot be undone)"
   back: "<gray>Back"
 
   abilities: "<light_purple>Abilities"

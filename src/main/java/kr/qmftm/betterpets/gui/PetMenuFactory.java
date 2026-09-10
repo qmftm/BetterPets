@@ -177,8 +177,13 @@ public final class PetMenuFactory {
         return stack;
     }
 
-    public Inventory detail(final PetData pet) {
-        final Menus.Detail holder = new Menus.Detail(pet);
+    /**
+     * 펫 한 마리의 상세 화면.
+     *
+     * @param page 이 펫을 고른 보관함 쪽 번호. "돌아가기"가 그 쪽으로 되돌아간다
+     */
+    public Inventory detail(final PetData pet, final int page) {
+        final Menus.Detail holder = new Menus.Detail(pet, page);
         final PetType type = catalog.type(pet.typeId()).orElse(null);
         final String name = pet.displayNameOr(type == null ? pet.typeId() : type.displayName());
 
@@ -190,7 +195,7 @@ public final class PetMenuFactory {
         inventory.setItem(SLOT_ABILITIES, abilityBook(pet, type));
         inventory.setItem(SLOT_SUMMON, summonButton(pet));
         inventory.setItem(SLOT_RENAME, simple(Material.NAME_TAG, "gui.rename"));
-        inventory.setItem(SLOT_RELEASE, simple(Material.BARRIER, "gui.release"));
+        inventory.setItem(SLOT_RELEASE, releaseButton());
         inventory.setItem(SLOT_BACK, simple(Material.ARROW, "gui.back"));
         return inventory;
     }
@@ -224,6 +229,21 @@ public final class PetMenuFactory {
             }
         }
         meta.lore(lore);
+        stack.setItemMeta(meta);
+        return stack;
+    }
+
+    /**
+     * 놓아주기 버튼.
+     *
+     * <p><b>되돌릴 수 없는 유일한 버튼이다.</b> 그런데 소환 버튼 바로 옆에 있고, 한 번
+     * 누르면 키우던 펫이 그대로 사라졌다. 그래서 쉬프트를 요구하고, 그 사실을 로어에
+     * 적는다 — 눌러보고 알게 되는 규칙은 규칙이 아니다.
+     */
+    private ItemStack releaseButton() {
+        final ItemStack stack = simple(Material.BARRIER, "gui.release");
+        final ItemMeta meta = stack.getItemMeta();
+        meta.lore(List.of(line("gui.release-hint")));
         stack.setItemMeta(meta);
         return stack;
     }

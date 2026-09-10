@@ -210,7 +210,15 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             target = Optional.of(active.getFirst());
         }
 
-        final String name = String.join(" ", java.util.Arrays.copyOfRange(args, nameFrom, args.length));
+        // 길이는 태그를 걷어낸 뒤에 잰다. 그래야 "화면에 보이는 글자 수"로 제한이 걸린다 —
+        // 태그를 포함해 재면 <gradient:...> 하나로 한도를 다 쓴 것처럼 거절당한다.
+        final String name = PetData.sanitizeNickname(
+            String.join(" ", java.util.Arrays.copyOfRange(args, nameFrom, args.length)));
+        if (name == null) {
+            // 태그만 적었다. 조용히 별명을 지우는 것보다 다시 치게 하는 편이 낫다.
+            messages.send(player, "command.rename-usage");
+            return;
+        }
         if (name.length() > 32) {
             messages.send(player, "pet.name-too-long");
             return;
