@@ -48,10 +48,11 @@
 
 ### 지금까지 확정된 것
 
-- **빌드가 통과한다** — JDK 25로 BetterModel 3.4.1 API에 대해 실제 컴파일, 단위 테스트 37개 통과
+- **빌드가 통과한다** — JDK 25로 BetterModel 3.4.1 API에 대해 실제 컴파일, 단위 테스트 69개 통과
 - **캐리어 엔티티는 보이지 않는 `Mob`** — `ItemDisplay` 대신 고른 이유는 자체 히트박스가 있어서다. 모델에 히트박스 본(`b_`)이 없어도 우클릭이 먹는다
 - **BetterModel API 격리** — `BetterModelRenderer` 가 그 API를 import하는 유일한 파일이다
 - **탑승은 `ArmorStand` + Paper `Input`** — `allowFlight` 를 쓰지 않으므로 비행 권한이 샐 위험 자체가 없다
+- **선택적 연동은 리플렉션** — DiscordSRV·Floodgate 가 없어도 빌드되고 돌아간다. 상속이 필요한 PlaceholderAPI 만 예외로 컴파일 의존(`provided`)을 건다
 
 ### 다음에 직접 확인할 것
 
@@ -62,6 +63,8 @@
 3. **추종 이동이 자연스러운가** — 계단·언덕에서 끊기지 않는지, 텔레포트 폴백이 과하지 않은지
 4. **탑승·비행 조작감** — 벽 슬라이딩과 하차 안전 처리가 실제로 먹는지
 5. **Bedrock 변환** — 모델 하나로 GeyserModelEngine 파이프라인을 끝까지 통과시켜 본다
+6. **연동이 실제로 붙는가** — `/petadmin debug` 의 연동 줄에서 DiscordSRV·PlaceholderAPI·floodgate·GeyserModelEngine 상태 확인
+7. **여러 마리 소환** — `max-active` 를 2 이상으로 두고, 한 마리에 탔을 때 나머지가 제자리에 남는지
 
 ---
 
