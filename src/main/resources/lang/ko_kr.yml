@@ -117,11 +117,25 @@ gui:
   prev-page: "<gray>이전 쪽"
   next-page: "<gray>다음 쪽"
 
+  # 정렬·필터 토글. %value% 는 지금 값, %next% 는 다음에 눌렀을 때의 값.
+  sort: "<aqua>정렬 <white>%value%"
+  sort-default: "기본"
+  sort-newest: "최근 얻은 순"
+  sort-growth: "많이 자란 순"
+  filter: "<aqua>보기 <white>%value%"
+  filter-all: "전체"
+  filter-active: "소환 중"
+  filter-baby: "아기"
+  filter-adult: "성체"
+  toggle-hint: "<dark_gray>클릭 → %next%"
+
   summary-title: "<yellow>내 펫"
   summary-owned: "<gray>보유 <white>%value%"
   summary-active: "<gray>소환 중 <white>%value%"
   summary-full: "<red>보유 한도가 찼습니다. 놓아줘야 더 받습니다."
   summary-empty: "<dark_gray>알을 우클릭해 펫을 얻으세요."
+  summary-shown: "<dark_gray>이 보기에 <white>%count%<dark_gray>마리"
+  summary-filtered-empty: "<yellow>이 보기에 해당하는 펫이 없습니다. <gray>보기를 바꿔보세요."
 
   pet-rarity: "<gray>등급 <white>%rarity% <dark_gray>(%name%)"
   pet-stage: "<gray>상태 <white>%stage%"

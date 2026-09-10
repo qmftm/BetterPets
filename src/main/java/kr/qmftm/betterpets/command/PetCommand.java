@@ -4,6 +4,7 @@ import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
+import kr.qmftm.betterpets.gui.Menus;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
 import kr.qmftm.betterpets.runtime.RideController;
 import kr.qmftm.betterpets.service.GrowthCatchUp;
@@ -84,8 +85,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         // 열기 전에 맞춘다. 보관함에 넣어둔 펫은 틱을 안 받아서, 여기서 확인하지 않으면
         // 성장도가 상한에 붙은 채 아기로 보인다.
         catchUp.all(player);
-        player.openInventory(menus.box(player.getUniqueId(),
-            menus.ordered(store.owned(player.getUniqueId())), 0));
+        player.openInventory(menus.box(
+            player.getUniqueId(), store.owned(player.getUniqueId()), Menus.View.first()));
     }
 
     private void summon(final Player player, final String[] args) {

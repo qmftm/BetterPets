@@ -75,19 +75,31 @@ public final class MenuListener implements Listener {
     }
 
     private void handleBox(final Player player, final Menus.Box box, final int slot) {
-        if (slot == PetMenuFactory.SLOT_PREV) {
-            openBox(player, box.page() - 1);
-            return;
-        }
-        if (slot == PetMenuFactory.SLOT_NEXT) {
-            openBox(player, box.page() + 1);
-            return;
+        final Menus.View view = box.view();
+        switch (slot) {
+            case PetMenuFactory.SLOT_PREV -> {
+                openBox(player, view.page(view.page() - 1));
+                return;
+            }
+            case PetMenuFactory.SLOT_NEXT -> {
+                openBox(player, view.page(view.page() + 1));
+                return;
+            }
+            case PetMenuFactory.SLOT_SORT -> {
+                openBox(player, view.nextSort());
+                return;
+            }
+            case PetMenuFactory.SLOT_FILTER -> {
+                openBox(player, view.nextFilter());
+                return;
+            }
+            default -> { /* 펫 아이콘일 수 있다 */ }
         }
         final PetData pet = box.petAt(slot);
         if (pet != null) {
-            // 보던 쪽을 넘겨준다. 상세에서 "돌아가기"가 그 쪽으로 되돌아가야
-            // 여러 마리를 훑어보는 동안 매번 다시 넘기지 않는다.
-            player.openInventory(menus.detail(pet, box.page()));
+            // 보던 화면을 그대로 넘겨준다. 상세에서 "돌아가기"가 같은 쪽·정렬·필터로
+            // 되돌아가야 여러 마리를 훑어보는 동안 매번 다시 맞추지 않는다.
+            player.openInventory(menus.detail(pet, view));
         }
     }
 
@@ -128,18 +140,18 @@ public final class MenuListener implements Listener {
                 }
                 pets.release(player, pet);
                 messages.send(player, "pet.released");
-                openBox(player, detail.page());
+                openBox(player, detail.view());
             }
-            case PetMenuFactory.SLOT_BACK -> openBox(player, detail.page());
+            case PetMenuFactory.SLOT_BACK -> openBox(player, detail.view());
             default -> { /* 빈 칸 */ }
         }
     }
 
-    private void openBox(final Player player, final int page) {
+    private void openBox(final Player player, final Menus.View view) {
         // 보관함의 펫도 시간이 흐르면 자란다. 열기 전에 맞춰야 화면이 사실을 말한다.
         catchUp.all(player);
-        // 순서는 PetMenuFactory 가 정한다. 여기서 따로 정렬하면 /pet list 와 어긋난다.
-        player.openInventory(menus.box(player.getUniqueId(),
-            menus.ordered(store.owned(player.getUniqueId())), page));
+        // 거르고 정렬하는 건 PetMenuFactory 가 한다 — 여기서 미리 걸러 넘기면
+        // 현황에 적을 전체 마릿수를 잃는다.
+        player.openInventory(menus.box(player.getUniqueId(), store.owned(player.getUniqueId()), view));
     }
 }

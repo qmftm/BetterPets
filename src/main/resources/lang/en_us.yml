@@ -117,11 +117,25 @@ gui:
   prev-page: "<gray>Previous page"
   next-page: "<gray>Next page"
 
+  # Sort/filter toggles. %value% is the current one, %next% is what a click gives you.
+  sort: "<aqua>Sort <white>%value%"
+  sort-default: "Default"
+  sort-newest: "Newest first"
+  sort-growth: "Most grown"
+  filter: "<aqua>Showing <white>%value%"
+  filter-all: "All"
+  filter-active: "Out"
+  filter-baby: "Babies"
+  filter-adult: "Grown"
+  toggle-hint: "<dark_gray>Click → %next%"
+
   summary-title: "<yellow>My pets"
   summary-owned: "<gray>Owned <white>%value%"
   summary-active: "<gray>Out <white>%value%"
   summary-full: "<red>You are at your pet limit. Release one to get more."
   summary-empty: "<dark_gray>Right-click an egg to get a pet."
+  summary-shown: "<dark_gray><white>%count%<dark_gray> in this view"
+  summary-filtered-empty: "<yellow>No pets match this view. <gray>Try another one."
 
   pet-rarity: "<gray>Rarity <white>%rarity% <dark_gray>(%name%)"
   pet-stage: "<gray>Stage <white>%stage%"

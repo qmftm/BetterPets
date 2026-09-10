@@ -8,8 +8,9 @@ import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
+import kr.qmftm.betterpets.domain.PetFilter;
 import kr.qmftm.betterpets.domain.PetLimits;
-import kr.qmftm.betterpets.domain.PetOrder;
+import kr.qmftm.betterpets.domain.PetSort;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.GrowthService;
@@ -32,7 +33,9 @@ public final class PetMenuFactory {
     public static final int BOX_SIZE = 54;
     public static final int BOX_CONTENT = 45;          // 마지막 줄은 네비게이션
     public static final int SLOT_PREV = 45;
+    public static final int SLOT_SORT = 47;            // 정렬 바꾸기
     public static final int SLOT_SUMMARY = 49;         // 보유·소환 현황
+    public static final int SLOT_FILTER = 51;          // 무엇만 볼지
     public static final int SLOT_NEXT = 53;
 
     public static final int DETAIL_SIZE = 27;
@@ -102,15 +105,29 @@ public final class PetMenuFactory {
     }
 
     /**
-     * 보관함에 보여줄 순서.
+     * 보여줄 목록을 걸러 정렬한다.
      *
-     * <p>기준은 {@link PetOrder} 에 있다. 이 순서가 GUI 와 {@code /pet list} 양쪽에
-     * 쓰인다 — 두 곳이 다르면 "보관함에서 세 번째"가 채팅에서는 다른 펫을 가리킨다.
+     * <p>기준은 {@link PetSort}·{@link PetFilter} 에 있다 — Bukkit 없이 검증할 수 있는
+     * 쪽에 둔다. {@code /pet list} 는 {@link PetSort#DEFAULT} 로 고정이다. 보관함의
+     * 정렬은 <b>보는 사람의 선택</b>이라 채팅과 같을 이유가 없다. 어느 펫인지는 양쪽 다
+     * 여덟 자리 id 로 가리키므로 순서가 달라도 헷갈리지 않는다.
      */
-    public List<PetData> ordered(final Collection<PetData> owned) {
-        final List<PetData> list = new ArrayList<>(owned);
-        list.sort(PetOrder.forBox(this::rarityRank));
+    public List<PetData> ordered(final Collection<PetData> owned,
+                                 final PetSort sort,
+                                 final PetFilter filter) {
+        final List<PetData> list = new ArrayList<>(owned.size());
+        for (final PetData pet : owned) {
+            if (filter.test(pet)) {
+                list.add(pet);
+            }
+        }
+        list.sort(sort.comparator(this::rarityRank));
         return list;
+    }
+
+    /** {@code /pet list} 처럼 고정 순서가 필요한 곳. */
+    public List<PetData> ordered(final Collection<PetData> owned) {
+        return ordered(owned, PetSort.DEFAULT, PetFilter.ALL);
     }
 
     /** 등급 서열. 종류를 못 찾으면 맨 뒤로 보낸다 — 설정이 깨진 펫이다. */
@@ -125,39 +142,85 @@ public final class PetMenuFactory {
      * 현황({@link #SLOT_SUMMARY})을 둔다. 보유 한도가 있는 서버에서는 "몇 마리를
      * 더 받을 수 있는지"가 알을 까기 전에 보여야 한다.
      */
-    public Inventory box(final UUID ownerId, final List<PetData> pets, final int page) {
-        // 마지막 쪽에서 펫을 놓아주면 그 쪽이 통째로 비어버린다. 빈 화면 대신
-        // 존재하는 마지막 쪽으로 접어준다.
+    /**
+     * @param owned 소유한 펫 <b>전부</b>. 거르고 정렬하는 건 여기서 한다 — 호출부가
+     *              미리 걸러 넘기면 "현황"에 적을 전체 마릿수를 잃는다
+     */
+    public Inventory box(final UUID ownerId,
+                         final Collection<PetData> owned,
+                         final Menus.View view) {
+        final List<PetData> pets = ordered(owned, view.sort(), view.filter());
+
+        // 마지막 쪽에서 펫을 놓아주면 그 쪽이 통째로 비어버린다. 필터를 바꿔도 마찬가지다.
+        // 빈 화면 대신 존재하는 마지막 쪽으로 접어준다.
         final int lastPage = Math.max(0, (pets.size() - 1) / BOX_CONTENT);
-        final int shown = Math.max(0, Math.min(page, lastPage));
+        final Menus.View shown = view.page(Math.min(view.page(), lastPage));
 
         final Menus.Box holder = new Menus.Box();
-        holder.page(shown);
+        holder.view(shown);
 
         final Inventory inventory = Bukkit.createInventory(holder, BOX_SIZE,
             title("gui.box-title",
-                "page", String.valueOf(shown + 1),
+                "page", String.valueOf(shown.page() + 1),
                 "pages", String.valueOf(lastPage + 1)));
         holder.inventory(inventory);
 
-        final int from = shown * BOX_CONTENT;
+        final int from = shown.page() * BOX_CONTENT;
         for (int i = 0; i < BOX_CONTENT && from + i < pets.size(); i++) {
             final PetData pet = pets.get(from + i);
             inventory.setItem(i, icon(pet));
             holder.slots.put(i, pet);
         }
-        if (shown > 0) {
+        if (shown.page() > 0) {
             inventory.setItem(SLOT_PREV, simple(Material.ARROW, "gui.prev-page"));
         }
         if (from + BOX_CONTENT < pets.size()) {
             inventory.setItem(SLOT_NEXT, simple(Material.ARROW, "gui.next-page"));
         }
-        inventory.setItem(SLOT_SUMMARY, summary(ownerId, pets.size()));
+        inventory.setItem(SLOT_SORT, toggle(Material.HOPPER, "gui.sort",
+            "gui.sort-" + shown.sort().key(), "gui.sort-" + shown.sort().next().key()));
+        inventory.setItem(SLOT_FILTER, toggle(Material.SPYGLASS, "gui.filter",
+            "gui.filter-" + shown.filter().key(), "gui.filter-" + shown.filter().next().key()));
+        inventory.setItem(SLOT_SUMMARY, summary(ownerId, owned.size(), pets.size(), shown.filter()));
         return inventory;
     }
 
-    /** 보유·소환 현황 아이콘. 목록 아래에 항상 떠 있다. */
-    private ItemStack summary(final UUID ownerId, final int owned) {
+    /**
+     * 정렬·필터 버튼.
+     *
+     * <p>지금 값과 <b>다음에 눌렀을 때의 값</b>을 같이 적는다. 지금 값만 보여주면
+     * 무엇이 나올지 몰라서 원하는 게 나올 때까지 누르게 된다.
+     */
+    private ItemStack toggle(final Material material,
+                             final String titleKey,
+                             final String currentKey,
+                             final String nextKey) {
+        final ItemStack stack = new ItemStack(material);
+        final ItemMeta meta = stack.getItemMeta();
+        meta.displayName(line(titleKey, "value", labelOf(currentKey)));
+        meta.lore(List.of(line("gui.toggle-hint", "next", labelOf(nextKey))));
+        stack.setItemMeta(meta);
+        return stack;
+    }
+
+    /**
+     * 문구 하나를 태그 없는 평문으로.
+     *
+     * <p>버튼 이름 <b>안에 끼워 넣을</b> 값이라 서식이 들어가면 안 된다 — 색 태그가
+     * 그대로 가면 바깥 문구의 색을 중간에서 덮어쓴다.
+     */
+    private String labelOf(final String key) {
+        return Tags.strip(messages.raw(key));
+    }
+
+    /**
+     * 보유·소환 현황 아이콘. 목록 아래에 항상 떠 있다.
+     *
+     * @param owned 필터와 무관한 <b>전체</b> 마릿수. 한도는 걸러진 수와 비교할 값이 아니다
+     * @param shown 지금 화면에 걸린 수
+     */
+    private ItemStack summary(final UUID ownerId, final int owned,
+                              final int shown, final PetFilter filter) {
         final ItemStack stack = new ItemStack(Material.BOOK);
         final ItemMeta meta = stack.getItemMeta();
         meta.displayName(line("gui.summary-title"));
@@ -171,6 +234,12 @@ public final class PetMenuFactory {
         }
         if (owned == 0) {
             lore.add(line("gui.summary-empty"));
+        } else if (shown == 0) {
+            // 펫은 있는데 화면이 비었다. 필터 때문이라고 말해주지 않으면
+            // "펫이 사라졌다"로 읽힌다.
+            lore.add(line("gui.summary-filtered-empty"));
+        } else if (filter != PetFilter.ALL) {
+            lore.add(line("gui.summary-shown", "count", String.valueOf(shown)));
         }
         meta.lore(lore);
         stack.setItemMeta(meta);
@@ -180,10 +249,10 @@ public final class PetMenuFactory {
     /**
      * 펫 한 마리의 상세 화면.
      *
-     * @param page 이 펫을 고른 보관함 쪽 번호. "돌아가기"가 그 쪽으로 되돌아간다
+     * @param view 이 펫을 고른 보관함 화면. "돌아가기"가 그대로 되돌아간다
      */
-    public Inventory detail(final PetData pet, final int page) {
-        final Menus.Detail holder = new Menus.Detail(pet, page);
+    public Inventory detail(final PetData pet, final Menus.View view) {
+        final Menus.Detail holder = new Menus.Detail(pet, view);
         final PetType type = catalog.type(pet.typeId()).orElse(null);
         final String name = pet.displayNameOr(type == null ? pet.typeId() : type.displayName());
 
