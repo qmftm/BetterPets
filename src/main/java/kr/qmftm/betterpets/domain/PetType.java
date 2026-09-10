@@ -13,27 +13,28 @@ import java.util.Set;
  *
  * <p>개체({@link PetData})와 구분한다 — 같은 종류의 펫을 여러 마리 가질 수 있고,
  * 개체마다 레벨과 이름이 다르다.
+ *
+ * @param stats     이 펫의 등급 수치. {@code rarity.yml} 에서 온 값을 로드 시점에
+ *                  박아 넣는다. {@code rarity()} 로 표를 다시 찾지 않는 이유는, 그러면
+ *                  수치를 읽는 모든 자리에 표를 들고 다녀야 하기 때문이다 — 이동
+ *                  컨트롤러, 능력, GUI, 알림. 리로드하면 어차피 펫 정의를 통째로 다시
+ *                  만드므로 값이 굳어 있어도 문제없다
+ * @param flyChance {@code ride} 가 {@link RideMode#FLY} 일 때만 의미가 있다
+ * @param nextStage 비어 있으면 다음 단계에서도 같은 종류를 유지한다
  */
 public record PetType(
     String id,
     String displayName,
     String modelId,
     Rarity rarity,
-    /**
-     * 이 펫의 등급 수치. {@code rarity.yml} 에서 온 값을 로드 시점에 박아 넣는다.
-     *
-     * <p>{@code rarity()} 를 통해 표를 다시 찾지 않는 이유는, 그러면 수치를 읽는
-     * 모든 자리에 표를 들고 다녀야 하기 때문이다 — 이동 컨트롤러, 능력, GUI, 알림.
-     * 리로드하면 어차피 펫 정의를 통째로 다시 만드므로 값이 굳어 있어도 문제없다.
-     */
     RarityStats stats,
     int growthMax,
     RideMode ride,
-    double flyChance,           // ride 가 FLY 일 때만 의미가 있다
+    double flyChance,
     AnimationSet animations,
     MovementProfile movement,
     List<AbilityDefinition> abilities,
-    Map<String, Integer> nextStage,   // 비어 있으면 다음 단계에서도 같은 종류를 유지한다
+    Map<String, Integer> nextStage,
     int gachaWeight
 ) {
 

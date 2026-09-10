@@ -428,11 +428,6 @@ public final class PetCatalog {
     }
 
     /**
-     * material 값을 읽고 검증한다.
-     *
-     * @return 유효한 material 이름. 알 수 없는 값이면 문제로 기록하고 null
-     */
-    /**
      * {@code material:} 을 읽는다.
      *
      * <p><b>존재하는 것만으로는 모자라다. 아이템으로 들 수 있어야 한다.</b>

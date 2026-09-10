@@ -25,6 +25,10 @@
 JAVA_HOME=/opt/jdk/jdk-25.0.4.1+1 mvn -B clean package
 ```
 
+**경고도 본다.** `-Xlint:all` 이 켜져 있는데 오랫동안 `[ERROR]` 만 보고 있었다.
+`[WARNING] /home/...` 줄을 훑으면 붙지 않은 javadoc과 deprecated API 사용이 그대로
+나온다 — 실제로 그렇게 셋을 찾았다.
+
 `JAVA_HOME` 을 반드시 지정한다. **BetterModel 3.x 는 모든 버전이 클래스 파일 major 69(Java 25)**
 로 배포돼서 JDK 24 이하로는 컴파일도 로드도 안 된다. 이건 문서가 아니라 바이트코드를 직접
 확인해 정한 것이다 (deepwiki 는 25, README 는 21 이라고 적혀 있었다).

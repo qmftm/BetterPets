@@ -91,10 +91,17 @@ public final class InteractionListener implements Listener {
      * <p><b>{@code EquipmentSlot.HAND} 만 처리한다.</b> 안 그러면 오프핸드로도 이벤트가 와서
      * 한 번의 우클릭에 알이 두 개 소비된다.
      *
-     * <p><b>상자·화로처럼 열리는 블록을 클릭했을 때는 블록에 양보한다.</b> 그러지 않으면
-     * 알을 들고 상자를 열려다 알이 까진다 — 플레이어 입장에서는 아이템을 잃은 것이고,
-     * 되돌릴 수도 없다. 알은 허공이나 평범한 블록에 대고 쓰라는 뜻이 되지만, 그쪽이
-     * "상자를 못 여는 아이템"보다 훨씬 덜 놀랍다.
+     * <p><b>블록을 클릭했을 때는 블록에 양보한다.</b> 그러지 않으면 알을 들고 상자를
+     * 열려다 알이 까진다 — 아이템을 잃은 것이고 되돌릴 수도 없다. 그래서 알은 허공에
+     * 대고 쓰거나, 블록 쪽이면 스니크를 요구한다(바닐라도 스니크면 블록 상호작용을
+     * 건너뛰므로 따로 배울 게 없다).
+     *
+     * <p><b>"열리는 블록만" 가려내려 하지 않는다.</b> {@code isInteractable()} 이
+     * 그 질문에 답해 주는 것처럼 보이지만, {@code Material} 과 {@code BlockType} 양쪽
+     * 모두 deprecated 다 — 답이 들고 있는 아이템과 블록 상태에 따라 달라져서
+     * 플랫폼 스스로 믿을 수 없다고 표시해 둔 것이다. 틀린 답의 대가가 <b>알 하나가
+     * 사라지는 것</b>이라, 못 미더운 판정에 기대느니 규칙을 단순하게 둔다.
+     * 실패하면 "아무 일도 안 일어남"이고, 그건 되돌릴 수 있다.
      */
     @EventHandler(ignoreCancelled = true)
     public void onEggUse(final PlayerInteractEvent event) {
@@ -104,11 +111,10 @@ public final class InteractionListener implements Listener {
         if (!event.getAction().isRightClick()) {
             return;
         }
-        // 스니크 중이면 바닐라도 블록 상호작용을 건너뛴다. 그때는 알을 쓰려는 게 맞다.
-        final var clickedBlock = event.getClickedBlock();
-        if (!event.getPlayer().isSneaking()
-            && clickedBlock != null && clickedBlock.getType().isInteractable()) {
-            return;     // 상자·문·화로 등. 블록이 먼저다
+        // 블록을 클릭했으면 블록이 먼저다. 스니크 중이면 바닐라도 블록 상호작용을
+        // 건너뛰므로 그때는 알을 쓰려는 게 맞다.
+        if (event.getClickedBlock() != null && !event.getPlayer().isSneaking()) {
+            return;
         }
         final ItemStack held = event.getItem();
         final Optional<String> eggId = items.eggIdOf(held);
