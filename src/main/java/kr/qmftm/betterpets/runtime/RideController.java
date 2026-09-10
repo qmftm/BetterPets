@@ -45,9 +45,26 @@ public final class RideController {
     private final NamespacedKey ownerKey;
     private final Map<UUID, Ride> rides = new ConcurrentHashMap<>();
 
+    /**
+     * 비행 수치는 기동 시 한 번만 읽는다.
+     *
+     * <p>{@code drive()} 와 {@code isSafe()} 는 <b>매 틱, 탑승자마다, 서브스텝마다</b>
+     * 돈다. 거기서 {@code getConfig().getDouble()} 을 부르면 문자열 키로 맵을 뒤지는
+     * 일이 초당 수백 번 일어난다. 값은 리로드 때만 바뀌므로 캐시가 맞다.
+     */
+    private volatile double flightLift;
+    private volatile double flightMaxHeight;
+
     public RideController(final Plugin plugin) {
         this.plugin = plugin;
         this.ownerKey = new NamespacedKey(plugin, "ride_owner");
+        reloadTuning();
+    }
+
+    /** {@code /petadmin reload} 가 부른다. 설정을 다시 읽어 캐시를 갈아끼운다. */
+    public void reloadTuning() {
+        flightLift = plugin.getConfig().getDouble("ride.flight-lift", 0.5);
+        flightMaxHeight = plugin.getConfig().getDouble("ride.flight-max-height", 1024.0);
     }
 
     /**
@@ -89,6 +106,16 @@ public final class RideController {
 
     public Ride rideOf(final Player player) {
         return rides.get(player.getUniqueId());
+    }
+
+    /**
+     * 지금 타고 있는 사람들.
+     *
+     * <p>틱 루프가 이걸로 돈다. 소환된 펫 전부를 훑으며 "타고 있나?"를 묻는 것보다,
+     * 보통 비어 있는 이 집합을 도는 편이 훨씬 싸다.
+     */
+    public java.util.Set<UUID> riderIds() {
+        return rides.keySet();
     }
 
     /**
@@ -227,7 +254,7 @@ public final class RideController {
 
         if (ride.flying) {
             if (input.isJump()) {
-                move.setY(move.getY() + plugin.getConfig().getDouble("ride.flight-lift", 0.5));
+                move.setY(move.getY() + flightLift);
             }
         } else {
             // 지상 탑승은 수평 이동만. 지면 높이는 아래에서 맞춘다.
@@ -281,7 +308,7 @@ public final class RideController {
         if (world == null || location.getY() <= world.getMinHeight() + 1) {
             return false;
         }
-        if (flying && location.getY() >= plugin.getConfig().getDouble("ride.flight-max-height", 1024.0)) {
+        if (flying && location.getY() >= flightMaxHeight) {
             return false;
         }
         // 빌드 높이 위는 블록이 없으므로 검사를 건너뛴다.

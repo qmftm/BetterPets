@@ -7,11 +7,13 @@ import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.RideMode;
+import kr.qmftm.betterpets.integration.BedrockSupport;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.MovementController;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.runtime.RideController;
+import kr.qmftm.betterpets.service.BroadcastService;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
@@ -45,6 +47,11 @@ public final class InteractionListener implements Listener {
     private final RideController rides;
     private final GrowthService growth;
     private final Messages messages;
+    private final BroadcastService broadcasts;
+    private final BedrockSupport bedrock;
+
+    /** Bedrock 플레이어에게 비행 이륙 확인을 건너뛸지. 터치로는 두 번째 우클릭이 어렵다. */
+    private final boolean skipMountConfirmOnBedrock;
 
     private final Map<UUID, Long> mountConfirms = new ConcurrentHashMap<>();
 
@@ -54,7 +61,10 @@ public final class InteractionListener implements Listener {
                                final PetRegistry registry,
                                final RideController rides,
                                final GrowthService growth,
-                               final Messages messages) {
+                               final Messages messages,
+                               final BroadcastService broadcasts,
+                               final BedrockSupport bedrock,
+                               final boolean skipMountConfirmOnBedrock) {
         this.pets = pets;
         this.store = store;
         this.items = items;
@@ -62,6 +72,9 @@ public final class InteractionListener implements Listener {
         this.rides = rides;
         this.growth = growth;
         this.messages = messages;
+        this.broadcasts = broadcasts;
+        this.bedrock = bedrock;
+        this.skipMountConfirmOnBedrock = skipMountConfirmOnBedrock;
     }
 
     /**
@@ -98,7 +111,8 @@ public final class InteractionListener implements Listener {
         }
 
         // 보유 한도가 찼으면 알을 먹어치우지 않는다. 아이템을 잃는 게 제일 나쁜 결과다.
-        if (pets.grantPet(player, typeId).isEmpty()) {
+        final Optional<PetData> granted = pets.grantPet(player, typeId);
+        if (granted.isEmpty()) {
             messages.send(player, "pet.box-full",
                 "max", String.valueOf(pets.limits().maxOwned()));
             return;
@@ -108,6 +122,7 @@ public final class InteractionListener implements Listener {
         final PetType type = pets.catalog().type(typeId).orElseThrow();
         messages.send(player, "egg.opened", "name", stripTags(type.displayName()));
         player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1.0f, 1.2f);
+        broadcasts.onObtained(player, granted.get(), type);
     }
 
     /** 펫 우클릭 — 먹이를 들고 있으면 급여, 아니면 탑승 시도. */
@@ -158,7 +173,10 @@ public final class InteractionListener implements Listener {
             case STAGE_UP -> messages.send(player, "feed.stage-up",
                 "stage", String.valueOf(data.growthStage()),
                 "max", String.valueOf(growth.maxStage()));
-            case GREW_UP -> messages.send(player, "feed.grew-up");
+            case GREW_UP -> {
+                messages.send(player, "feed.grew-up");
+                broadcasts.onGrown(player, data, pet.type());
+            }
             case BECAME_PIG -> messages.send(player, "feed.became-pig");
             case FED -> messages.send(player, "feed.fed",
                 "growth", String.valueOf(data.growth()),
@@ -193,7 +211,9 @@ public final class InteractionListener implements Listener {
 
         // FLY 종류라도 비행 추첨에 실패한 개체는 걷는 탑승까지만 된다.
         final boolean flying = type.ride().effective(data.canFly()) == RideMode.FLY;
-        if (flying) {
+        // Bedrock 은 터치 조작이라 "3초 안에 한 번 더 우클릭"을 맞히기가 어렵다.
+        // 자바 플레이어의 실수 방지는 그대로 두고, 이쪽만 건너뛴다.
+        if (flying && !(skipMountConfirmOnBedrock && bedrock.isBedrock(player))) {
             final long now = System.currentTimeMillis();
             final Long armed = mountConfirms.get(player.getUniqueId());
             if (armed == null || now > armed) {

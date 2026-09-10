@@ -77,6 +77,23 @@ public final class PetRegistry {
         return Optional.empty();
     }
 
+    /**
+     * 복사 없이 전부 훑는다.
+     *
+     * <p>{@link #all()} 은 호출마다 {@link ArrayList} 를 새로 만든다. 틱 루프가 초당
+     * 30번 부르는 자리라 그 쓰레기가 그대로 GC 압력이 된다. 소유자별 목록이
+     * {@link CopyOnWriteArrayList} 라 순회 중 변경이 안전하므로 — 실제로 틱 루프가
+     * 순회하면서 죽은 펫을 지운다 — 스냅샷을 뜰 이유가 없다.
+     */
+    public void forEach(final java.util.function.Consumer<ActivePet> action) {
+        for (final List<ActivePet> owned : active.values()) {
+            for (final ActivePet pet : owned) {
+                action.accept(pet);
+            }
+        }
+    }
+
+    /** 스냅샷이 필요할 때만. 틱 루프는 {@link #forEach} 를 쓴다. */
     public Collection<ActivePet> all() {
         final List<ActivePet> everything = new ArrayList<>();
         for (final List<ActivePet> owned : active.values()) {

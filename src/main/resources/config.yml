@@ -3,6 +3,40 @@
 # 이 서버는 동시 접속 5명 내외를 전제로 설계했다. 거리 LOD 나 커넥션 풀 같은
 # 대규모 최적화는 의도적으로 넣지 않았다. 자세한 근거는 docs/DESIGN.md 참고.
 
+# 언어. plugins/BetterPets/lang/<코드>.yml 을 읽는다.
+# 기본 제공: ko_kr, en_us. 새로 만들려면 lang/ko_kr.yml 을 복사해 번역한다.
+# 번역이 빠진 키는 내장 한국어로 채워지므로, 바꾸고 싶은 줄만 남겨도 된다.
+language: ko_kr
+
+# 서버 전체 알림. 희귀한 일에만 울려야 소음이 되지 않는다.
+broadcast:
+  enabled: true
+
+  # 이 등급 이상일 때만 알린다. D C B A S 중 하나.
+  # D 로 두면 사실상 모든 펫을 알리게 되니 채팅이 밀린다.
+  min-rarity: A
+
+  # 이 성장 단계 이상일 때만. 1 이면 단계 조건 없음.
+  min-growth-stage: 1
+
+  on-obtain: true      # 알에서 나왔을 때 (뽑기 자랑)
+  on-grown: true       # 다 자랐을 때 (키운 결과)
+  sound: true          # 알림과 함께 효과음
+
+integrations:
+  # DiscordSRV 가 있으면 같은 알림을 Discord 로도 보낸다. 없으면 조용히 꺼진다.
+  discord:
+    enabled: true
+    # DiscordSRV 의 게임 채널 이름. DiscordSRV config.yml 의 Channels 에 있는 키다.
+    channel: global
+
+  # Geyser(Bedrock) 대응.
+  bedrock:
+    # Bedrock 플레이어는 비행 이륙 확인(한 번 더 우클릭)을 건너뛴다.
+    # 터치 조작에서 3초 안에 두 번째 우클릭을 맞히기가 어렵기 때문이다.
+    # 구분에는 Floodgate 가 필요하다 — 없으면 전원 자바로 취급한다.
+    skip-mount-confirm: true
+
 pets:
   # 한 명이 보유할 수 있는 펫 마릿수. 한도에 닿으면 알을 우클릭해도
   # 아이템이 소비되지 않고 안내만 나간다.

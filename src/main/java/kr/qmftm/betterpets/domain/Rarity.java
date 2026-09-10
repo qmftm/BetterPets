@@ -72,6 +72,16 @@ public enum Rarity {
      * 대소문자를 가리지 않으며, 알 수 없는 값이면 비어 있는 Optional 을 준다.
      * 잘못된 설정을 조용히 D로 떨어뜨리지 않기 위해 기본값을 넣지 않는다.
      */
+    /**
+     * 이 등급이 기준 이상인가. 선언 순서(D→S)가 곧 서열이라 ordinal 로 비교한다.
+     *
+     * <p>등급 사이에 새 등급을 끼워 넣으려면 <b>선언 위치</b>를 지켜야 한다 —
+     * 이름이 아니라 순서가 의미를 갖는다.
+     */
+    public boolean atLeast(final Rarity floor) {
+        return floor == null || ordinal() >= floor.ordinal();
+    }
+
     public static Optional<Rarity> parse(final String raw) {
         if (raw == null || raw.isBlank()) {
             return Optional.empty();

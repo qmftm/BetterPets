@@ -1,5 +1,13 @@
-# 사용자에게 보이는 문자열. MiniMessage 형식이다.
-# https://docs.advntr.dev/minimessage/format.html
+# 한국어. 사용자에게 보이는 문자열은 전부 여기 있다.
+#
+# 다른 언어를 쓰려면 config.yml 의 language 를 바꾼다 (예: language: en_us).
+# 새 언어를 만들려면 이 파일을 복사해 lang/<코드>.yml 로 저장하고 값을 번역한다.
+#
+# 형식은 MiniMessage 다 — https://docs.advntr.dev/minimessage/format.html
+# %이름% 은 플러그인이 채우는 자리다. 위치는 옮겨도 되지만 철자는 그대로 둔다.
+#
+# 여기 없는 키는 내장 한국어 기본값으로 채워진다. 그래서 플러그인이 올라가
+# 키가 늘어도 이 파일이 깨지지 않는다.
 
 prefix: "<gray>[<gold>펫<gray>] </gray>"
 
@@ -59,3 +67,7 @@ admin:
   growth-given: "<green>성장도 <white>%amount%<green> 를 줬습니다."
   reloaded: "<green>설정을 다시 읽었습니다. <gray>펫 <white>%pets%<gray>종, 알 <white>%eggs%<gray>종, 먹이 <white>%feeds%<gray>종"
   reloaded-with-problems: "<yellow>설정을 읽었지만 <white>%count%<yellow>개의 문제가 있습니다:"
+
+broadcast:
+  obtained: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님이 <white>%rarity%<gray> 등급 <white>%pet%<gray> 을(를) 얻었습니다!"
+  grown: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님의 <white>%rarity%<gray> 등급 <white>%pet%<gray> 이(가) 다 자랐습니다!"

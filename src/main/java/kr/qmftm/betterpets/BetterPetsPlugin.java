@@ -6,7 +6,10 @@ import kr.qmftm.betterpets.command.PetCommand;
 import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.domain.PetLimits;
+import kr.qmftm.betterpets.domain.Rarity;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
+import kr.qmftm.betterpets.integration.BedrockSupport;
+import kr.qmftm.betterpets.integration.DiscordBridge;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.listener.AbilityTriggerListener;
 import kr.qmftm.betterpets.listener.InteractionListener;
@@ -19,6 +22,7 @@ import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.runtime.PetTicker;
 import kr.qmftm.betterpets.runtime.RideController;
 import kr.qmftm.betterpets.service.AbilityService;
+import kr.qmftm.betterpets.service.BroadcastService;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
@@ -46,6 +50,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
     private PetTicker ticker;
     private PetService pets;
     private CarrierFactory carriers;
+    private BedrockSupport bedrock;
+    private DiscordBridge discord;
 
     @Override
     public void onEnable() {
@@ -67,7 +73,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
         }
 
         saveDefaultConfig();
-        saveResourceIfMissing("messages.yml");
+        saveResourceIfMissing("lang/ko_kr.yml");
+        saveResourceIfMissing("lang/en_us.yml");
         saveResourceIfMissing("items.yml");
         saveResourceIfMissing("pets/wolf.yml");
         saveResourceIfMissing("pets/dragon.yml");
@@ -100,6 +107,25 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getInt("pets.max-owned", 20),
             getConfig().getInt("pets.max-active", 1));
 
+        bedrock = new BedrockSupport(this);
+        bedrock.detect();
+
+        discord = new DiscordBridge(this,
+            getConfig().getBoolean("integrations.discord.enabled", true),
+            getConfig().getString("integrations.discord.channel", "global"));
+        discord.connect();
+
+        final BroadcastService broadcasts = new BroadcastService(
+            getServer(),
+            messages,
+            discord,
+            getConfig().getBoolean("broadcast.enabled", true),
+            Rarity.parse(getConfig().getString("broadcast.min-rarity", "A")).orElse(Rarity.A),
+            getConfig().getInt("broadcast.min-growth-stage", 1),
+            getConfig().getBoolean("broadcast.on-obtain", true),
+            getConfig().getBoolean("broadcast.on-grown", true),
+            getConfig().getBoolean("broadcast.sound", true));
+
         final AbilityService abilities = new AbilityService(this, abilityRegistry);
         pets = new PetService(
             catalog, store, renderer, carriers, registry, rides, abilities, growth, limits);
@@ -115,10 +141,10 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 + orphanCarriers + "개, 마운트 " + orphanMounts + "개");
         }
 
-        registerListeners(items, menus, abilities, growth);
+        registerListeners(items, menus, abilities, growth, broadcasts);
         registerCommands(items, menus, abilityRegistry);
 
-        ticker = new PetTicker(this, registry, rides, growth, store, pets);
+        ticker = new PetTicker(this, registry, rides, growth, store, pets, broadcasts);
         ticker.start();
 
         // 리로드로 들어온 경우 이미 접속해 있는 플레이어의 데이터를 읽어야 한다.
@@ -152,11 +178,13 @@ public final class BetterPetsPlugin extends JavaPlugin {
     private void registerListeners(final PetItems items,
                                    final PetMenuFactory menus,
                                    final AbilityService abilities,
-                                   final GrowthService growth) {
+                                   final GrowthService growth,
+                                   final BroadcastService broadcasts) {
         final var manager = getServer().getPluginManager();
         manager.registerEvents(new SessionListener(store, pets, registry, abilities), this);
-        manager.registerEvents(
-            new InteractionListener(pets, store, items, registry, rides, growth, messages), this);
+        manager.registerEvents(new InteractionListener(pets, store, items, registry, rides, growth,
+            messages, broadcasts, bedrock,
+            getConfig().getBoolean("integrations.bedrock.skip-mount-confirm", true)), this);
         manager.registerEvents(new MenuListener(pets, store, menus, messages), this);
         manager.registerEvents(new AbilityTriggerListener(registry, abilities), this);
     }
@@ -169,6 +197,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
             messages, () -> {
                 reloadConfig();
                 reloadDefinitions(abilityRegistry);
+                rides.reloadTuning();   // 비행 수치는 캐시돼 있다. 다시 읽어야 반영된다
             }));
     }
 
@@ -186,7 +215,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
     /** 설정을 다시 읽는다. 문제가 있으면 전부 모아 한 번에 보고한다. */
     private void reloadDefinitions(final AbilityRegistry abilityRegistry) {
-        messages.load(new File(getDataFolder(), "messages.yml"));
+        messages.load(this, getDataFolder(), getConfig().getString("language", Messages.FALLBACK_LANGUAGE));
         catalog.load(getDataFolder(), abilityRegistry, renderer);
 
         final var problems = catalog.problems();

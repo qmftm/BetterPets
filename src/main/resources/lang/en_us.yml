@@ -1,0 +1,73 @@
+# English. Every player-facing string lives here.
+#
+# Pick a language with `language:` in config.yml (e.g. language: en_us).
+# To add a language, copy this file to lang/<code>.yml and translate the values.
+#
+# The format is MiniMessage — https://docs.advntr.dev/minimessage/format.html
+# %name% markers are filled in by the plugin. You may move them, but keep the spelling.
+#
+# Any key missing here falls back to the built-in Korean default, so upgrading
+# the plugin never leaves you with a blank message.
+
+prefix: "<gray>[<gold>Pets<gray>] </gray>"
+
+pet:
+  summoned: "<green>Pet summoned."
+  summoned-replaced: "<green>Pet summoned. <gray>You were at the active limit, so your oldest pet went back."
+  dismissed: "<gray>Pet sent back."
+  dismissed-count: "<gray>Sent back <white>%count%<gray> pet(s)."
+  none-active: "<red>You have no pet out."
+  box-full: "<red>You cannot hold any more pets. <gray>(max <white>%max%<gray>) Release one and try again."
+  not-found: "<red>No such pet."
+  model-missing: "<red>That pet's model is missing. Tell an admin."
+  unknown-type: "<red>Unknown pet type."
+  renamed: "<green>Renamed to '<white>%name%<green>'."
+  name-too-long: "<red>Names cannot be longer than 32 characters."
+  released: "<gray>You released the pet."
+  rename-hint: "<gray>Use /pet rename %id% <name> to rename it."
+  rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."
+
+egg:
+  unknown: "<red>Unknown egg."
+  broken-definition: "<red>This egg is misconfigured. Tell an admin."
+  opened: "<green>A <white>%name%<green> came out of the egg!"
+
+feed:
+  fed: "<green>Fed. <gray>Growth <white>%growth%<gray>/<white>%max%"
+  stage-up: "<aqua>Growth stage up! <gray>(stage %stage%/%max%)"
+  grew-up: "<gold>Fully grown! You can ride it now."
+  became-pig: "<yellow>You overfed it... it turned into a pig."
+  already-grown: "<gray>This pet is already fully grown."
+  unknown: "<red>That food is not in the config. Tell an admin."
+
+ride:
+  started-ground: "<green>Mounted. <gray>Look where you want to go; sneak to dismount."
+  started-flying: "<gold>Taking off. <gray>Jump to climb, sneak to dismount."
+  confirm: "<gold>Right-click once more to take off."
+  stopped: "<gray>Dismounted."
+  not-riding: "<red>You are not riding anything."
+  not-rideable: "<red>This pet cannot be ridden."
+  too-young: "<yellow>Still a baby. It has to grow up first."
+  failed: "<red>You cannot mount here."
+
+command:
+  unknown: "<red>Unknown command. <gray>/pet"
+  summon-usage: "<gray>/pet summon <first digits of petId>"
+  rename-usage: "<gray>/pet rename <name>"
+
+admin:
+  player-not-found: "<red>Player not found."
+  unknown-pet-type: "<red>Unknown pet type: <white>%id%"
+  unknown-egg: "<red>Unknown egg: <white>%id%"
+  unknown-feed: "<red>Unknown food: <white>%id%"
+  box-full: "<red><white>%player%<red> is at their pet limit."
+  given: "<green>Gave <white>%type%<green> to <white>%player%<green>."
+  egg-given: "<green>Gave egg <white>%id%<green> to <white>%player%<green>."
+  feed-given: "<green>Gave food <white>%id%<green> to <white>%player%<green>."
+  growth-given: "<green>Gave <white>%amount%<green> growth."
+  reloaded: "<green>Config reloaded. <gray><white>%pets%<gray> pets, <white>%eggs%<gray> eggs, <white>%feeds%<gray> foods"
+  reloaded-with-problems: "<yellow>Config loaded with <white>%count%<yellow> problem(s):"
+
+broadcast:
+  obtained: "<gray>[<gold>Pets<gray>] <white>%player%<gray> obtained a <white>%rarity%<gray> <white>%pet%<gray>!"
+  grown: "<gray>[<gold>Pets<gray>] <white>%player%<gray>'s <white>%rarity%<gray> <white>%pet%<gray> is fully grown!"

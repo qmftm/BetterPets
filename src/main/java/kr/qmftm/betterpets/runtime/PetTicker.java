@@ -3,12 +3,15 @@ package kr.qmftm.betterpets.runtime;
 import kr.qmftm.betterpets.domain.GrowthCurve;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
+import kr.qmftm.betterpets.service.BroadcastService;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
+
+import java.util.UUID;
 
 /**
  * 전역 틱 루프.
@@ -30,6 +33,7 @@ public final class PetTicker {
     private final GrowthService growth;
     private final PetStore store;
     private final PetService pets;
+    private final BroadcastService broadcasts;
 
     private BukkitTask followTask;
     private BukkitTask rideTask;
@@ -39,13 +43,15 @@ public final class PetTicker {
                      final RideController rides,
                      final GrowthService growth,
                      final PetStore store,
-                     final PetService pets) {
+                     final PetService pets,
+                     final BroadcastService broadcasts) {
         this.plugin = plugin;
         this.registry = registry;
         this.rides = rides;
         this.growth = growth;
         this.store = store;
         this.pets = pets;
+        this.broadcasts = broadcasts;
     }
 
     public void start() {
@@ -67,48 +73,55 @@ public final class PetTicker {
     }
 
     private void tickFollow() {
-        for (final ActivePet pet : registry.all()) {
+        registry.forEach(pet -> {
             final Player owner = plugin.getServer().getPlayer(pet.ownerId());
 
             // 소유자가 없으면 소환된 채로 둘 이유가 없다. 즉시 정리한다.
-            if (owner == null || !owner.isOnline()) {
+            if (owner == null || !owner.isOnline()
+                || pet.isClosed()
+                || pet.carrier().isDead() || !pet.carrier().isValid()) {
+                // 소유자가 없거나 캐리어가 사라졌다(청크 언로드, 외부 플러그인).
+                // 소환된 채로 둘 이유가 없다.
                 registry.remove(pet.ownerId(), pet.petId());
-                continue;
-            }
-            if (pet.isClosed()) {
-                registry.remove(pet.ownerId(), pet.petId());
-                continue;
-            }
-            // 캐리어가 어떤 이유로든 사라졌다면(청크 언로드, 외부 플러그인) 정리한다.
-            if (pet.carrier().isDead() || !pet.carrier().isValid()) {
-                registry.remove(pet.ownerId(), pet.petId());
-                continue;
+                return;
             }
             // 월드가 갈리면 추종으로는 못 따라간다. 즉시 옮긴다.
             if (!owner.getWorld().equals(pet.carrier().getWorld())) {
                 pet.carrier().teleport(owner.getLocation());
-                continue;
+                return;
             }
 
             applyTimeGrowth(owner, pet.data());
             pet.tick(owner);
-        }
+        });
     }
 
+    /**
+     * 탑승 조향. 매 틱 돈다.
+     *
+     * <p><b>소환된 펫이 아니라 타고 있는 사람을 훑는다.</b> 탑승자는 보통 0~1명인데
+     * 소환된 펫은 그보다 훨씬 많다 — 펫을 훑으면 매 틱 전부 확인하고 대부분 건너뛴다.
+     * 아무도 안 타고 있으면 이 루프는 한 바퀴도 돌지 않는다.
+     */
     private void tickRides() {
-        for (final ActivePet pet : registry.all()) {
-            final Player owner = plugin.getServer().getPlayer(pet.ownerId());
+        for (final UUID riderId : rides.riderIds()) {
+            final Player owner = plugin.getServer().getPlayer(riderId);
             if (owner == null) {
                 continue;
             }
-            // 여러 마리를 소환해 뒀을 수 있다. 실제로 타고 있는 그 한 마리만 처리한다 —
-            // 이 확인이 없으면 같이 나와 있는 펫들이 전부 마운트로 순간이동한다.
-            if (!rides.isRiding(owner, pet.petId())) {
+            final RideController.Ride ride = rides.rideOf(owner);
+            if (ride == null) {
+                continue;
+            }
+            final ActivePet pet = registry.of(riderId, ride.petId()).orElse(null);
+            if (pet == null) {
+                // 탄 펫이 사라졌다. 공중에 남기지 않고 내려준다.
+                rides.stop(owner);
                 continue;
             }
             if (rides.tick(owner)) {
                 // 탑승 중에는 펫 본체가 마운트를 밀착 추적한다.
-                pet.carrier().teleport(rides.rideOf(owner).mount().getLocation());
+                pet.carrier().teleport(ride.mount().getLocation());
             } else {
                 // 하차했다. 추종으로 되돌린다.
                 pet.movement().mode(MovementController.Mode.GROUND);
@@ -134,13 +147,19 @@ public final class PetTicker {
         store.saveAsync(data);
 
         final String typeBefore = data.typeId();
-        growth.promoteIfGrown(data);
+        final GrowthService.StageResult result = growth.promoteIfGrown(data);
 
         // 성장 단계 진화로 종류가 바뀌었으면 모델을 갈아끼운다. 이걸 빼면 데이터만
         // 바뀌고 화면은 예전 모습 그대로다.
         if (!typeBefore.equals(data.typeId())) {
             store.saveAsync(data);
             pets.refreshIfTypeChanged(owner, data);
+        }
+        // 먹여서 자란 경우는 InteractionListener 가 알린다. 시간이 흘러 자란 경우가
+        // 여기다 — 두 경로 모두 알려야 "가만히 뒀더니 조용히 성체가 됐다"가 없다.
+        if (result == GrowthService.StageResult.GREW_UP) {
+            pets.catalog().type(data.typeId())
+                .ifPresent(type -> broadcasts.onGrown(owner, data, type));
         }
     }
 
