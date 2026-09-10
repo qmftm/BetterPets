@@ -76,4 +76,15 @@ class RarityTest {
         assertFalse(LifeStage.BABY.abilitiesActive());
         assertFalse(LifeStage.PIG.abilitiesActive(), "돼지는 기믹이라 능력이 없다");
     }
+
+    @Test
+    @DisplayName("등급 비교는 선언 순서를 따른다 — 방송 문턱이 이걸로 정해진다")
+    void atLeastFollowsDeclarationOrder() {
+        assertTrue(Rarity.S.atLeast(Rarity.A));
+        assertTrue(Rarity.A.atLeast(Rarity.A), "같은 등급도 기준을 만족한다");
+        assertFalse(Rarity.B.atLeast(Rarity.A));
+        assertFalse(Rarity.D.atLeast(Rarity.S));
+
+        assertTrue(Rarity.D.atLeast(null), "기준이 없으면 전부 통과시킨다");
+    }
 }

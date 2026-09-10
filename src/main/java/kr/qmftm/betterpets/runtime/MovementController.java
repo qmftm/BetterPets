@@ -12,6 +12,14 @@ import org.bukkit.util.Vector;
  *
  * <p>바닐라 경로탐색을 쓰지 않는다({@code setAI(false)}). 대신 목표 지점을 계산해
  * 보간 이동하고, 막히면 간이 지형 처리로 넘어가거나 텔레포트로 폴백한다.
+ *
+ * <p><b>여기는 초당 5번, 소환된 펫마다 도는 자리다.</b> 두 가지를 아낀다:
+ * <ul>
+ *   <li><b>할당</b> — {@code getLocation()} 은 호출마다 새 {@link Location} 을 만든다.
+ *       재사용 버퍼를 넘기는 오버로드를 써서 틱마다 생기는 쓰레기를 없앤다
+ *   <li><b>패킷</b> — {@code teleport}/{@code setRotation} 은 시청자 수만큼 패킷이 된다.
+ *       원작이 렉으로 무너진 지점이 여기라, <b>바뀐 게 없으면 부르지 않는다</b>
+ * </ul>
  */
 public final class MovementController {
 
@@ -28,19 +36,36 @@ public final class MovementController {
     /** 이 시간 동안 목표에 가까워지지 못하면 텔레포트한다. */
     private static final long STUCK_MILLIS = 3_000L;
 
+    /** 이보다 작은 회전은 패킷을 보낼 값어치가 없다. 눈으로 구분되지 않는다. */
+    private static final float YAW_EPSILON = 2.0f;
+
     private final Mob carrier;
-    private final PetType type;
-    private final double speedMultiplier;
+    private final PetType.MovementProfile profile;
+    private final double walkStep;
+    private final double runStep;
+
+    /**
+     * 틱마다 다시 쓰는 위치 버퍼.
+     *
+     * <p>한 펫의 tick 은 항상 메인 스레드에서 순차적으로 돈다. 그래서 인스턴스마다
+     * 하나씩 들고 돌려 써도 안전하고, 이 클래스 밖으로는 절대 새어 나가지 않는다 —
+     * 값을 넘길 때는 반드시 복사한다.
+     */
+    private final Location here = new Location(null, 0, 0, 0);
+    private final Location probe = new Location(null, 0, 0, 0);
 
     private Mode mode = Mode.GROUND;
     private State state = State.IDLE;
     private double lastDistance = Double.MAX_VALUE;
     private long lastProgressAt = System.currentTimeMillis();
+    private float lastYaw = Float.NaN;
 
     public MovementController(final Mob carrier, final PetType type) {
         this.carrier = carrier;
-        this.type = type;
-        this.speedMultiplier = type.rarity().moveSpeedMultiplier();
+        this.profile = type.movement();
+        final double multiplier = type.rarity().moveSpeedMultiplier();
+        this.walkStep = profile.walkSpeed() * multiplier;
+        this.runStep = profile.runSpeed() * multiplier;
     }
 
     public Mode mode() {
@@ -65,7 +90,7 @@ public final class MovementController {
             return;
         }
         final Location target = followTarget(owner);
-        final Location current = carrier.getLocation();
+        final Location current = carrier.getLocation(here);
 
         if (!current.getWorld().equals(target.getWorld())) {
             teleportTo(target);
@@ -87,13 +112,13 @@ public final class MovementController {
     }
 
     private State resolveState(final double distance) {
-        if (distance >= type.movement().teleportDistance()) {
+        if (distance >= profile.teleportDistance()) {
             return State.TELEPORT;
         }
         if (distance >= 8.0) {
             return State.RUN;
         }
-        if (distance >= type.movement().followDistance() + DEAD_ZONE) {
+        if (distance >= profile.followDistance() + DEAD_ZONE) {
             return State.WALK;
         }
         return State.IDLE;
@@ -106,14 +131,12 @@ public final class MovementController {
         if (behind.lengthSquared() < 1.0e-4) {
             behind.setX(0).setZ(1);
         }
-        behind.normalize().multiply(-type.movement().followDistance());
+        behind.normalize().multiply(-profile.followDistance());
         return base.clone().add(behind);
     }
 
     private void step(final Location current, final Location target, final double distance) {
-        final double speed = (state == State.RUN
-            ? type.movement().runSpeed()
-            : type.movement().walkSpeed()) * speedMultiplier;
+        final double speed = state == State.RUN ? runStep : walkStep;
 
         final Vector direction = target.toVector().subtract(current.toVector());
         direction.setY(0);
@@ -126,6 +149,7 @@ public final class MovementController {
         next.setY(groundLevel(next, current.getY()));
         next.setDirection(target.toVector().subtract(next.toVector()).setY(0));
         carrier.teleport(next);
+        lastYaw = next.getYaw();    // 회전 캐시를 실제로 보낸 값에 맞춘다
 
         if (distance < lastDistance - 0.05) {
             lastProgressAt = System.currentTimeMillis();
@@ -140,27 +164,28 @@ public final class MovementController {
      * 그보다 복잡한 지형은 텔레포트 폴백이 처리한다.
      */
     private double groundLevel(final Location at, final double currentY) {
-        final Location probe = at.clone();
-        probe.setY(currentY);
+        // 버퍼 하나를 y 만 바꿔가며 재사용한다. 예전엔 검사마다 clone() 이 하나씩 났다.
+        probe.setWorld(at.getWorld());
+        probe.setX(at.getX());
+        probe.setZ(at.getZ());
 
-        if (isSolid(probe)) {
-            final Location above = probe.clone().add(0, 1, 0);
-            if (!isSolid(above)) {
-                return currentY + 1.0;
-            }
-            return currentY;    // 두 칸 벽. 텔레포트 폴백에 맡긴다
+        if (isSolidAt(currentY)) {
+            return isSolidAt(currentY + 1.0)
+                ? currentY              // 두 칸 벽. 텔레포트 폴백에 맡긴다
+                : currentY + 1.0;
         }
         for (int drop = 1; drop <= 3; drop++) {
-            final Location below = probe.clone().subtract(0, drop, 0);
-            if (isSolid(below)) {
+            if (isSolidAt(currentY - drop)) {
                 return currentY - drop + 1.0;
             }
         }
         return currentY;
     }
 
-    private boolean isSolid(final Location location) {
-        final Material material = location.getBlock().getType();
+    /** {@link #probe} 의 x·z 를 그대로 두고 높이만 바꿔 확인한다. */
+    private boolean isSolidAt(final double y) {
+        probe.setY(y);
+        final Material material = probe.getBlock().getType();
         return material.isSolid();
     }
 
@@ -169,22 +194,45 @@ public final class MovementController {
      * 지형 처리가 감당 못 하는 상황에서 펫이 영영 뒤처지는 것을 막는다.
      */
     private boolean isStuck(final double distance) {
-        if (distance <= type.movement().followDistance() + DEAD_ZONE) {
+        if (distance <= profile.followDistance() + DEAD_ZONE) {
             lastProgressAt = System.currentTimeMillis();
             return false;
         }
         return System.currentTimeMillis() - lastProgressAt > STUCK_MILLIS;
     }
 
+    /**
+     * 소유자를 바라본다.
+     *
+     * <p>가만히 서 있는 펫이 여기로 온다 — 가장 자주 도는 경로다. 그래서 <b>회전이
+     * 눈에 띄게 달라졌을 때만</b> 패킷을 보낸다. 매 틱 같은 각도를 다시 보내면
+     * 소환된 펫 수 × 시청자 수만큼 의미 없는 트래픽이 된다.
+     */
     private void faceOwner(final Player owner) {
-        final Vector toOwner = owner.getLocation().toVector()
-            .subtract(carrier.getLocation().toVector()).setY(0);
-        if (toOwner.lengthSquared() < 1.0e-4) {
+        final Location ownerAt = owner.getLocation();
+        final Location current = carrier.getLocation(here);
+        final double dx = ownerAt.getX() - current.getX();
+        final double dz = ownerAt.getZ() - current.getZ();
+        if (dx * dx + dz * dz < 1.0e-4) {
             return;
         }
-        final Location facing = carrier.getLocation();
-        facing.setDirection(toOwner);
-        carrier.setRotation(facing.getYaw(), 0.0f);
+        final float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        if (!Float.isNaN(lastYaw) && Math.abs(angleDelta(yaw, lastYaw)) < YAW_EPSILON) {
+            return;     // 사실상 같은 방향이다. 패킷을 아낀다
+        }
+        carrier.setRotation(yaw, 0.0f);
+        lastYaw = yaw;
+    }
+
+    /** -180..180 으로 접은 각도 차. 359도와 1도가 358도 차이로 잡히지 않게 한다. */
+    private static float angleDelta(final float a, final float b) {
+        float delta = (a - b) % 360.0f;
+        if (delta > 180.0f) {
+            delta -= 360.0f;
+        } else if (delta < -180.0f) {
+            delta += 360.0f;
+        }
+        return delta;
     }
 
     private void teleportTo(final Location target) {
@@ -192,5 +240,6 @@ public final class MovementController {
         state = State.IDLE;
         lastDistance = Double.MAX_VALUE;
         lastProgressAt = System.currentTimeMillis();
+        lastYaw = Float.NaN;    // 위치가 튀었다. 다음 회전은 무조건 보낸다
     }
 }

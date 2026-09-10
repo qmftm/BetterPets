@@ -17,6 +17,25 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+    # 알림을 Discord 로도 보낸다. 없으면 조용히 꺼진다.
+    DiscordSRV:
+      load: BEFORE
+      required: false
+      join-classpath: false
+    # Bedrock 플레이어 구분. 없으면 전원 자바로 취급한다.
+    floodgate:
+      load: BEFORE
+      required: false
+      join-classpath: false
+    Geyser-Spigot:
+      load: BEFORE
+      required: false
+      join-classpath: false
+    # BetterModel 모델을 Bedrock 에 변환해 보여준다. 없으면 Bedrock 에는 히트박스만 보인다.
+    GeyserModelEngine:
+      load: BEFORE
+      required: false
+      join-classpath: false
 
 commands:
   pet:
