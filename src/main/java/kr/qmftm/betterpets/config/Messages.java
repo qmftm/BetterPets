@@ -128,6 +128,17 @@ public final class Messages {
     }
 
     /**
+     * 아이템 이름·로어용.
+     *
+     * <p><b>{@link #bare} 를 쓰면 안 되는 자리다.</b> 바닐라는 아이템 로어를 기본으로
+     * 기울여 그린다. 그대로 두면 우리가 쓴 서식과 섞여 지저분하고, 무엇보다 GUI 로어는
+     * 안 기울고 아이템 로어만 기울어 <b>같은 화면 안에서 글꼴이 갈린다.</b>
+     */
+    public Component item(final String key, final String... placeholders) {
+        return plain(raw(key, placeholders));
+    }
+
+    /**
      * 접두사 없이 조립한다. 방송처럼 자기 서식을 통째로 들고 있는 문구에 쓴다.
      */
     public Component bare(final String key, final String... placeholders) {

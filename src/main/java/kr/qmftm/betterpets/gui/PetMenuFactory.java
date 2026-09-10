@@ -69,9 +69,15 @@ public final class PetMenuFactory {
         this.messages = messages;
     }
 
-    /** 인벤토리 제목. MiniMessage 태그가 제목에 그대로 들어가지 않게 걷어낸다. */
+    /**
+     * 인벤토리 제목.
+     *
+     * <p>여기서 태그를 걷어내지 않는다 — 그러면 번역자가 제목에 색을 쓸 수 없다.
+     * 대신 <b>플레이어가 정한 값</b>(펫 이름)은 넘기기 전에 호출부가 걷어낸다.
+     * 위험한 건 서식 자체가 아니라, 남이 정한 문자열이 서식으로 읽히는 것이다.
+     */
     private Component title(final String key, final String... placeholders) {
-        return Messages.plain(Tags.strip(messages.raw(key, placeholders)));
+        return messages.item(key, placeholders);
     }
 
     /**
@@ -318,14 +324,9 @@ public final class PetMenuFactory {
         return stack;
     }
 
-    /**
-     * 언어 파일의 한 줄을 아이템 이름·로어용 {@link Component} 로.
-     *
-     * <p>기울임을 끈다 — 바닐라가 아이템 로어를 기본으로 기울여 그리는데, 그대로 두면
-     * 우리가 쓴 서식과 섞여 지저분해진다. {@link Messages#plain(String)} 이 그 처리를 한다.
-     */
+    /** 언어 파일의 한 줄을 아이템 이름·로어용 {@link Component} 로. */
     private Component line(final String key, final String... placeholders) {
-        return Messages.plain(messages.raw(key, placeholders));
+        return messages.item(key, placeholders);
     }
 
 }

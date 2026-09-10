@@ -70,7 +70,7 @@ public final class PetItems {
         meta.displayName(Messages.plain(definition.displayName()));
         // 알과 대칭이다. 먹이도 성장도가 제각각인데 이름만 보고는 알 수 없다 —
         // "펫 우유"와 "고급 사료" 중 뭐가 나은지 물어볼 일이 없어야 한다.
-        meta.lore(List.of(messages.bare("feed.lore-growth",
+        meta.lore(List.of(messages.item("feed.lore-growth",
             "growth", String.valueOf(definition.growthOr(defaultFeedAmount)))));
         applyItemModel(meta, definition.itemModel());
         // 먹이마다 성장도가 다르므로 어떤 먹이인지 id 로 남긴다.
@@ -94,7 +94,7 @@ public final class PetItems {
     private List<Component> contentsLore(final EggDefinition definition) {
         final List<Component> lore = new ArrayList<>();
         if (!definition.isRandom()) {
-            lore.add(messages.bare("egg.lore-guaranteed", "pet", petName(definition.gives())));
+            lore.add(messages.item("egg.lore-guaranteed", "pet", petName(definition.gives())));
             return lore;
         }
         final int total = definition.weights().values().stream()
@@ -104,7 +104,7 @@ public final class PetItems {
         if (total <= 0) {
             return lore;    // 설정이 깨진 알. 기동 시 경고가 이미 나갔다
         }
-        lore.add(messages.bare("egg.lore-header"));
+        lore.add(messages.item("egg.lore-header"));
 
         final List<Map.Entry<String, Integer>> sorted = definition.weights().entrySet().stream()
             .filter(e -> e.getValue() != null && e.getValue() > 0)
@@ -113,12 +113,12 @@ public final class PetItems {
 
         for (int i = 0; i < Math.min(LORE_LIMIT, sorted.size()); i++) {
             final var entry = sorted.get(i);
-            lore.add(messages.bare("egg.lore-entry",
+            lore.add(messages.item("egg.lore-entry",
                 "pet", petName(entry.getKey()),
                 "chance", percent(entry.getValue(), total)));
         }
         if (sorted.size() > LORE_LIMIT) {
-            lore.add(messages.bare("egg.lore-more",
+            lore.add(messages.item("egg.lore-more",
                 "count", String.valueOf(sorted.size() - LORE_LIMIT)));
         }
         return lore;
