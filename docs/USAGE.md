@@ -373,6 +373,8 @@ Bedrock 플레이어에게만 안 보인다면 GeyserModelEngine 이 필요합�
 <summary><b>설정을 고쳤는데 그대로예요</b></summary>
 
 `/petadmin reload` 를 쳐 주세요. 문제가 있으면 뭐가 잘못됐는지 하나씩 알려줍니다.
+(설정 오류 문구는 파일 경로와 키를 그대로 담고 있어서 언어 설정과 무관하게
+한국어로 나옵니다 — 번역해도 그 안의 경로는 그대로라 오히려 읽기 어려워져요.)
 `config.yml` · `rarity.yml` · `items.yml` · `pets/*.yml` · `lang/*.yml` 이 전부 다시
 읽히고, 성장·기믹·한도·알림·비행·Discord 채널까지 그 자리에서 바뀝니다.
 </details>
