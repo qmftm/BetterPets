@@ -74,6 +74,20 @@ public record PetType(
         public static final String RIDE = "ride";
         public static final String EAT = "eat";
 
+        /**
+         * 플러그인이 아는 논리 이름.
+         *
+         * <p>{@code animations:} 의 <b>키</b>는 "바꿀 이름"이 아니라 "바꿀 대상"이다.
+         * 거기에 오타를 내면 매핑이 조용히 무시되고, 증상은 "이름을 바꿨는데 안 먹는다"로
+         * 나온다 — 원인에서 한참 떨어진 자리다. 로드할 때 걸러내려고 목록을 둔다.
+         *
+         * <p>뒤 넷은 <b>아직 재생되지 않지만</b> MODELING 이 자리를 잡아둔 이름이라
+         * 오타로 치지 않는다. 미리 만들어 둔 사람에게 경고를 띄울 이유가 없다.
+         */
+        public static final java.util.Set<String> KNOWN = java.util.Set.of(
+            IDLE, WALK, RUN, RIDE, FLY, EAT,
+            "fly_idle", "sit", "attack", "spawn");
+
         public AnimationSet {
             mapping = Map.copyOf(mapping);
         }
@@ -94,6 +108,24 @@ public record PetType(
         double runSpeed,
         double teleportDistance
     ) {
+        /**
+         * 설정값을 쓸 수 있는 범위로 접는다.
+         *
+         * <p>0이나 음수가 들어오면 <b>증상이 원인에서 아주 멀다.</b> 음수 속도는 펫을
+         * 주인 반대쪽으로 밀어내고, {@code teleport-distance: 0} 은 매 틱 텔레포트가
+         * 된다 — 원작이 렉으로 무너진 바로 그 종류의 일이다. 설정 실수 하나로 서버가
+         * 느려지게 두지 않는다.
+         *
+         * <p>달리기가 걷기보다 느린 것도 접는다. 뜻이 없는 조합이고, 그대로 두면
+         * "멀어질수록 느려지는" 펫이 된다.
+         */
+        public MovementProfile {
+            followDistance = Math.max(0.5, followDistance);
+            walkSpeed = Math.max(0.01, walkSpeed);
+            runSpeed = Math.max(walkSpeed, runSpeed);
+            teleportDistance = Math.max(4.0, teleportDistance);
+        }
+
         public static MovementProfile defaults() {
             return new MovementProfile(2.0, 0.25, 0.45, 24.0);
         }

@@ -196,7 +196,7 @@ public final class PetCatalog {
                 yaml.getInt("growth-max", 100),
                 ride,
                 yaml.getDouble("fly-chance", rarities.stats(rarity.get()).flyChance()),
-                readAnimations(yaml.getConfigurationSection("animations")),
+                readAnimations(file.getName(), yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
                 readAbilities(file.getName(), yaml.getMapList("abilities"), abilities),
                 readWeights(yaml.getConfigurationSection("next-stage")),
@@ -232,16 +232,31 @@ public final class PetCatalog {
         return parsed.get();
     }
 
-    private PetType.AnimationSet readAnimations(final ConfigurationSection section) {
+    /**
+     * {@code animations:} 매핑을 읽는다.
+     *
+     * <p><b>모르는 키는 알린다.</b> 여기 키는 플러그인이 쓰는 논리 이름이라 정해져 있는데,
+     * 오타를 내도 맵에 조용히 들어갔다가 아무도 찾지 않는다. 증상은 "이름을 바꿨는데
+     * 안 먹는다"로 나오고, 그때 들여다볼 곳은 이 파일이 아니라 모델 쪽이라고 착각하게 된다.
+     */
+    private PetType.AnimationSet readAnimations(final String fileName,
+                                                final ConfigurationSection section) {
         if (section == null) {
             return PetType.AnimationSet.defaults();
         }
         final Map<String, String> mapping = new HashMap<>();
         for (final String key : section.getKeys(false)) {
             final String value = section.getString(key);
-            if (value != null && !value.isBlank()) {
-                mapping.put(key, value);
+            if (value == null || value.isBlank()) {
+                continue;
             }
+            if (!PetType.AnimationSet.KNOWN.contains(key)) {
+                problems.add(fileName + ": animations 의 '" + key
+                    + "' 는 플러그인이 쓰지 않는 이름입니다. 사용 가능: "
+                    + PetType.AnimationSet.KNOWN);
+                continue;
+            }
+            mapping.put(key, value);
         }
         return new PetType.AnimationSet(mapping);
     }

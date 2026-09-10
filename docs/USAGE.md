@@ -84,11 +84,17 @@ ride: FLY                  # NONE(못 탐) / GROUND(걸어서) / FLY(날아서)
 fly-chance: 0.35           # FLY 라도 실제로 날 확률. 실패하면 걷는 탑승
 
 animations:                # 모델의 애니메이션 이름과 연결
-  idle: idle
+  idle: idle               # 키는 정해져 있어요. 오타를 내면 기동할 때 알려드립니다
   walk: walk
   run: run
   fly: fly
   ride: ride
+
+movement:                  # 안 적으면 전부 기본값입니다
+  follow-distance: 3.0     # 주인 뒤 이만큼 떨어져 따라와요
+  walk-speed: 0.28
+  run-speed: 0.5           # 8블록 이상 뒤처지면 이 속도로 뜁니다
+  teleport-distance: 28.0  # 이보다 멀어지면 순간이동으로 따라잡아요
 
 abilities:
   - id: attribute_speed
@@ -101,6 +107,10 @@ acquire:
 
 설정에 오타가 있으면 **기동할 때 전부 모아서 한 번에** 알려줍니다. 고치고 재시작하기를
 반복할 일이 없어요.
+
+`movement:` 값은 쓸 수 있는 범위로 접습니다. 예를 들어 `teleport-distance: 0` 은 펫이
+매 틱 순간이동하게 만들어서 서버가 느려지는데, 그런 값은 조용히 최소값으로 올려요 —
+설정 한 줄 때문에 서버가 멈추는 편보다 낫습니다.
 
 ### 🔢 보유 · 소환 마릿수
 

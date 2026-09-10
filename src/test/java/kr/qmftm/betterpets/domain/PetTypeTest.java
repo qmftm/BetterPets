@@ -92,6 +92,47 @@ class PetTypeTest {
     }
 
     @Test
+    @DisplayName("이동 수치는 쓸 수 있는 범위로 접힌다 — 설정 실수로 서버가 느려지면 안 된다")
+    void movementProfileClampsBadValues() {
+        final var broken = new PetType.MovementProfile(-5.0, -1.0, 0.0, 0.0);
+
+        assertTrue(broken.followDistance() >= 0.5, "0이면 펫들이 주인 위에 겹친다");
+        assertTrue(broken.walkSpeed() > 0.0, "음수 속도는 펫을 주인 반대쪽으로 민다");
+        assertTrue(broken.teleportDistance() >= 4.0, "0이면 매 틱 텔레포트가 된다");
+    }
+
+    @Test
+    @DisplayName("달리기가 걷기보다 느릴 수는 없다")
+    void runIsNeverSlowerThanWalk() {
+        final var reversed = new PetType.MovementProfile(2.0, 0.5, 0.1, 24.0);
+
+        assertEquals(0.5, reversed.runSpeed(), 1.0e-9,
+            "그대로 두면 멀어질수록 느려지는 펫이 된다");
+    }
+
+    @Test
+    @DisplayName("기본값은 접히지 않는다 — 접는 범위가 기본값을 삼키면 안 된다")
+    void defaultsSurviveClamping() {
+        final var defaults = PetType.MovementProfile.defaults();
+
+        assertEquals(2.0, defaults.followDistance());
+        assertEquals(0.25, defaults.walkSpeed());
+        assertEquals(0.45, defaults.runSpeed());
+        assertEquals(24.0, defaults.teleportDistance());
+    }
+
+    @Test
+    @DisplayName("플러그인이 아는 애니메이션 이름에는 실제로 쓰는 여섯이 다 들어 있다")
+    void knownAnimationsCoverWhatWePlay() {
+        final var known = PetType.AnimationSet.KNOWN;
+
+        for (final String name : List.of("idle", "walk", "run", "ride", "fly", "eat")) {
+            assertTrue(known.contains(name), name + " 은 실제로 재생하는 이름이다");
+        }
+        assertFalse(known.contains("wlak"), "오타를 통과시키면 경고를 낼 수 없다");
+    }
+
+    @Test
     @DisplayName("능력 목록도 밖에서 고칠 수 없다")
     void abilitiesAreImmutable() {
         final PetType wolf = simple();
