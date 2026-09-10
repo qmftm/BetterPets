@@ -48,7 +48,7 @@
 
 ### 지금까지 확정된 것
 
-- **빌드가 통과한다** — JDK 25로 BetterModel 3.4.1 API에 대해 실제 컴파일, 단위 테스트 93개 통과
+- **빌드가 통과한다** — JDK 25로 BetterModel 3.4.1 API에 대해 실제 컴파일, 단위 테스트 104개 통과
 - **캐리어 엔티티는 보이지 않는 `Mob`** — `ItemDisplay` 대신 고른 이유는 자체 히트박스가 있어서다. 모델에 히트박스 본(`b_`)이 없어도 우클릭이 먹는다
 - **BetterModel API 격리** — `BetterModelRenderer` 가 그 API를 import하는 유일한 파일이다
 - **탑승은 `ArmorStand` + Paper `Input`** — `allowFlight` 를 쓰지 않으므로 비행 권한이 샐 위험 자체가 없다
@@ -104,6 +104,8 @@
 
 **관리**
 - [x] 펫 보관함 GUI — 가진 펫 전부를 등급·상태·성장도와 함께 한 화면에서 본다 (한 쪽에 45마리, 쪽 넘김)
+- [x] 정렬 — 소환 중 → 등급 높은 순 → 획득 순
+- [x] 상세 화면에 능력 목록 (지금 성장도 기준 수치)
 - [x] 최대 보유 · 최대 동시 소환 마릿수를 `config.yml` 에서 설정 (0 = 무제한)
 - [x] 이름 변경 · 해방
 - [ ] PlaceholderAPI 연동
@@ -344,6 +346,7 @@ kr.qmftm.betterpets
 │   ├─ LifeStage           BABY · ADULT · PIG
 │   ├─ GrowthCurve         성장도 지연 계산
 │   ├─ PetLimits           보유·동시 소환 한도 (0 = 무제한)
+│   ├─ PetOrder            보관함 정렬 기준
 │   ├─ PetType             펫 종류 정의 (설정에서 로드)
 │   ├─ PetData             펫 개체 (저장 대상)
 │   └─ EggDefinition       알 아이템 정의, 가중치 추첨

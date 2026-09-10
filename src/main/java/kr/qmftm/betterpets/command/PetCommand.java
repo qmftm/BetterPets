@@ -16,8 +16,6 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -76,7 +74,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     }
 
     private void openBox(final Player player) {
-        player.openInventory(menus.box(player.getUniqueId(), sorted(player.getUniqueId()), 0));
+        player.openInventory(menus.box(player.getUniqueId(),
+            menus.ordered(store.owned(player.getUniqueId())), 0));
     }
 
     private void summon(final Player player, final String[] args) {
@@ -131,7 +130,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
      * 아이콘을 찾는 것보다 빠를 때가 있고, 여덟 자리 id 를 손으로 옮겨 적을 일도 없앤다.
      */
     private void list(final Player player) {
-        final List<PetData> owned = sorted(player.getUniqueId());
+        final List<PetData> owned = menus.ordered(store.owned(player.getUniqueId()));
         if (owned.isEmpty()) {
             messages.send(player, "pet.list-empty");
             return;
@@ -219,12 +218,6 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         return store.owned(player.getUniqueId()).stream()
             .filter(pet -> pet.petId().toString().toLowerCase(java.util.Locale.ROOT).startsWith(needle))
             .findFirst();
-    }
-
-    private List<PetData> sorted(final UUID ownerId) {
-        final List<PetData> list = new ArrayList<>(store.owned(ownerId));
-        list.sort(Comparator.comparingLong(PetData::acquiredAt));
-        return list;
     }
 
     @Override

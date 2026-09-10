@@ -6,6 +6,7 @@ import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetLimits;
+import kr.qmftm.betterpets.domain.PetOrder;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.GrowthService;
@@ -18,6 +19,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +33,11 @@ public final class PetMenuFactory {
     public static final int SLOT_NEXT = 53;
 
     public static final int DETAIL_SIZE = 27;
+
+    // 첫 줄은 정보 둘을 가운데 기준으로 나란히 둔다. 아래 줄이 조작 버튼이다.
+    public static final int SLOT_ICON = 3;
+    public static final int SLOT_ABILITIES = 5;
+
     public static final int SLOT_SUMMON = 11;
     public static final int SLOT_RENAME = 13;
     public static final int SLOT_RELEASE = 15;
@@ -57,6 +64,23 @@ public final class PetMenuFactory {
      */
     private PetLimits limits() {
         return pets.limits();
+    }
+
+    /**
+     * 보관함에 보여줄 순서.
+     *
+     * <p>기준은 {@link PetOrder} 에 있다. 이 순서가 GUI 와 {@code /pet list} 양쪽에
+     * 쓰인다 — 두 곳이 다르면 "보관함에서 세 번째"가 채팅에서는 다른 펫을 가리킨다.
+     */
+    public List<PetData> ordered(final Collection<PetData> owned) {
+        final List<PetData> list = new ArrayList<>(owned);
+        list.sort(PetOrder.forBox(this::rarityRank));
+        return list;
+    }
+
+    /** 등급 서열. 종류를 못 찾으면 맨 뒤로 보낸다 — 설정이 깨진 펫이다. */
+    private int rarityRank(final PetData pet) {
+        return catalog.type(pet.typeId()).map(type -> type.rarity().ordinal()).orElse(-1);
     }
 
     /**
@@ -125,12 +149,48 @@ public final class PetMenuFactory {
             holder, DETAIL_SIZE, Messages.plain("<dark_gray>" + Tags.strip(name)));
         holder.inventory(inventory);
 
-        inventory.setItem(4, icon(pet));
+        inventory.setItem(SLOT_ICON, icon(pet));
+        inventory.setItem(SLOT_ABILITIES, abilityBook(pet, type));
         inventory.setItem(SLOT_SUMMON, summonButton(pet));
         inventory.setItem(SLOT_RENAME, simple(Material.NAME_TAG, "<yellow>이름 변경"));
         inventory.setItem(SLOT_RELEASE, simple(Material.BARRIER, "<red>놓아주기"));
         inventory.setItem(SLOT_BACK, simple(Material.ARROW, "<gray>돌아가기"));
         return inventory;
+    }
+
+    /**
+     * 이 펫이 가진 능력.
+     *
+     * <p>지금까지 능력은 화면 어디에도 보이지 않았다. 설정 파일을 열어보지 않으면
+     * S등급 펫이 무엇을 해 주는지 알 방법이 없었다는 뜻이다.
+     *
+     * <p>수치는 <b>지금 성장도 기준</b>으로 계산해 보여준다. 능력이 성장도에 비례해
+     * 커지는데 설정값만 보여주면 "왜 이만큼 안 오르지"가 된다.
+     */
+    private ItemStack abilityBook(final PetData pet, final PetType type) {
+        final ItemStack stack = new ItemStack(Material.ENCHANTED_BOOK);
+        final ItemMeta meta = stack.getItemMeta();
+        meta.displayName(Messages.plain("<light_purple>능력"));
+
+        final List<Component> lore = new ArrayList<>();
+        if (type == null || type.abilities().isEmpty()) {
+            lore.add(Messages.plain("<dark_gray>이 펫에게는 능력이 없습니다."));
+        } else if (!pet.stage().abilitiesActive()) {
+            // 아기와 돼지는 능력이 없다. 왜 안 보이는지 알려줘야 한다.
+            lore.add(Messages.plain("<yellow>성체가 되어야 발현됩니다."));
+            lore.add(Messages.plain("<dark_gray>"));
+            type.abilities().forEach(ability ->
+                lore.add(Messages.plain("<dark_gray>· " + ability.id())));
+        } else {
+            for (final var ability : type.abilities()) {
+                final double value = ability.scaled(pet.growth(), type.stats().moveSpeedMultiplier());
+                lore.add(Messages.plain("<gray>· <white>" + ability.id()
+                    + " <dark_gray>+" + String.format(java.util.Locale.ROOT, "%.2f", value)));
+            }
+        }
+        meta.lore(lore);
+        stack.setItemMeta(meta);
+        return stack;
     }
 
     /**

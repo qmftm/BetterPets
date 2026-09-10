@@ -12,10 +12,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * GUI 클릭 처리.
@@ -125,12 +121,8 @@ public final class MenuListener implements Listener {
     }
 
     private void openBox(final Player player, final int page) {
-        player.openInventory(menus.box(player.getUniqueId(), sorted(player.getUniqueId()), page));
-    }
-
-    private List<PetData> sorted(final UUID ownerId) {
-        final List<PetData> list = new ArrayList<>(store.owned(ownerId));
-        list.sort(Comparator.comparingLong(PetData::acquiredAt));
-        return list;
+        // 순서는 PetMenuFactory 가 정한다. 여기서 따로 정렬하면 /pet list 와 어긋난다.
+        player.openInventory(menus.box(player.getUniqueId(),
+            menus.ordered(store.owned(player.getUniqueId())), page));
     }
 }
