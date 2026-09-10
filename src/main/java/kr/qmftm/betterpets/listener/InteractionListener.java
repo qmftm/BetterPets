@@ -90,6 +90,11 @@ public final class InteractionListener implements Listener {
      *
      * <p><b>{@code EquipmentSlot.HAND} 만 처리한다.</b> 안 그러면 오프핸드로도 이벤트가 와서
      * 한 번의 우클릭에 알이 두 개 소비된다.
+     *
+     * <p><b>상자·화로처럼 열리는 블록을 클릭했을 때는 블록에 양보한다.</b> 그러지 않으면
+     * 알을 들고 상자를 열려다 알이 까진다 — 플레이어 입장에서는 아이템을 잃은 것이고,
+     * 되돌릴 수도 없다. 알은 허공이나 평범한 블록에 대고 쓰라는 뜻이 되지만, 그쪽이
+     * "상자를 못 여는 아이템"보다 훨씬 덜 놀랍다.
      */
     @EventHandler(ignoreCancelled = true)
     public void onEggUse(final PlayerInteractEvent event) {
@@ -98,6 +103,12 @@ public final class InteractionListener implements Listener {
         }
         if (!event.getAction().isRightClick()) {
             return;
+        }
+        // 스니크 중이면 바닐라도 블록 상호작용을 건너뛴다. 그때는 알을 쓰려는 게 맞다.
+        final var clickedBlock = event.getClickedBlock();
+        if (!event.getPlayer().isSneaking()
+            && clickedBlock != null && clickedBlock.getType().isInteractable()) {
+            return;     // 상자·문·화로 등. 블록이 먼저다
         }
         final ItemStack held = event.getItem();
         final Optional<String> eggId = items.eggIdOf(held);
