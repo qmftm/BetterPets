@@ -152,10 +152,21 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "pet.not-found");
             return;
         }
+        // 0 이하는 GrowthCurve.feed 가 조용히 무시한다. 그대로 두면 "성장도 -50 을
+        // 줬습니다" 라고 답하면서 아무 일도 안 하게 된다. 오타를 되돌려준다.
         final int amount = parseInt(args[3], 0);
-        pet.get().addGrowth(amount, pets.growth().maxOf(pet.get()));
-        pets.growth().promoteIfGrown(pet.get());
-        store.saveAsync(pet.get());
+        if (amount <= 0) {
+            messages.send(sender, "admin.growth-not-positive", "amount", args[3]);
+            return;
+        }
+        final PetData target2 = pet.get();
+        target2.addGrowth(amount, pets.growth().maxOf(target2));
+        pets.growth().promoteIfGrown(target2);
+        store.saveAsync(target2);
+
+        // 성장은 재소환 없이 일어난다. 이걸 빼면 관리자가 성장도를 부어 성체로
+        // 만들어도 모델과 능력이 예전 상태로 남는다 — 급여 경로와 같은 마무리다.
+        pets.refreshAfterGrowth(target, target2);
         messages.send(sender, "admin.growth-given", "amount", String.valueOf(amount));
     }
 

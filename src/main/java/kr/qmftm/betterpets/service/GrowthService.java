@@ -32,8 +32,24 @@ public final class GrowthService {
     private final String overfeedBecomes;
     private final int maxStage;
 
-    /** 펫별 과급식 카운터. 짧은 시간에 몰아 먹이면 돼지가 된다. */
+    /**
+     * 펫별 과급식 카운터. 짧은 시간에 몰아 먹이면 돼지가 된다.
+     *
+     * <p>항목은 창(window)이 지나면 의미가 없어지는데, 지우는 곳이 "실제로 돼지가 됐을 때"
+     * 하나뿐이었다. 먹이를 준 모든 펫의 항목이 서버가 살아 있는 내내 남았다는 뜻이다 —
+     * 놓아준 펫도, 퇴장한 플레이어의 펫도. 항목 하나는 작지만 상한이 없는 게 문제다.
+     * {@link #pruneExpired} 가 가끔 훑어 지운다.
+     */
     private final java.util.Map<java.util.UUID, FeedBurst> bursts = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * 이 개수를 넘으면 만료된 항목을 훑어 지운다.
+     *
+     * <p>급여마다 전체를 훑으면 마리 수에 비례하는 일을 매번 하게 된다. 반대로 아예 안
+     * 훑으면 무한히 쌓인다. 5명 서버에서 동시에 과급식 중인 펫이 이 수를 넘을 일은
+     * 없으므로, 넘었다는 건 곧 대부분이 만료된 찌꺼기라는 뜻이다.
+     */
+    private static final int BURST_PRUNE_THRESHOLD = 64;
 
     private record FeedBurst(int count, long since) {}
 
@@ -94,6 +110,7 @@ public final class GrowthService {
 
         final StageResult stageResult = promoteIfGrown(data);
         if (stageResult == StageResult.GREW_UP) {
+            bursts.remove(data.petId());    // 다 자랐다. 더는 과급식 대상이 아니다
             return FeedResult.GREW_UP;
         }
         if (stageResult == StageResult.STAGE_UP) {
@@ -147,7 +164,7 @@ public final class GrowthService {
      * 설정된 돼지 종류가 없으면 상태만 바꾼다 — 기믹은 못 살려도 펫을 망가뜨리지는 않는다.
      * (그 경우 기동 시 경고가 뜬다)
      *
-     * <p>모델 교체는 호출부가 {@code PetService.refreshIfTypeChanged} 로 마무리한다.
+     * <p>모델 교체는 호출부가 {@code PetService.refreshAfterGrowth} 로 마무리한다.
      * 소환 중인 개체는 소환 시점의 종류를 들고 있어서, 데이터만 바꾸면 화면이 안 바뀐다.
      */
     private void becomePig(final PetData data) {
@@ -170,6 +187,9 @@ public final class GrowthService {
             return false;
         }
         final long now = System.currentTimeMillis();
+        if (bursts.size() > BURST_PRUNE_THRESHOLD) {
+            pruneExpired(now);
+        }
         final FeedBurst updated = bursts.compute(data.petId(), (key, existing) -> {
             if (existing == null || now - existing.since() > overfeedWindowMillis) {
                 return new FeedBurst(1, now);
@@ -177,6 +197,20 @@ public final class GrowthService {
             return new FeedBurst(existing.count() + 1, existing.since());
         });
         return updated.count() >= overfeedCount;
+    }
+
+    /** 창이 지난 항목을 지운다. 지나면 어차피 새 창으로 다시 시작하므로 값이 없다. */
+    private void pruneExpired(final long now) {
+        bursts.entrySet().removeIf(entry -> now - entry.getValue().since() > overfeedWindowMillis);
+    }
+
+    /**
+     * 이 펫의 과급식 카운터를 버린다.
+     *
+     * <p>더 자랄 수 없게 된 펫(성체·돼지)과 놓아준 펫의 항목은 남겨둘 이유가 없다.
+     */
+    public void forget(final PetData data) {
+        bursts.remove(data.petId());
     }
 
     public int maxOf(final PetData data) {

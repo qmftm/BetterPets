@@ -4,6 +4,7 @@ import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.service.BroadcastService;
 import kr.qmftm.betterpets.service.GrowthService;
+import kr.qmftm.betterpets.service.GrowthService.StageResult;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.entity.Player;
@@ -145,20 +146,18 @@ public final class PetTicker {
         }
         store.saveAsync(data);
 
-        final String typeBefore = data.typeId();
         final GrowthService.StageResult result = growth.promoteIfGrown(data);
-
-        // 성장 단계 진화로 종류가 바뀌었으면 모델을 갈아끼운다. 이걸 빼면 데이터만
-        // 바뀌고 화면은 예전 모습 그대로다.
-        if (!typeBefore.equals(data.typeId())) {
-            store.saveAsync(data);
-            pets.refreshIfTypeChanged(owner, data);
+        if (result == StageResult.NONE) {
+            return;     // 성장도만 올랐다. 화면에 바뀔 것이 없다
         }
+        store.saveAsync(data);
+
+        // 종류가 바뀌었으면 모델을, 성체가 됐으면 능력을 지금 상태에 맞춘다.
+        // 성장은 재소환 없이 일어나므로 이 마무리가 없으면 데이터만 바뀐다.
+        pets.refreshAfterGrowth(owner, data);
+
         // 먹여서 자란 경우는 InteractionListener 가 알린다. 시간이 흘러 자란 경우가
         // 여기다 — 두 경로 모두 알려야 "가만히 뒀더니 조용히 성체가 됐다"가 없다.
-        if (result == GrowthService.StageResult.NONE) {
-            return;
-        }
         pets.catalog().type(data.typeId()).ifPresent(type -> {
             if (result == GrowthService.StageResult.GREW_UP) {
                 broadcasts.onGrown(owner, data, type);

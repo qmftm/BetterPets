@@ -43,8 +43,11 @@ sqlite-jdbc 를 넣으면 jar 이 16KB → 14MB 가 된다. 저장은 YAML 로 �
 
 ### 자주 놓치는 것
 
-- **종류(`typeId`)가 바뀌면 모델을 다시 붙여야 한다.** `ActivePet` 은 소환 시점의 `PetType` 을
-  붙들고 있다. `PetService.refreshIfTypeChanged` 를 빠뜨리면 데이터만 바뀌고 화면은 그대로다.
+- **성장이 일어난 뒤에는 반드시 `PetService.refreshAfterGrowth` 를 부른다.**
+  성장은 **재소환 없이** 일어나는데, 모델과 능력은 소환 시점에 붙는다. 빠뜨리면 둘이 어긋난다:
+  `ActivePet` 이 소환 시점의 `PetType` 을 붙들고 있어 진화해도 예전 모델이 남고,
+  `equip` 이 `summon` 에서만 불려서 **아기로 꺼내둔 펫이 성체가 돼도 능력이 안 붙는다.**
+  급여·시간 경과·`/petadmin growth` 세 경로 모두 이 마무리가 필요하다.
   같은 이유로 **알림에도 `pet.type()` 을 쓰면 안 된다** — 진화 전 이름을 부르게 된다.
 - **설정을 읽어 들고 있는 쪽은 `/petadmin reload` 때 다시 밀어 넣어야 한다.**
   지금은 셋이다: `RideController.reloadTuning`, `PetService.limits`, `BroadcastService.rules`.

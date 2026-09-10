@@ -199,34 +199,48 @@ public final class PetService {
     /** 펫을 놓아준다. 소환 중이면 먼저 해제한다. */
     public void release(final Player owner, final PetData data) {
         dismiss(owner, data.petId());
+        growth.forget(data);    // 과급식 카운터를 들고 있을 이유가 없다
         store.remove(data);
     }
 
     /**
-     * 소환 중인 펫의 종류가 바뀌었으면 모델을 다시 붙인다.
+     * 성장으로 펫이 달라졌을 때 화면과 능력을 현재 상태에 맞춘다.
      *
-     * <p><b>이게 없으면 종류 변경이 화면에 반영되지 않는다.</b> {@link ActivePet} 은 소환
-     * 시점의 {@link PetType} 을 붙들고 있어서, {@code data.typeId()} 만 바뀌면 예전 모델과
-     * 예전 애니메이션 이름을 계속 쓴다. 성장 단계 진화와 과급식 변신 두 경로 모두
-     * 이 마무리가 필요하다.
+     * <p>성장은 <b>재소환 없이</b> 일어난다. 그래서 이 마무리를 빠뜨리면 데이터만 바뀌고
+     * 나머지가 예전 상태로 남는다. 두 가지가 어긋난다:
      *
-     * <p>탑승 중이었다면 {@link #summon} 안의 {@link #dismiss} 가 안전하게 내려준다 —
-     * 드래곤이 돼지가 됐는데 그대로 하늘에 떠 있으면 곤란하다.
+     * <ul>
+     *   <li><b>모델</b> — {@link ActivePet} 은 소환 시점의 {@link PetType} 을 붙들고 있어서,
+     *       {@code typeId} 만 바뀌면 예전 모델과 예전 애니메이션 이름을 계속 쓴다
+     *   <li><b>능력</b> — {@code equip} 은 {@link #summon} 에서만 불린다. 아기로 소환해 둔
+     *       채 성체가 되면 능력이 영영 안 붙는다. "펫을 데리고 다니며 키운다"는 가장
+     *       자연스러운 경로에서 등급별 능력이 통째로 조용히 안 도는 상태였다
+     * </ul>
      *
-     * @return 모델을 다시 붙였으면 true
+     * <p>능력은 떼었다 다시 붙인다. {@code unequip} 은 생애주기와 무관하게 돌고
+     * {@code equip} 은 성체에게만 붙으므로, 이 한 쌍이 <b>어느 방향의 변화든</b> 맞춘다 —
+     * 아기→성체는 붙고, 성체→돼지는 떨어진다.
+     *
+     * <p>탑승 중에 종류가 바뀌었다면 {@link #summon} 안의 {@link #dismiss} 가 안전하게
+     * 내려준다 — 드래곤이 돼지가 됐는데 그대로 하늘에 떠 있으면 곤란하다.
+     *
+     * @return 소환 중이어서 실제로 손볼 것이 있었으면 true
      */
-    public boolean refreshIfTypeChanged(final Player owner, final PetData data) {
+    public boolean refreshAfterGrowth(final Player owner, final PetData data) {
         final ActivePet current = registry.of(owner.getUniqueId(), data.petId()).orElse(null);
         if (current == null) {
-            return false;   // 소환 중이 아니다
+            return false;   // 소환 중이 아니다. 다음 소환 때 알아서 맞춰진다
         }
-        if (current.type().id().equals(data.typeId())) {
-            return false;   // 종류가 그대로다
+        if (!current.type().id().equals(data.typeId())) {
+            // 종류가 바뀌었다. 모델부터 다시 붙여야 하고, 그 과정에서 능력도 다시 붙는다.
+            // 이미 소환 중인 펫이라 동시 소환 한도를 새로 잡아먹지 않는다 — summon 이
+            // 같은 petId 를 먼저 해제하고 그 자리에 다시 넣는다.
+            final SummonResult result = summon(owner, data);
+            return result == SummonResult.OK || result == SummonResult.OK_REPLACED;
         }
-        // 이미 소환 중인 펫을 다시 소환하는 것이라 한도를 새로 잡아먹지 않는다 —
-        // summon 이 같은 petId 를 먼저 해제하고 그 자리에 다시 넣는다.
-        final SummonResult result = summon(owner, data);
-        return result == SummonResult.OK || result == SummonResult.OK_REPLACED;
+        abilities.unequip(owner, data, current.type());
+        abilities.equip(owner, data, current.type());
+        return true;
     }
 
     private Location spawnLocation(final Player owner) {
