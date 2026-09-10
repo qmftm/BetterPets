@@ -92,8 +92,8 @@
 - [x] 등급 D~S — 등급이 오를수록 이동속도 상승, A등급부터 비행 가능
 - [x] 등급 수치를 `rarity.yml` 로 외부화 (속도 · 비행 확률 · 표시색 · 이름)
 - [x] 성장 단계 — 성장도가 찰 때마다 확률로 다음 형태 결정, 최대 단계는 `config.yml` 에서 설정 (기본 1 = 예전과 동일)
-- [x] 패시브 능력 (상시 버프)
-- [x] 트리거 능력 (이벤트 반응)
+- [x] 능력 — 펫이 **주인에게** 주는 효과. 패시브(상시 버프) 3종 + 트리거(이벤트 반응) 1종
+- [x] 능력 수치가 성장도·등급에 비례해 커짐, 성체부터 발현
 
 **알림과 연동**
 - [x] 다국어 — `lang/<코드>.yml`, `ko_kr` · `en_us` 기본 제공, 빠진 키는 내장 한국어로 채움
@@ -194,6 +194,43 @@ language: ko_kr     # plugins/BetterPets/lang/ko_kr.yml 을 읽는다
 `lang/ko_kr.yml` 을 복사해 `lang/<코드>.yml` 로 저장하면 새 언어가 된다.
 **빠진 키는 내장 한국어로 채워지므로 바꾸고 싶은 줄만 남겨도 된다** — 플러그인이
 올라가 문구가 늘어도 번역 파일이 깨지지 않는다.
+
+### 능력
+
+**능력은 펫이 아니라 주인에게 붙는다.** 펫이 싸우지 않고, 주인을 강하게 만든다.
+
+| id | 종류 | 하는 일 | 수치 키 |
+| --- | --- | --- | --- |
+| `attribute_speed` | 패시브 | 주인 이동속도 증가 (비율) | `base` · `per-growth` |
+| `attribute_health` | 패시브 | 주인 최대 체력 증가 (칸) | `base` · `per-growth` |
+| `attribute_damage` | 패시브 | 주인 공격력 증가 | `base` · `per-growth` |
+| `on_kill_extra_drop` | 트리거 | 몹 처치 시 확률로 드롭을 한 벌 더 | `chance-base` · `chance-per-growth` |
+
+펫마다 `pets/*.yml` 에 적는다:
+
+```yaml
+# pets/dragon.yml
+abilities:
+  - id: attribute_speed
+    base: 0.05           # 기본값
+    per-growth: 0.0005   # 성장도 1당 추가 → 성장도 100이면 +0.05 더
+  - id: on_kill_extra_drop
+    chance-base: 0.05
+    chance-per-growth: 0.002
+```
+
+**계산식** — 패시브는 `(base + per-growth × 성장도) × 등급 이동속도 배율`.
+등급 배율은 `rarity.yml` 의 `move-speed` 값을 그대로 쓴다.
+
+> ⚠️ `on_kill_extra_drop` 은 **등급 배율을 곱하지 않는다.** 확률에 1.0~1.7배를 곱하면
+> 상한 1.0에 금방 붙어 등급 차이가 오히려 뭉개진다. 등급별 차이는 `chance-base` 로 낸다.
+> 바꾸려면 `ExtraDropAbility.onEvent` 한 줄이다.
+
+**성체부터 발현된다.** 아기와 돼지는 능력이 없고, 보관함 상세 화면이 그 사실과
+현재 수치를 함께 보여준다. 소환 중에 성체가 되면 **재소환 없이 바로 붙는다.**
+
+새 능력을 추가하려면 `PetAbility` 를 구현하고 `AbilityRegistry` 에 등록한다.
+수치를 이름→값 맵으로 들고 있어서 능력을 늘려도 정의 클래스를 고칠 필요가 없다.
 
 ### 전체 알림과 연동
 
@@ -367,7 +404,11 @@ kr.qmftm.betterpets
 │   ├─ BedrockSupport      Geyser/Floodgate 감지, Bedrock 플레이어 판별
 │   └─ PetPlaceholders     %betterpets_...% (유일하게 컴파일 의존이 있는 연동)
 ├─ service/                PetService · GrowthService · AbilityService · BroadcastService
-├─ ability/                능력 인터페이스 + 등록소 + 구현체
+├─ ability/                능력 — 펫이 주인에게 주는 효과
+│   ├─ PetAbility          인터페이스 (PASSIVE / TRIGGER)
+│   ├─ AbilityDefinition   설정에서 읽은 수치 (이름→값 맵)
+│   ├─ AbilityRegistry     id → 구현체
+│   └─ impl/               AttributeAbility(능력치) · ExtraDropAbility(처치 드롭)
 ├─ storage/                PetRepository · YamlPetRepository · PetStore
 ├─ config/                 PetCatalog (검증 포함) · Messages
 ├─ item/                   PetItems — PDC 기반 알·먹이 식별
