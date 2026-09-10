@@ -11,6 +11,8 @@
 #   gives   고정 알. 지정한 펫 하나를 준다
 #   weights 랜덤 알. 가중치 추첨. 원작의 뽑기권을 아이템 하나로 대체한다
 #           (먼저 적은 항목이 낮은 구간을 차지한다. 확률 비율 자체는 순서와 무관)
+#   (둘 다 없으면) 각 펫이 pets/*.yml 에 적어둔 acquire.gacha-weight 를 표로 쓴다.
+#           펫을 추가하면 이 파일을 안 고쳐도 뽑기 알에 들어간다
 #
 # 지급: /petadmin egg <플레이어> <알id> [개수]
 eggs:
@@ -41,6 +43,13 @@ eggs:
       wolf: 50
       dragon: 1
     # item-model: "betterpets:egg_random"
+
+  # gives 도 weights 도 적지 않은 알. 펫 파일의 acquire.gacha-weight 를 그대로 쓴다.
+  # 지금 설정 기준으로는 늑대 50 : 드래곤 1 이고, 돼지와 새끼는 0 이라 빠진다.
+  # 새 펫을 만들 때 gacha-weight 만 적어두면 이 알에 자동으로 들어간다.
+  gacha_egg:
+    display-name: "<light_purple>뽑기 알"
+    material: EGG
 
 # ── 먹이 ──────────────────────────────────────────────────────────
 # 소환한 펫에게 우클릭하면 먹인다. 성장도가 차면 다음 단계로 넘어간다.

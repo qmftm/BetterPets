@@ -166,6 +166,10 @@ public final class PetCatalog {
             problems.add("pets/ 폴더에 펫 정의가 없습니다.");
             return;
         }
+        // 파일 순서를 고정한다. listFiles 는 파일시스템이 주는 순서라 기계마다 다른데,
+        // 이 순서가 곧 types 의 반복 순서이고 뽑기 표의 구간 순서가 된다.
+        // 같은 설정·같은 시드에서 서버마다 다른 펫이 나오면 재현이 불가능해진다.
+        java.util.Arrays.sort(files, java.util.Comparator.comparing(File::getName));
         for (final File file : files) {
             final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
             final String id = yaml.getString("id", file.getName().replaceAll("\\.yml$", ""));
@@ -345,14 +349,58 @@ public final class PetCatalog {
         if (materialName == null) {
             return;
         }
+        final String gives = node.getString("gives");
+        Map<String, Integer> weights = readWeights(node.getConfigurationSection("weights"));
+
+        // gives 도 weights 도 없는 알은 "그냥 뽑기 알"이다. 그때는 각 펫이 자기 파일에
+        // 적어둔 acquire.gacha-weight 를 표로 쓴다.
+        //
+        // 그 값은 여태 읽어만 두고 아무도 쓰지 않았다. pets/*.yml 의 주석과 사용 안내는
+        // "랜덤 알에서 뽑힐 가중치"라고 적고 있었으니, gacha-weight: 0 으로 막아뒀다고
+        // 믿은 펫이 실제로는 아무 영향도 못 받고 있었다. 문서가 약속한 대로 되돌린다.
+        if ((gives == null || gives.isBlank()) && weights.isEmpty()) {
+            weights = gachaTable();
+            if (weights.isEmpty()) {
+                problems.add("items.yml/eggs/" + id + ": gives 도 weights 도 없는데,"
+                    + " acquire.gacha-weight 가 0 보다 큰 펫이 하나도 없습니다."
+                    + " 이 알은 아무것도 주지 못합니다.");
+            }
+        }
+
         eggs.put(id, new EggDefinition(
             id,
             node.getString("display-name", id),
             materialName,
             readItemModel(node, "items.yml/eggs/" + id),
-            node.getString("gives"),
-            readWeights(node.getConfigurationSection("weights"))
+            gives,
+            weights
         ));
+    }
+
+    /**
+     * 펫들이 스스로 적어둔 뽑기 가중치를 모은다.
+     *
+     * <p>{@code acquire.gacha-weight} 가 0 이하인 펫은 빠진다 — 과급식으로만 얻는 돼지,
+     * 전용 알로만 주는 새끼가 그렇다. 이 표를 쓰면 <b>펫을 추가할 때 items.yml 을 다시
+     * 손대지 않아도</b> 뽑기 알에 자동으로 들어간다.
+     *
+     * <p>{@code types} 는 {@link LinkedHashMap} 이고 펫 파일을 이름순으로 읽으므로,
+     * 여기서 나오는 순서도 기계와 무관하게 같다 — {@code Weighted.pick} 이 순서대로
+     * 구간을 나누기 때문에 그게 곧 재현 가능성이다.
+     */
+    private Map<String, Integer> gachaTable() {
+        return gachaTable(types.values());
+    }
+
+    /** 표를 만드는 규칙만 따로. 파일도 Bukkit 도 필요 없어서 이쪽만 검증할 수 있다. */
+    static Map<String, Integer> gachaTable(final java.util.Collection<PetType> all) {
+        final Map<String, Integer> table = new LinkedHashMap<>();
+        for (final PetType type : all) {
+            if (type.gachaWeight() > 0) {
+                table.put(type.id(), type.gachaWeight());
+            }
+        }
+        return table;
     }
 
     private void readFeed(final ConfigurationSection parent, final String id) {

@@ -102,7 +102,7 @@ abilities:
     per-growth: 0.0005
 
 acquire:
-  gacha-weight: 1          # 랜덤 알에서 뽑힐 가중치
+  gacha-weight: 1          # 뽑기 알에서 뽑힐 가중치. 0 이면 뽑기 알에서 안 나와요
 ```
 
 설정에 오타가 있으면 **기동할 때 전부 모아서 한 번에** 알려줍니다. 고치고 재시작하기를
@@ -182,7 +182,16 @@ eggs:
     weights:                 # 랜덤 알 — 가중치 추첨
       wolf: 50
       dragon: 1
+
+  gacha_egg:
+    display-name: "<light_purple>뽑기 알"
+    material: EGG            # 둘 다 안 적으면 펫들의 gacha-weight 를 그대로 씁니다
 ```
+
+`gives` 도 `weights` 도 없는 알은 각 펫이 `pets/*.yml` 에 적어둔
+`acquire.gacha-weight` 를 표로 씁니다. **새 펫을 만들 때 그 한 줄만 적어두면 뽑기 알에
+자동으로 들어가요** — `items.yml` 을 다시 열 필요가 없습니다. `0` 으로 두면 안 나오고요
+(기본 설정의 돼지와 새끼가 그렇습니다).
 
 **알 아이템에 무엇이 들었는지 자동으로 적힙니다.** 고정 알은 나올 펫 이름을, 랜덤 알은
 가능한 펫과 확률을 흔한 순으로 보여줘요. 확률을 모르면 뽑을 이유가 없으니까요.
