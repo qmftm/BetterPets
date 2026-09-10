@@ -117,6 +117,10 @@ public final class PetTicker {
         for (final UUID riderId : rides.riderIds()) {
             final Player owner = plugin.getServer().getPlayer(riderId);
             if (owner == null) {
+                // 탑승자가 나갔다. 보통은 퇴장 처리가 먼저 정리하지만, 펫이 레지스트리에서
+                // 빠진 뒤에 나가면 그 경로를 타지 않는다. 그냥 넘기면 보이지 않는
+                // 아머스탠드가 다음 재시작까지 월드에 떠 있는다.
+                rides.stopQuietly(riderId);
                 continue;
             }
             final RideController.Ride ride = rides.rideOf(owner);

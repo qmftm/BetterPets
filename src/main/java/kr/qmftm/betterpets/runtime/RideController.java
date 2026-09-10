@@ -214,16 +214,27 @@ public final class RideController {
         }
     }
 
+    /**
+     * 플레이어 객체 없이 정리한다.
+     *
+     * <p>탑승자가 이미 나갔거나 서버가 내려가는 중이면 {@link #stop} 이 필요한 것들
+     * (하차·낙하 보호)을 해 줄 대상이 없다. <b>그래도 마운트는 반드시 지워야 한다</b> —
+     * 안 지우면 보이지 않는 아머스탠드가 다음 재시작까지 월드에 떠 있는다.
+     */
+    public void stopQuietly(final UUID riderId) {
+        final Ride ride = rides.remove(riderId);
+        if (ride != null) {
+            ride.mount.remove();
+        }
+    }
+
     public void stopAll() {
         for (final UUID id : Map.copyOf(rides).keySet()) {
             final Player player = plugin.getServer().getPlayer(id);
             if (player != null) {
                 stop(player);
             } else {
-                final Ride ride = rides.remove(id);
-                if (ride != null) {
-                    ride.mount.remove();
-                }
+                stopQuietly(id);
             }
         }
     }
