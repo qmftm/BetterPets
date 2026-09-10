@@ -133,18 +133,39 @@ public final class InteractionListener implements Listener {
         broadcasts.onObtained(player, granted.get(), type);
     }
 
-    /** 펫 우클릭 — 먹이를 들고 있으면 급여, 아니면 탑승 시도. */
+    /**
+     * 펫 우클릭 — 먹이를 들고 있으면 급여, 아니면 탑승 시도.
+     *
+     * <p><b>캐리어를 건드리는 상호작용은 무조건 먼저 취소한다.</b> 캐리어는 보이지 않는
+     * {@code Allay} 인데, 알레이의 바닐라 동작은 <b>우클릭한 사람의 손에 든 아이템을
+     * 받아 가는 것</b>이다. AI 를 꺼도 이 상호작용은 그대로 돈다. 취소를 조건 뒤로
+     * 미루고 있어서 구멍이 둘 있었다:
+     *
+     * <ul>
+     *   <li><b>오프핸드</b> — {@code HAND} 가 아니면 그냥 return 했다. 오프핸드에 든
+     *       아이템이 알레이에게 넘어간다
+     *   <li><b>남의 펫</b> — 소유자가 아니면 그냥 return 했다. 아무나 남의 펫을 클릭해
+     *       자기 아이템을 잃는다. 반대로 말하면, 남의 펫을 아이템 먹이는 함정으로 쓸 수 있다
+     * </ul>
+     *
+     * <p>GUI 클릭 핸들러와 같은 규칙이다 — 취소를 로직 뒤로 미루면 그 사이의 모든
+     * 조기 return 이 구멍이 된다.
+     */
     @EventHandler
     public void onPetClick(final PlayerInteractEntityEvent event) {
+        final Optional<ActivePet> clicked = registry.byCarrier(event.getRightClicked());
+        if (clicked.isEmpty()) {
+            return;     // 우리 캐리어가 아니다. 남의 엔티티를 막을 이유가 없다
+        }
+        event.setCancelled(true);   // ★ 무조건 먼저
+
         if (event.getHand() != EquipmentSlot.HAND) {
-            return;
+            return;     // 한 번의 우클릭을 두 번 처리하지 않는다. 취소는 이미 했다
         }
         final Player player = event.getPlayer();
-        final Optional<ActivePet> clicked = registry.byCarrier(event.getRightClicked());
-        if (clicked.isEmpty() || !clicked.get().ownerId().equals(player.getUniqueId())) {
-            return;
+        if (!clicked.get().ownerId().equals(player.getUniqueId())) {
+            return;     // 남의 펫은 만질 수 없다. 조용히 아무 일도 하지 않는다
         }
-        event.setCancelled(true);
 
         final ActivePet pet = clicked.get();
         final ItemStack held = player.getInventory().getItemInMainHand();

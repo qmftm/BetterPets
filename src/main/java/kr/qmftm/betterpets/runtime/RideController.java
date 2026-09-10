@@ -163,6 +163,10 @@ public final class RideController {
             entity.setBasePlate(false);
             entity.setPersistent(false);
             entity.setSilent(true);
+            // 보이지 않아도 아머스탠드는 아머스탠드다 — 우클릭하면 손에 든 것을 입는다.
+            // 남이 지나가다 클릭해 갑옷을 잃거나, 반대로 남의 마운트에서 갑옷을 벗겨
+            // 가져갈 수 있다. 슬롯을 통째로 잠가 바닐라 쪽에서 막는다.
+            entity.setDisabledSlots(org.bukkit.inventory.EquipmentSlot.values());
             entity.addScoreboardTag(RIDE_TAG);
             entity.getPersistentDataContainer()
                 .set(ownerKey, PersistentDataType.STRING, player.getUniqueId().toString());
