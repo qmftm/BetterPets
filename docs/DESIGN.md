@@ -830,9 +830,24 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 
 | 레벨 | 대상 | 도구 |
 | --- | --- | --- |
-| 단위 | `GrowthCurve`, `Rarity`, `LifeStage`, 설정 파서 | JUnit 5 |
-| 통합 | Repository CRUD | JUnit + 인메모리 DB |
-| 수동 | 렌더링 · 이동 · 탑승 · 비행 | Paper 테스트 서버 |
+| 단위 | Bukkit 을 안 쓰는 도메인·설정 로직 | JUnit 5 |
+| 수동 | 렌더링 · 이동 · 탑승 · 비행 · 연동 | Paper 테스트 서버 |
+
+**선은 "Bukkit 이 필요한가"로 긋는다.** 서버 없이 돌릴 수 있는 것만 단위 테스트로 덮고,
+나머지는 아래 수동 체크리스트에 맡긴다. Mockito 로 `Player` 를 흉내 내는 것은 하지 않는다 —
+그렇게 만든 테스트는 우리 코드가 아니라 우리가 상상한 Bukkit 을 검증한다.
+
+지금 덮고 있는 것 (93개):
+
+| 대상 | 무엇을 지키는가 |
+| --- | --- |
+| `GrowthCurve` | 성장도와 기준 시각이 <b>함께</b> 움직인다. 시계가 뒤로 가도 안전하다 |
+| `Weighted` · `EggDefinition` · `PetType` | 가중치 추첨이 <b>설정에 적은 순서</b>를 지킨다 (실제로 겪은 버그) |
+| `PetLimits` · `RarityTable` · `RarityStats` | 0 = 무제한, 설정 실수(음수 속도·1 넘는 확률)를 접는다 |
+| `BroadcastService.Rules` | 등급·단계 문턱이 <b>둘 다</b> 걸린다 |
+| `Messages` | 언어 코드가 파일 경로로 새지 않는다 (`../../`) |
+| `LanguageFilesTest` | ko_kr 과 en_us 의 키·치환 자리가 어긋나지 않는다 |
+| `AbilityDefinition` | 성장도 비례 수치와 등급 배율 |
 
 ### 수동 체크리스트
 

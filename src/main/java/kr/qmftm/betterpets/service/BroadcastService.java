@@ -41,6 +41,18 @@ public final class BroadcastService {
         public Rules {
             minGrowthStage = Math.max(1, minGrowthStage);
         }
+
+        /**
+         * 알릴 만한 일인가. 등급과 성장 단계를 <b>모두</b> 넘겨야 한다.
+         *
+         * <p>판정을 규칙 옆에 두는 이유는 이게 이 기능의 전부이기 때문이다 — 나머지는
+         * 문자열을 조립해 보내는 배관이다. 여기 있어야 Bukkit 없이 검증할 수 있다.
+         */
+        public boolean qualifies(final Rarity rarity, final int growthStage) {
+            return enabled && rarity != null
+                && rarity.atLeast(minRarity)
+                && growthStage >= minGrowthStage;
+        }
     }
 
     private volatile Rules rules;
@@ -89,7 +101,7 @@ public final class BroadcastService {
 
     private void announce(final String key, final Player owner, final PetData data, final PetType type) {
         final Rules current = rules;
-        if (!current.enabled() || !qualifies(current, data, type)) {
+        if (!current.qualifies(type.rarity(), data.growthStage())) {
             return;
         }
         final String[] placeholders = {
@@ -110,11 +122,6 @@ public final class BroadcastService {
         }
         // Discord 에는 서식을 걷어낸 평문을 보낸다. MiniMessage 태그가 그대로 가면 흉하다.
         discord.send(Tags.strip(messages.raw(key, placeholders)));
-    }
-
-    /** 알릴 만한 일인가. 등급과 성장 단계를 모두 넘겨야 한다. */
-    private static boolean qualifies(final Rules rules, final PetData data, final PetType type) {
-        return type.rarity().atLeast(rules.minRarity()) && data.growthStage() >= rules.minGrowthStage();
     }
 
 }
