@@ -121,7 +121,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
             messages,
             discord,
             getConfig().getBoolean("broadcast.enabled", true),
-            Rarity.parse(getConfig().getString("broadcast.min-rarity", "A")).orElse(Rarity.A),
+            broadcastFloor(),
             getConfig().getInt("broadcast.min-growth-stage", 1),
             getConfig().getBoolean("broadcast.on-obtain", true),
             getConfig().getBoolean("broadcast.on-grown", true),
@@ -237,6 +237,21 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getLogger().warning("gimmick.overfeed.becomes 가 가리키는 펫 '" + pigType
                 + "' 가 없습니다. 과급식해도 모습은 그대로 남습니다.");
         }
+    }
+
+    /**
+     * 방송 문턱 등급을 읽는다.
+     *
+     * <p>잘못된 값을 조용히 A 로 바꾸면 "S로 적었는데 왜 다 뜨지"로 헤매게 된다.
+     * 오타는 드러나야 고쳐진다.
+     */
+    private Rarity broadcastFloor() {
+        final String raw = getConfig().getString("broadcast.min-rarity", "A");
+        return Rarity.parse(raw).orElseGet(() -> {
+            getLogger().warning("broadcast.min-rarity 값 '" + raw
+                + "' 은 등급이 아닙니다. D C B A S 중 하나여야 합니다. A 로 진행합니다.");
+            return Rarity.A;
+        });
     }
 
     private void saveResourceIfMissing(final String path) {

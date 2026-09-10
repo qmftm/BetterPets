@@ -50,7 +50,7 @@ public final class Messages {
                 + ".yml 을 읽지 못했습니다. 메시지가 키 이름으로 보일 수 있습니다.");
         }
 
-        final String code = normalize(language);
+        final String code = normalizeLanguage(language);
         if (code.equals(FALLBACK_LANGUAGE) && overlayFile(new File(dataFolder, "lang/" + code + ".yml"))) {
             return;     // 기본 언어를 쓰면서 파일도 있는 흔한 경우
         }
@@ -69,8 +69,14 @@ public final class Messages {
             + ".yml 이 없습니다. " + FALLBACK_LANGUAGE + " 로 표시합니다.");
     }
 
-    /** 파일명으로 쓸 수 있는 형태로 다듬는다. {@code ko-KR}, {@code KO_KR} 모두 받는다. */
-    private static String normalize(final String language) {
+    /**
+     * 파일명으로 쓸 수 있는 형태로 다듬는다. {@code ko-KR}, {@code KO_KR} 모두 받는다.
+     *
+     * <p><b>이 값은 파일 경로가 된다.</b> 설정 파일이라고 해서 그대로 믿지 않는다 —
+     * {@code ../../} 같은 값이 들어오면 데이터 폴더 밖을 읽게 된다. 허용 문자를
+     * {@code [a-z0-9_]} 로 좁히고, 벗어나면 조용히 기본 언어로 접는다.
+     */
+    static String normalizeLanguage(final String language) {
         if (language == null || language.isBlank()) {
             return FALLBACK_LANGUAGE;
         }

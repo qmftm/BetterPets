@@ -201,6 +201,19 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             active == carriers && active == trackers
                 ? "→ 일치. 누수 없음."
                 : "→ 불일치! 누수 의심. 트래커 수가 활성 펫 수와 달라야 할 이유가 없습니다."));
+
+        // 연동은 전부 선택 사항이라 "왜 Discord 로 안 가지" 같은 질문이 나온다.
+        // 무엇이 붙었는지 여기서 한 번에 보여준다.
+        sender.sendMessage(Component.text("연동: "
+            + plugged(sender, "DiscordSRV") + ", "
+            + plugged(sender, "PlaceholderAPI") + ", "
+            + plugged(sender, "floodgate") + ", "
+            + plugged(sender, "GeyserModelEngine")));
+    }
+
+    /** 플러그인 하나의 활성 여부를 "이름(O/X)" 로 적는다. */
+    private static String plugged(final CommandSender sender, final String name) {
+        return name + (sender.getServer().getPluginManager().isPluginEnabled(name) ? "(O)" : "(X)");
     }
 
     private static int parseInt(final String raw, final int fallback) {
