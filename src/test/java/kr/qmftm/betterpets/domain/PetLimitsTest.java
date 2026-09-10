@@ -60,6 +60,21 @@ class PetLimitsTest {
     }
 
     @Test
+    @DisplayName("한도만 따로 적을 때도 같은 ∞ 를 쓴다 — 화면마다 0 과 ∞ 가 섞이면 안 된다")
+    void maxLabelsMatchTheCombinedOnes() {
+        final PetLimits limited = new PetLimits(20, 2);
+        final PetLimits unlimited = new PetLimits(0, 0);
+
+        assertEquals("20", limited.maxOwnedLabel());
+        assertEquals("2", limited.maxActiveLabel());
+        assertEquals("∞", unlimited.maxOwnedLabel());
+        assertEquals("∞", unlimited.maxActiveLabel());
+
+        assertTrue(limited.ownedLabel(3).endsWith("/" + limited.maxOwnedLabel()));
+        assertTrue(unlimited.activeLabel(3).endsWith("/" + unlimited.maxActiveLabel()));
+    }
+
+    @Test
     @DisplayName("기본값은 20마리 보유 · 1마리 소환")
     void defaultsMatchDocumentedConfig() {
         assertEquals(20, PetLimits.defaults().maxOwned());

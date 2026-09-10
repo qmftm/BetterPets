@@ -242,28 +242,26 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
         // active 는 서버 전체 합이다. 1인 한도와 직접 비교하면 안 되므로 따로 적는다.
         final long owners = registry.all().stream().map(ActivePet::ownerId).distinct().count();
         final var limits = pets.limits();
-        sender.sendMessage(Component.text("활성 펫: " + active + " (소유자 " + owners
-            + "명, 1인 동시 소환 한도 "
-            + (limits.activeUnlimited() ? "무제한" : limits.maxActive() + "마리")
-            + ", 1인 보유 한도 "
-            + (limits.ownedUnlimited() ? "무제한" : limits.maxOwned() + "마리") + ")"));
-        sender.sendMessage(Component.text("살아있는 캐리어: " + carriers));
-        sender.sendMessage(Component.text("BetterModel 트래커: " + trackers));
-        sender.sendMessage(Component.text(
-            active == carriers && active == trackers
-                ? "→ 일치. 누수 없음."
-                : "→ 불일치! 누수 의심. 트래커 수가 활성 펫 수와 달라야 할 이유가 없습니다."));
+        sender.sendMessage(messages.bare("admin.debug-pets",
+            "active", String.valueOf(active),
+            "owners", String.valueOf(owners),
+            "max-active", limits.maxActiveLabel(),
+            "max-owned", limits.maxOwnedLabel()));
+        sender.sendMessage(messages.bare("admin.debug-carriers", "count", String.valueOf(carriers)));
+        sender.sendMessage(messages.bare("admin.debug-trackers", "count", String.valueOf(trackers)));
+        sender.sendMessage(messages.bare(active == carriers && active == trackers
+            ? "admin.debug-consistent" : "admin.debug-leak"));
 
         // 연동은 전부 선택 사항이라 "왜 Discord 로 안 가지" 같은 질문이 나온다.
         // 무엇이 붙었는지 여기서 한 번에 보여준다.
-        sender.sendMessage(Component.text("연동: "
-            + plugged(sender, "DiscordSRV") + ", "
-            + plugged(sender, "PlaceholderAPI") + ", "
-            + plugged(sender, "floodgate") + ", "
-            + plugged(sender, "GeyserModelEngine")));
+        sender.sendMessage(messages.bare("admin.debug-integrations",
+            "list", plugged(sender, "DiscordSRV") + ", "
+                + plugged(sender, "PlaceholderAPI") + ", "
+                + plugged(sender, "floodgate") + ", "
+                + plugged(sender, "GeyserModelEngine")));
     }
 
-    /** 플러그인 하나의 활성 여부를 "이름(O/X)" 로 적는다. */
+    /** 플러그인 하나의 활성 여부를 "이름(O/X)" 로 적는다. 이름은 번역 대상이 아니다. */
     private static String plugged(final CommandSender sender, final String name) {
         return name + (sender.getServer().getPluginManager().isPluginEnabled(name) ? "(O)" : "(X)");
     }

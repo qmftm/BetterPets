@@ -39,10 +39,25 @@ public record PetLimits(int maxOwned, int maxActive) {
 
     /** GUI 표시용 "3/20" 또는 "3/∞". */
     public String ownedLabel(final int owned) {
-        return owned + "/" + (ownedUnlimited() ? "∞" : String.valueOf(maxOwned));
+        return owned + "/" + maxOwnedLabel();
     }
 
     public String activeLabel(final int active) {
-        return active + "/" + (activeUnlimited() ? "∞" : String.valueOf(maxActive));
+        return active + "/" + maxActiveLabel();
+    }
+
+    /**
+     * 한도만 따로.
+     *
+     * <p>{@code /petadmin debug} 처럼 "지금 몇 마리"가 아니라 "한도가 얼마"만 필요한
+     * 자리가 있다. 무제한을 어떻게 적을지는 한 곳에서 정해야 한다 — 화면마다 0 과 ∞ 가
+     * 섞이면 보는 사람이 둘을 다른 뜻으로 읽는다.
+     */
+    public String maxOwnedLabel() {
+        return ownedUnlimited() ? "∞" : String.valueOf(maxOwned);
+    }
+
+    public String maxActiveLabel() {
+        return activeUnlimited() ? "∞" : String.valueOf(maxActive);
     }
 }

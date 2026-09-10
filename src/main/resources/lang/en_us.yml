@@ -85,6 +85,13 @@ admin:
   feed-given: "<green>Gave food <white>%id%<green> to <white>%player%<green>."
   growth-given: "<green>Gave <white>%amount%<green> growth."
   inventory-full: "<yellow>%player%'s inventory was full, so it was dropped at their feet."
+  # Diagnostic lines for /petadmin debug.
+  debug-pets: "<gray>Active pets <white>%active%<gray> (%owners% owners · max active %max-active% · max owned %max-owned% per player)"
+  debug-carriers: "<gray>Live carriers <white>%count%"
+  debug-trackers: "<gray>BetterModel trackers <white>%count%"
+  debug-consistent: "<green>→ Consistent. No leak."
+  debug-leak: "<red>→ Mismatch! Possible leak. <gray>The tracker count should never differ from the active pet count."
+  debug-integrations: "<gray>Integrations: <white>%list%"
   growth-model-missing: "<red>Could not attach the model for '<white>%type%<red>', so the pet went back to the box."
   growth-not-positive: "<red>Growth must be 1 or more. <gray>(got <white>%amount%<gray>)"
   reloaded: "<green>Config reloaded. <gray><white>%pets%<gray> pets, <white>%eggs%<gray> eggs, <white>%feeds%<gray> foods"
