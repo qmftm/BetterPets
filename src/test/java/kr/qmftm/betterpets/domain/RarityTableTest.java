@@ -20,7 +20,7 @@ class RarityTableTest {
     void defaultsFillEverything() {
         final RarityTable table = RarityTable.defaults();
         for (final Rarity rarity : Rarity.values()) {
-            assertEquals(rarity.defaults(), table.of(rarity));
+            assertEquals(rarity.defaults(), table.stats(rarity));
         }
     }
 
@@ -30,9 +30,9 @@ class RarityTableTest {
         // S만 손보는 게 흔한 경우다. 나머지 넷을 전부 적게 만들면 안 된다.
         final RarityTable table = RarityTable.of(Map.of(Rarity.S, stats(9.0)));
 
-        assertEquals(9.0, table.of(Rarity.S).moveSpeedMultiplier());
-        assertEquals(Rarity.D.defaults(), table.of(Rarity.D));
-        assertEquals(Rarity.A.defaults(), table.of(Rarity.A));
+        assertEquals(9.0, table.stats(Rarity.S).moveSpeedMultiplier());
+        assertEquals(Rarity.D.defaults(), table.stats(Rarity.D));
+        assertEquals(Rarity.A.defaults(), table.stats(Rarity.A));
     }
 
     @Test
@@ -40,7 +40,7 @@ class RarityTableTest {
     void everyRarityIsPresent() {
         final RarityTable table = RarityTable.of(Map.of(Rarity.B, stats(2.0)));
         for (final Rarity rarity : Rarity.values()) {
-            assertNotNull(table.of(rarity), rarity + " 의 수치가 없다");
+            assertNotNull(table.stats(rarity), rarity + " 의 수치가 없다");
         }
     }
 

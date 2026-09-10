@@ -170,16 +170,21 @@ public final class InteractionListener implements Listener {
         // 모델을 다시 붙이면 이 오버레이는 어차피 사라진다.
         pet.animation().overlay(kr.qmftm.betterpets.domain.PetType.AnimationSet.EAT);
 
+        // 방송에는 pet.type() 을 쓰면 안 된다. ActivePet 은 소환 시점의 종류를 붙들고
+        // 있어서, 성장 단계 진화로 종류가 바뀌면 "늑대가 2단계가 됐습니다" 처럼
+        // 바뀌기 전 이름을 부르게 된다. 지금 데이터가 가리키는 종류를 다시 찾는다.
+        final PetType current = pets.catalog().type(data.typeId()).orElse(pet.type());
+
         switch (result) {
             case STAGE_UP -> {
                 messages.send(player, "feed.stage-up",
                     "stage", String.valueOf(data.growthStage()),
                     "max", String.valueOf(growth.maxStage()));
-                broadcasts.onStageUp(player, data, pet.type());
+                broadcasts.onStageUp(player, data, current);
             }
             case GREW_UP -> {
                 messages.send(player, "feed.grew-up");
-                broadcasts.onGrown(player, data, pet.type());
+                broadcasts.onGrown(player, data, current);
             }
             case BECAME_PIG -> messages.send(player, "feed.became-pig");
             case FED -> messages.send(player, "feed.fed",

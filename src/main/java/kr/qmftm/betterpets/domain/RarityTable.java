@@ -35,7 +35,7 @@ public final class RarityTable {
     }
 
     /** 절대 null 이 아니다 — 모든 등급이 채워져 있다. */
-    public RarityStats of(final Rarity rarity) {
+    public RarityStats stats(final Rarity rarity) {
         return stats.get(rarity);
     }
 }
