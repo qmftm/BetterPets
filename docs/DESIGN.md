@@ -860,6 +860,7 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 | `PetTicker.tickRides` | 소환된 펫 전부를 훑으며 "타고 있나"를 물었다. 탑승자는 보통 0~1명 | 타는 사람 쪽을 훑도록 뒤집음 |
 | `PetRegistry.all()` | 호출마다 `ArrayList` 를 뜬다. 틱 루프가 초당 30번 | 복사 없는 `forEach` |
 | `RideController.drive`·`isSafe` | 매 틱, 탑승자마다, 서브스텝마다 `getConfig()` | 기동/리로드 시 캐시 |
+| `RideController.isSafe` | 오프셋 배열이 **메서드 안 리터럴**이라 검사마다 배열 여섯 개. 거기에 `Location.clone()` 이 열 번 | 배열은 상수로, 위치는 인스턴스 버퍼로 |
 | `GrowthService.refresh` | 1분이 안 지나도 `Projection` 을 하나 만든다. 초당 5번 × 펫 수 | 값이 안 바뀌는 경우를 먼저 쳐냄 |
 | `AbilityTriggerListener` | 피격·처치 이벤트마다 `List.copyOf` | 복사 없는 `forEachOf` |
 | `Tags.strip` | `String.replaceAll` 이 호출마다 `Pattern.compile` | 미리 컴파일해 한곳으로 |

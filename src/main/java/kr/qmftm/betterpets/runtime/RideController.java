@@ -39,7 +39,21 @@ public final class RideController {
     /** 탑승자 몸통 반경. 중심만 검사하면 어깨가 벽에 낀다. */
     private static final double BODY_RADIUS = 0.35;
 
+    /**
+     * 안전 검사에서 볼 수평 오프셋. 중심 + 네 방향.
+     *
+     * <p><b>메서드 안의 배열 리터럴이었다.</b> 그 자리는 매 틱, 탑승자마다, 서브스텝마다
+     * 도는 곳이라 검사 한 번에 배열 여섯 개가 새로 생기고 있었다. 값이 상수인데 그럴
+     * 이유가 없다.
+     */
+    private static final double[][] BODY_OFFSETS = {
+        {0, 0}, {BODY_RADIUS, 0}, {-BODY_RADIUS, 0}, {0, BODY_RADIUS}, {0, -BODY_RADIUS}
+    };
+
     private static final String RIDE_TAG = "BetterPets.Ride";
+
+    /** 하차 직후 완강 낙하를 걸어두는 시간(틱). 공중에서 내려도 떨어져 죽지 않게 한다. */
+    private static final int SAFE_LANDING_TICKS = 100;
 
     private final Plugin plugin;
     private final NamespacedKey ownerKey;
@@ -54,6 +68,15 @@ public final class RideController {
      */
     private volatile double flightLift;
     private volatile double flightMaxHeight;
+
+    /**
+     * 지형 검사용 위치 버퍼.
+     *
+     * <p>{@code tick} 은 메인 스레드에서 순차적으로 돌기 때문에 컨트롤러 하나에 버퍼
+     * 하나면 충분하다. 이 클래스 밖으로 새어 나가지 않는다 — 검사에만 쓰고 버린다.
+     * {@code MovementController} 가 같은 이유로 같은 방식을 쓴다.
+     */
+    private final Location probe = new Location(null, 0, 0, 0);
 
     public RideController(final Plugin plugin) {
         this.plugin = plugin;
@@ -178,7 +201,13 @@ public final class RideController {
         ride.mount.remove();
 
         player.setFallDistance(0.0f);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 100, 0, true, false, true));
+        // 이미 더 오래가는 완강 낙하를 걸고 있었다면 건드리지 않는다. 물약을 마시고
+        // 탄 사람의 효과를 5초로 잘라먹으면, 내려서 절벽으로 걸어간 뒤에야 알게 된다.
+        final PotionEffect existing = player.getPotionEffect(PotionEffectType.SLOW_FALLING);
+        if (existing == null || existing.getDuration() < SAFE_LANDING_TICKS) {
+            player.addPotionEffect(new PotionEffect(
+                PotionEffectType.SLOW_FALLING, SAFE_LANDING_TICKS, 0, true, false, true));
+        }
     }
 
     public void stopAll() {
@@ -290,9 +319,14 @@ public final class RideController {
         }
         final double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         final int steps = Math.max(1, (int) Math.ceil(distance / SUB_STEP));
+        final World world = base.getWorld();
         for (int i = 1; i <= steps; i++) {
             final double fraction = (double) i / steps;
-            if (!isSafe(base.clone().add(dx * fraction, dy * fraction, dz * fraction), ride.flying)) {
+            // 좌표만 넘긴다. 서브스텝마다 Location 을 뜨면 그게 곧 틱당 쓰레기다.
+            if (!isSafe(world,
+                base.getX() + dx * fraction,
+                base.getY() + dy * fraction,
+                base.getZ() + dz * fraction, ride.flying)) {
                 return false;
             }
         }
@@ -303,25 +337,29 @@ public final class RideController {
         return true;
     }
 
-    private boolean isSafe(final Location location, final boolean flying) {
-        final World world = location.getWorld();
-        if (world == null || location.getY() <= world.getMinHeight() + 1) {
+    private boolean isSafe(final World world, final double x, final double y, final double z,
+                           final boolean flying) {
+        if (world == null || y <= world.getMinHeight() + 1) {
             return false;
         }
-        if (flying && location.getY() >= flightMaxHeight) {
+        if (flying && y >= flightMaxHeight) {
             return false;
         }
         // 빌드 높이 위는 블록이 없으므로 검사를 건너뛴다.
-        if (location.getY() >= world.getMaxHeight()) {
+        if (y >= world.getMaxHeight()) {
             return true;
         }
         // 중심 + 네 방향. 발치와 머리 높이 양쪽을 본다 — 중심만 보면 어깨가 낀다.
-        final double[][] offsets = {
-            {0, 0}, {BODY_RADIUS, 0}, {-BODY_RADIUS, 0}, {0, BODY_RADIUS}, {0, -BODY_RADIUS}
-        };
-        for (final double[] offset : offsets) {
-            final Location foot = location.clone().add(offset[0], 0, offset[1]);
-            if (!foot.getBlock().isPassable() || !foot.clone().add(0, 1, 0).getBlock().isPassable()) {
+        probe.setWorld(world);
+        for (final double[] offset : BODY_OFFSETS) {
+            probe.setX(x + offset[0]);
+            probe.setZ(z + offset[1]);
+            probe.setY(y);
+            if (!probe.getBlock().isPassable()) {
+                return false;
+            }
+            probe.setY(y + 1.0);
+            if (!probe.getBlock().isPassable()) {
                 return false;
             }
         }
