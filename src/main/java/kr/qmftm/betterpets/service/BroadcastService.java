@@ -97,7 +97,7 @@ public final class BroadcastService {
             "stage", String.valueOf(data.growthStage()),
             "pet", Tags.strip(data.displayNameOr(type.displayName())),
             "rarity", type.rarity().name(),
-            "rarity-name", Tags.strip(type.rarity().displayName()),
+            "rarity-name", Tags.strip(type.stats().displayName()),
             "type", Tags.strip(type.displayName())
         };
 

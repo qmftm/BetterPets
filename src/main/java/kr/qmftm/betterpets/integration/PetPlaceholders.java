@@ -158,7 +158,7 @@ public final class PetPlaceholders extends PlaceholderExpansion {
                 type == null ? data.typeId() : type.displayName()));
             case "pet_type" -> data.typeId();
             case "pet_rarity" -> type == null ? NONE : type.rarity().name();
-            case "pet_rarity_name" -> type == null ? NONE : strip(type.rarity().displayName());
+            case "pet_rarity_name" -> type == null ? NONE : strip(type.stats().displayName());
             case "pet_stage" -> data.stage().name();
             case "pet_growth" -> String.valueOf(data.growth());
             case "pet_growth_max" -> String.valueOf(growth.maxOf(data));

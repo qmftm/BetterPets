@@ -167,7 +167,7 @@ public final class PetMenuFactory {
         final List<Component> lore = new ArrayList<>();
         if (type != null) {
             lore.add(Messages.plain("<gray>등급 <white>" + type.rarity().name()
-                + " <dark_gray>(" + type.rarity().displayName() + ")"));
+                + " <dark_gray>(" + type.stats().displayName() + ")"));
         }
         lore.add(Messages.plain("<gray>상태 <white>" + stageLabel(pet.stage())));
 

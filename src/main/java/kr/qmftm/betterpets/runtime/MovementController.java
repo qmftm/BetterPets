@@ -63,7 +63,7 @@ public final class MovementController {
     public MovementController(final Mob carrier, final PetType type) {
         this.carrier = carrier;
         this.profile = type.movement();
-        final double multiplier = type.rarity().moveSpeedMultiplier();
+        final double multiplier = type.stats().moveSpeedMultiplier();
         this.walkStep = profile.walkSpeed() * multiplier;
         this.runStep = profile.runSpeed() * multiplier;
     }

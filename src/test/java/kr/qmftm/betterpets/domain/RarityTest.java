@@ -10,41 +10,41 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RarityTest {
 
     @Test
-    @DisplayName("등급이 오를수록 이동속도가 빨라진다 — 원작 규칙")
+    @DisplayName("내장 기본값은 등급이 오를수록 빨라진다 — 원작 규칙")
     void moveSpeedIncreasesWithRarity() {
         final Rarity[] ascending = {Rarity.D, Rarity.C, Rarity.B, Rarity.A, Rarity.S};
         for (int i = 1; i < ascending.length; i++) {
             assertTrue(
-                ascending[i].moveSpeedMultiplier() > ascending[i - 1].moveSpeedMultiplier(),
+                ascending[i].defaults().moveSpeedMultiplier() > ascending[i - 1].defaults().moveSpeedMultiplier(),
                 ascending[i] + " 은 " + ascending[i - 1] + " 보다 빨라야 한다"
             );
         }
     }
 
     @Test
-    @DisplayName("등급이 오를수록 탑승속도도 빨라진다")
+    @DisplayName("내장 기본값은 등급이 오를수록 탑승속도도 빨라진다")
     void rideSpeedIncreasesWithRarity() {
         final Rarity[] ascending = {Rarity.D, Rarity.C, Rarity.B, Rarity.A, Rarity.S};
         for (int i = 1; i < ascending.length; i++) {
-            assertTrue(ascending[i].rideSpeed() > ascending[i - 1].rideSpeed());
+            assertTrue(ascending[i].defaults().rideSpeed() > ascending[i - 1].defaults().rideSpeed());
         }
     }
 
     @Test
     @DisplayName("비행은 A등급부터만 나온다 — 원작 규칙")
     void flightOnlyFromRarityA() {
-        assertFalse(Rarity.D.canRollFlight());
-        assertFalse(Rarity.C.canRollFlight());
-        assertFalse(Rarity.B.canRollFlight());
-        assertTrue(Rarity.A.canRollFlight());
-        assertTrue(Rarity.S.canRollFlight());
+        assertFalse(Rarity.D.defaults().canRollFlight());
+        assertFalse(Rarity.C.defaults().canRollFlight());
+        assertFalse(Rarity.B.defaults().canRollFlight());
+        assertTrue(Rarity.A.defaults().canRollFlight());
+        assertTrue(Rarity.S.defaults().canRollFlight());
     }
 
     @Test
     @DisplayName("비행 확률은 0.0~1.0 범위다")
     void flyChanceIsProbability() {
         for (final Rarity rarity : Rarity.values()) {
-            assertTrue(rarity.flyChance() >= 0.0 && rarity.flyChance() <= 1.0,
+            assertTrue(rarity.defaults().flyChance() >= 0.0 && rarity.defaults().flyChance() <= 1.0,
                 rarity + " 의 비행 확률이 범위를 벗어난다");
         }
     }

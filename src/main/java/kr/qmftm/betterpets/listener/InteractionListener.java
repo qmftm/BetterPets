@@ -229,7 +229,7 @@ public final class InteractionListener implements Listener {
             mountConfirms.remove(player.getUniqueId());
         }
 
-        final double speed = type.rarity().rideSpeed();
+        final double speed = type.stats().rideSpeed();
         if (rides.start(player, pet.petId(), pet.carrier().getLocation(), flying, speed)) {
             pet.movement().mode(MovementController.Mode.RIDDEN);
             messages.send(player, flying ? "ride.started-flying" : "ride.started-ground");

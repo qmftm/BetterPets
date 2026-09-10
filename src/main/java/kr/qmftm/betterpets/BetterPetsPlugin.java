@@ -78,6 +78,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         saveResourceIfMissing("lang/ko_kr.yml");
         saveResourceIfMissing("lang/en_us.yml");
         saveResourceIfMissing("items.yml");
+        saveResourceIfMissing("rarity.yml");
         saveResourceIfMissing("pets/wolf.yml");
         saveResourceIfMissing("pets/dragon.yml");
         saveResourceIfMissing("pets/pig.yml");

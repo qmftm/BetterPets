@@ -6,6 +6,8 @@ import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.FeedDefinition;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.Rarity;
+import kr.qmftm.betterpets.domain.RarityStats;
+import kr.qmftm.betterpets.domain.RarityTable;
 import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.render.PetRenderer;
 import org.bukkit.Material;
@@ -14,6 +16,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,6 +36,9 @@ public final class PetCatalog {
     private final Map<String, EggDefinition> eggs = new LinkedHashMap<>();
     private final Map<String, FeedDefinition> feeds = new LinkedHashMap<>();
     private final List<String> problems = new ArrayList<>();
+
+    /** 등급 수치. {@code load} 가 채우기 전에도 읽힐 수 있어서 기본값으로 시작한다. */
+    private RarityTable rarities = RarityTable.defaults();
 
     public Optional<PetType> type(final String id) {
         return Optional.ofNullable(types.get(id));
@@ -69,10 +75,64 @@ public final class PetCatalog {
         feeds.clear();
         problems.clear();
 
+        // 등급 수치를 먼저 읽는다. 펫 정의가 이 값을 박아 넣기 때문이다.
+        rarities = loadRarities(new File(dataFolder, "rarity.yml"));
         loadTypes(new File(dataFolder, "pets"), abilities);
         loadItems(dataFolder);
 
         crossValidate(renderer);
+    }
+
+    /**
+     * {@code rarity.yml} 을 읽는다. 없으면 내장 기본값만으로 돈다 — 문제로 치지 않는다.
+     * 이 파일은 밸런싱용이라 없어도 플러그인이 정상 동작한다.
+     */
+    private RarityTable loadRarities(final File file) {
+        if (!file.isFile()) {
+            return RarityTable.defaults();
+        }
+        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+        final ConfigurationSection root = yaml.getConfigurationSection("rarities");
+        if (root == null) {
+            problems.add("rarity.yml 에 'rarities:' 섹션이 없습니다. 기본 수치로 진행합니다.");
+            return RarityTable.defaults();
+        }
+        final Map<Rarity, RarityStats> overrides = new EnumMap<>(Rarity.class);
+        for (final String key : root.getKeys(false)) {
+            final Optional<Rarity> rarity = Rarity.parse(key);
+            if (rarity.isEmpty()) {
+                problems.add("rarity.yml: '" + key + "' 는 등급이 아닙니다. D/C/B/A/S 중 하나여야 합니다.");
+                continue;
+            }
+            final ConfigurationSection node = root.getConfigurationSection(key);
+            if (node == null) {
+                continue;
+            }
+            // 적지 않은 항목은 그 등급의 내장 기본값을 그대로 쓴다. 다섯 줄을 전부
+            // 적게 만들 이유가 없다 — S등급의 fly-chance 만 손보는 게 흔한 경우다.
+            final RarityStats fallback = rarity.get().defaults();
+            overrides.put(rarity.get(), new RarityStats(
+                node.getString("display-name", fallback.displayName()),
+                node.getDouble("move-speed", fallback.moveSpeedMultiplier()),
+                node.getDouble("ride-speed", fallback.rideSpeed()),
+                node.getDouble("fly-chance", fallback.flyChance()),
+                readColor(key, node.getString("color"), fallback.color())));
+        }
+        return RarityTable.of(overrides);
+    }
+
+    /** {@code "FFAA00"} 또는 {@code "#FFAA00"} 을 받는다. 잘못됐으면 기본색으로 두고 알린다. */
+    private int readColor(final String rarityKey, final String raw, final int fallback) {
+        if (raw == null || raw.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(raw.trim().replaceFirst("^#", ""), 16) & 0xFFFFFF;
+        } catch (final NumberFormatException error) {
+            problems.add("rarity.yml/" + rarityKey + ": color '" + raw
+                + "' 를 읽지 못했습니다. RRGGBB 16진수여야 합니다.");
+            return fallback;
+        }
     }
 
     private void loadTypes(final File folder, final AbilityRegistry abilities) {
@@ -107,9 +167,10 @@ public final class PetCatalog {
                 yaml.getString("display-name", id),
                 model,
                 rarity.get(),
+                rarities.of(rarity.get()),
                 yaml.getInt("growth-max", 100),
                 ride,
-                yaml.getDouble("fly-chance", rarity.get().flyChance()),
+                yaml.getDouble("fly-chance", rarities.of(rarity.get()).flyChance()),
                 readAnimations(yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
                 readAbilities(file.getName(), yaml.getMapList("abilities"), abilities),
@@ -329,7 +390,7 @@ public final class PetCatalog {
             if (type.rollsFlight() && type.flyChance() <= 0.0) {
                 problems.add("펫 '" + type.id() + "': ride 가 FLY 인데 fly-chance 가 0 입니다."
                     + " 이대로면 항상 걷는 탑승이 됩니다 (등급 " + type.rarity().name()
-                    + " 의 기본 비행 확률은 " + type.rarity().flyChance() + ").");
+                    + " 의 기본 비행 확률은 " + type.stats().flyChance() + ").");
             }
             for (final String required : PetType.AnimationSet.REQUIRED) {
                 if (!type.animations().mapping().containsKey(required)) {

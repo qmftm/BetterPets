@@ -64,7 +64,7 @@ public final class ActivePet implements AutoCloseable {
 
     /** 등급 색을 모델에 입힌다. 소환 직후 한 번. */
     public void applyRarityTint() {
-        handle.tint(type.rarity().color());
+        handle.tint(type.stats().color());
     }
 
     /**

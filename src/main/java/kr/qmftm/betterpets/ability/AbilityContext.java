@@ -16,6 +16,6 @@ public record AbilityContext(
 
     /** 성장도와 등급을 반영한 최종 수치. 대부분의 능력이 이걸 쓴다. */
     public double scaledValue() {
-        return definition.scaled(pet.growth(), type.rarity().moveSpeedMultiplier());
+        return definition.scaled(pet.growth(), type.stats().moveSpeedMultiplier());
     }
 }
