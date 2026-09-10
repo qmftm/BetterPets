@@ -115,6 +115,22 @@ public final class GrowthService {
     }
 
     /**
+     * 경과 시간을 반영하고, 그 결과 상한에 닿았으면 다음 단계로 넘긴다.
+     *
+     * <p><b>둘을 짝으로 묶는 게 요점이다.</b> {@link #refresh} 만 부르면 성장도는 맞지만
+     * 성체가 되지는 않는다. 그리고 성장도가 상한에 붙은 뒤에는 {@code refresh} 가 값을
+     * 바꾸지 않으므로, "값이 바뀌었을 때만 확인한다"는 식으로 둘을 이으면 <b>딱 그
+     * 펫들이 영원히 아기로 남는다</b> — 보관함에 오래 넣어둔 펫과 접속하지 않은 동안
+     * 자란 펫이 전부 그랬다.
+     *
+     * @return 이번 확인으로 일어난 일
+     */
+    public StageResult catchUp(final PetData data) {
+        refresh(data);
+        return promoteIfGrown(data);
+    }
+
+    /**
      * 먹이를 준다.
      *
      * @param feed 먹인 먹이. 성장도 증가량이 여기서 나온다 —

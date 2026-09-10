@@ -24,6 +24,7 @@ import kr.qmftm.betterpets.runtime.PetTicker;
 import kr.qmftm.betterpets.runtime.RideController;
 import kr.qmftm.betterpets.service.AbilityService;
 import kr.qmftm.betterpets.service.BroadcastService;
+import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
@@ -126,6 +127,9 @@ public final class BetterPetsPlugin extends JavaPlugin {
         final PetMenuFactory menus = new PetMenuFactory(
             catalog, growth, registry, pets, abilityRegistry, messages);
 
+        // 시간이 흘러 일어난 성장을 확인하는 자리. 접속·보관함·목록·틱이 모두 여기를 지난다.
+        final GrowthCatchUp catchUp = new GrowthCatchUp(store, pets, growth, broadcasts, messages);
+
         // 기동 시 청소. 정상 종료였다면 지울 게 없고, 크래시였다면 여기서 정리된다.
         final int orphanCarriers = carriers.purgeOrphans(this);
         final int orphanMounts = rides.purgeOrphans();
@@ -134,10 +138,10 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 + orphanCarriers + "개, 마운트 " + orphanMounts + "개");
         }
 
-        registerListeners(items, menus, abilities, growth, broadcasts);
-        registerCommands(items, menus, abilityRegistry);
+        registerListeners(items, menus, abilities, growth, broadcasts, catchUp);
+        registerCommands(items, menus, abilityRegistry, catchUp);
 
-        ticker = new PetTicker(this, registry, rides, growth, store, pets, broadcasts);
+        ticker = new PetTicker(this, registry, rides, pets, catchUp);
         ticker.start();
 
         // 스코어보드·홀로그램에서 쓸 %betterpets_...%. 없으면 건너뛴다.
@@ -147,7 +151,17 @@ public final class BetterPetsPlugin extends JavaPlugin {
         // 리로드로 들어온 경우 이미 접속해 있는 플레이어의 데이터를 읽어야 한다.
         for (final var online : getServer().getOnlinePlayers()) {
             abilities.purge(online);
-            store.loadAsync(online.getUniqueId(), null);
+            // 접속 이벤트와 같은 마무리를 해 줘야 한다. 리로드로 들어온 플레이어만
+            // 성장 확인을 건너뛰면, 그 자리에서만 펫이 아기로 굳는다.
+            store.loadAsync(online.getUniqueId(), () -> {
+                if (isEnabled()) {
+                    getServer().getScheduler().runTask(this, () -> {
+                        if (online.isOnline()) {
+                            catchUp.all(online);
+                        }
+                    });
+                }
+            });
         }
 
         getLogger().info("BetterPets 활성화됨. 펫 " + catalog.types().size()
@@ -176,20 +190,23 @@ public final class BetterPetsPlugin extends JavaPlugin {
                                    final PetMenuFactory menus,
                                    final AbilityService abilities,
                                    final GrowthService growth,
-                                   final BroadcastService broadcasts) {
+                                   final BroadcastService broadcasts,
+                                   final GrowthCatchUp catchUp) {
         final var manager = getServer().getPluginManager();
-        manager.registerEvents(new SessionListener(store, pets, registry, abilities), this);
+        manager.registerEvents(
+            new SessionListener(this, store, pets, registry, abilities, catchUp), this);
         manager.registerEvents(new InteractionListener(pets, store, items, registry, rides, growth,
             messages, broadcasts, bedrock,
             getConfig().getBoolean("integrations.bedrock.skip-mount-confirm", true)), this);
-        manager.registerEvents(new MenuListener(pets, store, menus, messages), this);
+        manager.registerEvents(new MenuListener(pets, store, menus, messages, catchUp), this);
         manager.registerEvents(new AbilityTriggerListener(registry, abilities), this);
     }
 
     private void registerCommands(final PetItems items,
                                   final PetMenuFactory menus,
-                                  final AbilityRegistry abilityRegistry) {
-        bind("pet", new PetCommand(pets, store, menus, rides, messages));
+                                  final AbilityRegistry abilityRegistry,
+                                  final GrowthCatchUp catchUp) {
+        bind("pet", new PetCommand(pets, store, menus, rides, messages, catchUp));
         bind("petadmin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
             messages, () -> {
                 reloadConfig();

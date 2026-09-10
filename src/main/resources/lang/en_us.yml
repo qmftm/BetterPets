@@ -24,6 +24,9 @@ pet:
   renamed: "<green>Renamed to '<white>%name%<green>'."
   name-too-long: "<red>Names cannot be longer than 32 characters."
   released: "<gray>You released the pet."
+  # Grown from time passing. The fed-to-grow path uses feed.grew-up / feed.stage-up.
+  grew-up: "<gold>%name% <yellow>is fully grown! <gray>You can ride it now."
+  stage-up: "<aqua>%name% <gray>grew. <dark_gray>(stage %stage%/%max%)"
   release-confirm: "<yellow>Release this pet for good? <gray>This cannot be undone — hold <white>Shift<gray> and click again."
   rename-hint: "<gray>Use /pet rename %id% <name> to rename it."
   rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."

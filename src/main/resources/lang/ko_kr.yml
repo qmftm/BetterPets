@@ -24,6 +24,9 @@ pet:
   renamed: "<green>이름을 '<white>%name%<green>' 으로 바꿨습니다."
   name-too-long: "<red>이름은 32자를 넘을 수 없습니다."
   released: "<gray>펫을 놓아줬습니다."
+  # 시간이 흘러 자란 경우. 먹여서 자란 쪽은 feed.grew-up / feed.stage-up 을 쓴다.
+  grew-up: "<gold>%name% <yellow>이(가) 다 자랐습니다! <gray>이제 탈 수 있습니다."
+  stage-up: "<aqua>%name% <gray>이(가) 자랐습니다. <dark_gray>(%stage%/%max% 단계)"
   release-confirm: "<yellow>정말 놓아주시겠습니까? <gray>되돌릴 수 없습니다 — <white>쉬프트<gray> 를 누른 채로 다시 클릭하세요."
   rename-hint: "<gray>/pet rename %id% <이름> 으로 바꿀 수 있습니다."
   rename-pick: "<yellow>여러 마리를 소환 중입니다. <gray>/pet rename <펫id> <이름> 으로 지정하세요."

@@ -4,6 +4,7 @@ import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.gui.Menus;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
+import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.entity.Player;
@@ -29,15 +30,18 @@ public final class MenuListener implements Listener {
     private final PetStore store;
     private final PetMenuFactory menus;
     private final Messages messages;
+    private final GrowthCatchUp catchUp;
 
     public MenuListener(final PetService pets,
                         final PetStore store,
                         final PetMenuFactory menus,
-                        final Messages messages) {
+                        final Messages messages,
+                        final GrowthCatchUp catchUp) {
         this.pets = pets;
         this.store = store;
         this.menus = menus;
         this.messages = messages;
+        this.catchUp = catchUp;
     }
 
     @EventHandler
@@ -132,6 +136,8 @@ public final class MenuListener implements Listener {
     }
 
     private void openBox(final Player player, final int page) {
+        // 보관함의 펫도 시간이 흐르면 자란다. 열기 전에 맞춰야 화면이 사실을 말한다.
+        catchUp.all(player);
         // 순서는 PetMenuFactory 가 정한다. 여기서 따로 정렬하면 /pet list 와 어긋난다.
         player.openInventory(menus.box(player.getUniqueId(),
             menus.ordered(store.owned(player.getUniqueId())), page));

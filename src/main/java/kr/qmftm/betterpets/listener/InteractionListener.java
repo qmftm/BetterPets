@@ -25,6 +25,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInputEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -249,6 +250,18 @@ public final class InteractionListener implements Listener {
         if (rides.isRiding(event.getPlayer())) {
             rides.input(event.getPlayer(), event.getInput());
         }
+    }
+
+    /**
+     * 퇴장 시 이륙 확인 창을 버린다.
+     *
+     * <p>지우는 곳이 "실제로 이륙했을 때" 하나뿐이었다. 확인만 띄우고 안 탄 사람의
+     * 항목은 서버가 살아 있는 내내 남는다는 뜻이다 — 3초면 의미가 없어지는 값인데
+     * 지도에는 상한이 없다. 과급식 카운터에서 똑같은 걸 한 번 겪었다.
+     */
+    @EventHandler
+    public void onQuit(final PlayerQuitEvent event) {
+        mountConfirms.remove(event.getPlayer().getUniqueId());
     }
 
     /** 스니크 하차. 입력 이벤트가 오지 않는 상황을 위한 보조 경로다. */

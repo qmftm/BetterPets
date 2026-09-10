@@ -69,6 +69,62 @@ class GrowthServiceTest {
         return PetData.newBaby(OWNER, typeId, System.currentTimeMillis());
     }
 
+    /** 하루 전에 얻어 그 뒤로 아무도 들여다보지 않은 펫. */
+    private static PetData babyFrom(final String typeId, final long agoMillis) {
+        return PetData.newBaby(OWNER, typeId, System.currentTimeMillis() - agoMillis);
+    }
+
+    @Test
+    @DisplayName("보관함에 하루 넣어둔 펫은 꺼내 보는 순간 성체가 되어 있어야 한다")
+    void cappedGrowthStillPromotes() {
+        final PetData pet = babyFrom("wolf", DAY);
+
+        assertEquals(GrowthService.StageResult.GREW_UP, service(1).catchUp(pet));
+        assertEquals(LifeStage.ADULT, pet.stage());
+    }
+
+    @Test
+    @DisplayName("이미 상한에 붙어 있어도 확인은 일어난다 — 여기서 아기가 굳어 있었다")
+    void promotionDoesNotDependOnGrowthChanging() {
+        final GrowthService service = service(1);
+        final PetData pet = babyFrom("wolf", DAY);
+
+        // 첫 확인 직전 상태를 흉내 낸다: 성장도는 이미 상한, 단계는 아직 아기.
+        service.refresh(pet);
+        assertEquals(100, pet.growth());
+        assertEquals(LifeStage.BABY, pet.stage());
+
+        // 여기서 refresh 를 다시 불러도 값이 안 바뀐다. "값이 바뀌었을 때만 확인" 이면
+        // 이 펫은 영원히 아기다.
+        final int before = pet.growth();
+        service.refresh(pet);
+        assertEquals(before, pet.growth(), "상한에 붙으면 경과 반영은 아무것도 바꾸지 않는다");
+
+        assertEquals(GrowthService.StageResult.GREW_UP, service.catchUp(pet));
+        assertEquals(LifeStage.ADULT, pet.stage());
+    }
+
+    @Test
+    @DisplayName("확인을 반복해도 한 번만 자란다")
+    void catchUpIsIdempotent() {
+        final GrowthService service = service(1);
+        final PetData pet = babyFrom("wolf", DAY);
+
+        assertEquals(GrowthService.StageResult.GREW_UP, service.catchUp(pet));
+        assertEquals(GrowthService.StageResult.NONE, service.catchUp(pet),
+            "성체가 된 뒤에도 자꾸 GREW_UP 을 돌려주면 알림이 매 틱 나간다");
+    }
+
+    @Test
+    @DisplayName("아직 덜 자란 펫은 확인해도 아기 그대로다")
+    void catchUpLeavesYoungPetsAlone() {
+        final PetData pet = babyFrom("wolf", 5L * 60 * 1000);   // 5분 = 성장도 5
+
+        assertEquals(GrowthService.StageResult.NONE, service(1).catchUp(pet));
+        assertEquals(LifeStage.BABY, pet.stage());
+        assertEquals(5, pet.growth());
+    }
+
     @Test
     @DisplayName("먹이면 성장도가 오른다")
     void feedingRaisesGrowth() {

@@ -6,6 +6,7 @@ import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
 import kr.qmftm.betterpets.runtime.RideController;
+import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -37,16 +38,21 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     private final RideController rides;
     private final Messages messages;
 
+    /** 목록을 보여주기 전에 시간 경과분을 반영한다 — 보관함의 펫도 자란다. */
+    private final GrowthCatchUp catchUp;
+
     public PetCommand(final PetService pets,
                       final PetStore store,
                       final PetMenuFactory menus,
                       final RideController rides,
-                      final Messages messages) {
+                      final Messages messages,
+                      final GrowthCatchUp catchUp) {
         this.pets = pets;
         this.store = store;
         this.menus = menus;
         this.rides = rides;
         this.messages = messages;
+        this.catchUp = catchUp;
     }
 
     @Override
@@ -75,6 +81,9 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     }
 
     private void openBox(final Player player) {
+        // 열기 전에 맞춘다. 보관함에 넣어둔 펫은 틱을 안 받아서, 여기서 확인하지 않으면
+        // 성장도가 상한에 붙은 채 아기로 보인다.
+        catchUp.all(player);
         player.openInventory(menus.box(player.getUniqueId(),
             menus.ordered(store.owned(player.getUniqueId())), 0));
     }
@@ -131,6 +140,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
      * 아이콘을 찾는 것보다 빠를 때가 있고, 여덟 자리 id 를 손으로 옮겨 적을 일도 없앤다.
      */
     private void list(final Player player) {
+        catchUp.all(player);
         final List<PetData> owned = menus.ordered(store.owned(player.getUniqueId()));
         if (owned.isEmpty()) {
             messages.send(player, "pet.list-empty");

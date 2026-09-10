@@ -1,12 +1,7 @@
 package kr.qmftm.betterpets.runtime;
 
-import kr.qmftm.betterpets.domain.LifeStage;
-import kr.qmftm.betterpets.domain.PetData;
-import kr.qmftm.betterpets.service.BroadcastService;
-import kr.qmftm.betterpets.service.GrowthService;
-import kr.qmftm.betterpets.service.GrowthService.StageResult;
+import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.PetService;
-import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -30,10 +25,13 @@ public final class PetTicker {
     private final Plugin plugin;
     private final PetRegistry registry;
     private final RideController rides;
-    private final GrowthService growth;
-    private final PetStore store;
     private final PetService pets;
-    private final BroadcastService broadcasts;
+
+    /**
+     * 성장 확인은 여기 말고도 접속·보관함·{@code /pet list} 에서 일어난다.
+     * 같은 판정을 네 곳에 적으면 언젠가 갈리므로 한 곳에 모아 부른다.
+     */
+    private final GrowthCatchUp catchUp;
 
     private BukkitTask followTask;
     private BukkitTask rideTask;
@@ -41,17 +39,13 @@ public final class PetTicker {
     public PetTicker(final Plugin plugin,
                      final PetRegistry registry,
                      final RideController rides,
-                     final GrowthService growth,
-                     final PetStore store,
                      final PetService pets,
-                     final BroadcastService broadcasts) {
+                     final GrowthCatchUp catchUp) {
         this.plugin = plugin;
         this.registry = registry;
         this.rides = rides;
-        this.growth = growth;
-        this.store = store;
         this.pets = pets;
-        this.broadcasts = broadcasts;
+        this.catchUp = catchUp;
     }
 
     public void start() {
@@ -96,7 +90,7 @@ public final class PetTicker {
                 return;
             }
 
-            applyTimeGrowth(owner, pet.data());
+            catchUp.one(owner, pet.data());
             pet.tick(owner);
         });
     }
@@ -134,41 +128,4 @@ public final class PetTicker {
         }
     }
 
-    /**
-     * 시간 경과분 성장도를 반영한다.
-     *
-     * <p>지연 계산이라 여기서 하는 일은 값 갱신뿐이고, 주기적 DB 쓰기가 없다.
-     * 성장이 실제로 일어났을 때만 저장을 건다.
-     */
-    private void applyTimeGrowth(final Player owner, final PetData data) {
-        if (data.stage() != LifeStage.BABY) {
-            return;     // 성체와 돼지는 더 자라지 않는다
-        }
-        final int before = data.growth();
-        growth.refresh(data);
-        if (data.growth() == before) {
-            return;
-        }
-        store.saveAsync(data);
-
-        final GrowthService.StageResult result = growth.promoteIfGrown(data);
-        if (result == StageResult.NONE) {
-            return;     // 성장도만 올랐다. 화면에 바뀔 것이 없다
-        }
-        store.saveAsync(data);
-
-        // 종류가 바뀌었으면 모델을, 성체가 됐으면 능력을 지금 상태에 맞춘다.
-        // 성장은 재소환 없이 일어나므로 이 마무리가 없으면 데이터만 바뀐다.
-        pets.refreshAfterGrowth(owner, data);
-
-        // 먹여서 자란 경우는 InteractionListener 가 알린다. 시간이 흘러 자란 경우가
-        // 여기다 — 두 경로 모두 알려야 "가만히 뒀더니 조용히 성체가 됐다"가 없다.
-        pets.catalog().type(data.typeId()).ifPresent(type -> {
-            if (result == GrowthService.StageResult.GREW_UP) {
-                broadcasts.onGrown(owner, data, type);
-            } else {
-                broadcasts.onStageUp(owner, data, type);
-            }
-        });
-    }
 }
