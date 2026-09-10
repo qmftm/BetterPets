@@ -1,6 +1,7 @@
 package kr.qmftm.betterpets.integration;
 
 import kr.qmftm.betterpets.config.PetCatalog;
+import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
@@ -169,7 +170,9 @@ public final class PetPlaceholders extends PlaceholderExpansion {
         };
     }
 
+    /** 태그를 걷어내되, 결과가 비면 {@link #NONE} 을 준다 — 빈 줄은 스코어보드를 무너뜨린다. */
     private static String strip(final String raw) {
-        return raw == null ? NONE : raw.replaceAll("<[^>]*>", "");
+        final String stripped = Tags.strip(raw);
+        return stripped.isBlank() ? NONE : stripped;
     }
 }

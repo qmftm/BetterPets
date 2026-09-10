@@ -2,6 +2,7 @@ package kr.qmftm.betterpets.gui;
 
 import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.PetCatalog;
+import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetLimits;
@@ -112,7 +113,7 @@ public final class PetMenuFactory {
         final String name = pet.displayNameOr(type == null ? pet.typeId() : type.displayName());
 
         final Inventory inventory = Bukkit.createInventory(
-            holder, DETAIL_SIZE, Messages.plain("<dark_gray>" + stripTags(name)));
+            holder, DETAIL_SIZE, Messages.plain("<dark_gray>" + Tags.strip(name)));
         holder.inventory(inventory);
 
         inventory.setItem(4, icon(pet));
@@ -212,8 +213,4 @@ public final class PetMenuFactory {
         return stack;
     }
 
-    /** 인벤토리 제목에 태그가 그대로 들어가지 않게 한다. */
-    private static String stripTags(final String raw) {
-        return raw.replaceAll("<[^>]*>", "");
-    }
 }

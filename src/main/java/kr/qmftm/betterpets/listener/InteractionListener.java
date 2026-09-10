@@ -1,6 +1,7 @@
 package kr.qmftm.betterpets.listener;
 
 import kr.qmftm.betterpets.config.Messages;
+import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.FeedDefinition;
 import kr.qmftm.betterpets.domain.LifeStage;
@@ -120,7 +121,7 @@ public final class InteractionListener implements Listener {
         held.setAmount(held.getAmount() - 1);   // 성공한 뒤에만 소비한다
 
         final PetType type = pets.catalog().type(typeId).orElseThrow();
-        messages.send(player, "egg.opened", "name", stripTags(type.displayName()));
+        messages.send(player, "egg.opened", "name", Tags.strip(type.displayName()));
         player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1.0f, 1.2f);
         broadcasts.onObtained(player, granted.get(), type);
     }
@@ -254,7 +255,4 @@ public final class InteractionListener implements Listener {
         }
     }
 
-    private static String stripTags(final String raw) {
-        return raw.replaceAll("<[^>]*>", "");
-    }
 }

@@ -54,11 +54,24 @@ public final class GrowthService {
         this.maxStage = Math.max(1, maxStage);
     }
 
-    /** 저장된 값에 경과 시간을 반영한다. 읽는 시점마다 부르면 된다. */
+    /**
+     * 저장된 값에 경과 시간을 반영한다. 읽는 시점마다 부르면 된다.
+     *
+     * <p>흔한 경우를 먼저 쳐낸다. 1분(성장도 1점)이 안 지났으면 {@link GrowthCurve#project}
+     * 는 같은 값을 돌려주면서 {@code Projection} 을 하나 만들 뿐이다. <b>틱 루프가 초당
+     * 5번, 소환된 펫마다 부르는 자리</b>라 그 할당이 고스란히 쓰레기가 된다. 실제로 값이
+     * 바뀌는 건 1분에 한 번이다.
+     */
     public void refresh(final PetData data) {
-        final int max = maxOf(data);
-        data.applyGrowth(GrowthCurve.project(
-            data.growth(), data.updatedAt(), System.currentTimeMillis(), max));
+        final long now = System.currentTimeMillis();
+        final long elapsed = now - data.updatedAt();
+        // elapsed 가 음수면 시계가 뒤로 간 것이다. 그 처리는 project 에 맡긴다.
+        // growth 가 상한을 넘어 있으면(설정에서 growth-max 를 낮춘 경우) 깎아야 하므로
+        // 이때도 건너뛰지 않는다.
+        if (elapsed >= 0 && elapsed < GrowthCurve.MILLIS_PER_POINT && data.growth() <= maxOf(data)) {
+            return;
+        }
+        data.applyGrowth(GrowthCurve.project(data.growth(), data.updatedAt(), now, maxOf(data)));
     }
 
     /**

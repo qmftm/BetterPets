@@ -51,6 +51,22 @@ public final class PetRegistry {
         return Optional.empty();
     }
 
+    /**
+     * 한 소유자의 펫을 복사 없이 훑는다.
+     *
+     * <p>{@link #allOf} 는 호출마다 {@code List.copyOf} 를 뜬다. 능력 트리거가
+     * <b>전투 중 피격·처치 이벤트마다</b> 부르는 자리라 그 복사가 실제로 쌓인다.
+     */
+    public void forEachOf(final UUID ownerId, final java.util.function.Consumer<ActivePet> action) {
+        final List<ActivePet> owned = active.get(ownerId);
+        if (owned == null) {
+            return;
+        }
+        for (final ActivePet pet : owned) {
+            action.accept(pet);
+        }
+    }
+
     /** 소유자가 소환 중인 펫 전부. 소환한 순서다 — 앞쪽이 가장 오래됐다. */
     public List<ActivePet> allOf(final UUID ownerId) {
         final List<ActivePet> owned = active.get(ownerId);

@@ -1,6 +1,7 @@
 package kr.qmftm.betterpets.service;
 
 import kr.qmftm.betterpets.config.Messages;
+import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.Rarity;
@@ -90,10 +91,10 @@ public final class BroadcastService {
         final String[] placeholders = {
             "player", owner.getName(),
             "stage", String.valueOf(data.growthStage()),
-            "pet", strip(data.displayNameOr(type.displayName())),
+            "pet", Tags.strip(data.displayNameOr(type.displayName())),
             "rarity", type.rarity().name(),
-            "rarity-name", strip(type.rarity().displayName()),
-            "type", strip(type.displayName())
+            "rarity-name", Tags.strip(type.rarity().displayName()),
+            "type", Tags.strip(type.displayName())
         };
 
         final Component line = messages.bare(key, placeholders);
@@ -104,7 +105,7 @@ public final class BroadcastService {
             }
         }
         // Discord 에는 서식을 걷어낸 평문을 보낸다. MiniMessage 태그가 그대로 가면 흉하다.
-        discord.send(strip(messages.raw(key, placeholders)));
+        discord.send(Tags.strip(messages.raw(key, placeholders)));
     }
 
     /** 알릴 만한 일인가. 등급과 성장 단계를 모두 넘겨야 한다. */
@@ -112,8 +113,4 @@ public final class BroadcastService {
         return type.rarity().atLeast(minRarity) && data.growthStage() >= minGrowthStage;
     }
 
-    /** MiniMessage 태그를 걷어낸다. 콘솔·Discord 처럼 태그를 모르는 곳에 쓴다. */
-    private static String strip(final String raw) {
-        return raw == null ? "" : raw.replaceAll("<[^>]*>", "");
-    }
 }

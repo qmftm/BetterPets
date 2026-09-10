@@ -41,10 +41,13 @@ public final class AbilityTriggerListener implements Listener {
         }
     }
 
-    /** 소환 중인 펫 전부에게 넘긴다. 여러 마리를 데리고 다닐 수 있어서다. */
+    /**
+     * 소환 중인 펫 전부에게 넘긴다. 여러 마리를 데리고 다닐 수 있어서다.
+     *
+     * <p>전투 중이면 피격 이벤트마다 들어온다. 목록을 복사하지 않는 순회를 쓴다.
+     */
     private void dispatch(final Player player, final org.bukkit.event.Event event) {
-        for (final ActivePet pet : registry.allOf(player.getUniqueId())) {
-            abilities.dispatch(player, pet.data(), pet.type(), event);
-        }
+        registry.forEachOf(player.getUniqueId(),
+            pet -> abilities.dispatch(player, pet.data(), pet.type(), event));
     }
 }
