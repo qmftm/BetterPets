@@ -128,6 +128,7 @@ public final class PetService {
 
         data.active(true);
         abilities.equip(owner, data, type);
+        reindexFollowers(owner.getUniqueId());
         return replaced ? SummonResult.OK_REPLACED : SummonResult.OK;
     }
 
@@ -146,7 +147,22 @@ public final class PetService {
         store.saveAsync(pet.data());
 
         registry.remove(owner.getUniqueId(), petId);
+        reindexFollowers(owner.getUniqueId());
         return true;
+    }
+
+    /**
+     * 추종 슬롯을 다시 매긴다.
+     *
+     * <p>여러 마리가 같은 한 점을 목표로 삼으면 서로 겹쳐 떤다. 슬롯마다 주인 뒤
+     * 각도를 달리 줘서 부채꼴로 세우는데, 그 번호를 소환·해제 때마다 0부터 다시
+     * 붙여야 중간이 비지 않는다.
+     */
+    private void reindexFollowers(final UUID ownerId) {
+        int slot = 0;
+        for (final ActivePet pet : registry.allOf(ownerId)) {
+            pet.movement().followSlot(slot++);
+        }
     }
 
     /** 소환 중인 펫을 전부 해제한다. 퇴장과 {@code /pet dismiss} 경로다. */

@@ -56,6 +56,15 @@ public final class MovementController {
 
     private Mode mode = Mode.GROUND;
     private State state = State.IDLE;
+
+    /**
+     * 이 펫이 주인 뒤 어느 방향에 설지. 0이 정중앙 뒤다.
+     *
+     * <p>{@code max-active} 가 2 이상이면 여러 마리가 <b>같은 한 점</b>을 목표로 삼는다.
+     * 그러면 서로 겹쳐 떨거나 밀어내는 것처럼 보인다. 슬롯마다 각도를 달리 줘서
+     * 부채꼴로 펼친다.
+     */
+    private int followSlot;
     private double lastDistance = Double.MAX_VALUE;
     private long lastProgressAt = System.currentTimeMillis();
     private float lastYaw = Float.NaN;
@@ -78,6 +87,11 @@ public final class MovementController {
 
     public State state() {
         return state;
+    }
+
+    /** 소환 순서상 몇 번째인가. {@code PetService} 가 소환·해제 때마다 다시 매긴다. */
+    public void followSlot(final int value) {
+        followSlot = Math.max(0, value);
     }
 
     public void tick(final Player owner) {
@@ -119,7 +133,11 @@ public final class MovementController {
         return State.IDLE;
     }
 
-    /** 소유자 뒤쪽. 소유자가 제자리 회전할 때 펫이 따라 도는 것을 데드존이 막는다. */
+    /**
+     * 소유자 뒤쪽. 소유자가 제자리 회전할 때 펫이 따라 도는 것을 데드존이 막는다.
+     *
+     * <p>여러 마리를 데리고 다니면 슬롯마다 각도를 벌려 부채꼴로 세운다.
+     */
     private Location followTarget(final Player owner) {
         final Location base = owner.getLocation();
         final Vector behind = base.getDirection().setY(0);
@@ -127,7 +145,37 @@ public final class MovementController {
             behind.setX(0).setZ(1);
         }
         behind.normalize().multiply(-profile.followDistance());
+        rotateAroundY(behind, slotAngleRadians());
         return base.clone().add(behind);
+    }
+
+    /**
+     * 슬롯 → 각도. 0은 정중앙, 그다음부터 좌우로 번갈아 벌린다.
+     *
+     * <p>{@code 0° · +35° · -35° · +70° · -70° …} 순이다. 전체 마릿수를 몰라도 되도록
+     * 고정 간격을 쓴다 — 소환·해제로 마릿수가 계속 바뀌는데 그때마다 전부 다시
+     * 배치하면 펫들이 우르르 움직여서 더 어수선해진다.
+     */
+    private double slotAngleRadians() {
+        if (followSlot == 0) {
+            return 0.0;
+        }
+        final int step = (followSlot + 1) / 2;               // 1,1,2,2,3,3...
+        final int sign = followSlot % 2 == 1 ? 1 : -1;       // 오른쪽부터 번갈아
+        return Math.toRadians(Math.min(150.0, step * 35.0)) * sign;
+    }
+
+    /** y축 회전. 수평 방향만 다루므로 y 성분은 건드리지 않는다. */
+    private static void rotateAroundY(final Vector vector, final double radians) {
+        if (radians == 0.0) {
+            return;
+        }
+        final double cos = Math.cos(radians);
+        final double sin = Math.sin(radians);
+        final double x = vector.getX();
+        final double z = vector.getZ();
+        vector.setX(x * cos - z * sin);
+        vector.setZ(x * sin + z * cos);
     }
 
     private void step(final Location current, final Location target, final double distance) {
