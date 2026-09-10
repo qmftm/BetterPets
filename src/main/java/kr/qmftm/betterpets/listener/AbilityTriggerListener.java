@@ -1,6 +1,5 @@
 package kr.qmftm.betterpets.listener;
 
-import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.AbilityService;
 import org.bukkit.entity.Player;
