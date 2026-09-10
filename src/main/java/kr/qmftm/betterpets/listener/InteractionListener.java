@@ -194,7 +194,11 @@ public final class InteractionListener implements Listener {
         }
 
         // 종류가 바뀌었으면 모델을, 성체가 됐으면 능력을 지금 상태에 맞춘다.
-        pets.refreshAfterGrowth(player, data);
+        if (pets.refreshAfterGrowth(player, data) == PetService.RefreshResult.DETACHED) {
+            // 진화한 종류의 모델이 없다. 먹인 사람 눈앞에서 펫이 사라진 상태라
+            // 그냥 넘어가면 "먹였더니 펫이 없어졌다"는 신고가 된다.
+            messages.send(player, "pet.model-missing");
+        }
     }
 
     /**

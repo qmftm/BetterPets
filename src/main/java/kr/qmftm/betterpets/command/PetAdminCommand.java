@@ -168,7 +168,10 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
 
         // 성장은 재소환 없이 일어난다. 이걸 빼면 관리자가 성장도를 부어 성체로
         // 만들어도 모델과 능력이 예전 상태로 남는다 — 급여 경로와 같은 마무리다.
-        pets.refreshAfterGrowth(target, target2);
+        if (pets.refreshAfterGrowth(target, target2) == PetService.RefreshResult.DETACHED) {
+            // 진화한 종류의 모델이 없다. 관리자에게 알린다 — 설정을 고칠 수 있는 사람이다.
+            messages.send(sender, "admin.growth-model-missing", "type", target2.typeId());
+        }
         messages.send(sender, "admin.growth-given", "amount", String.valueOf(amount));
     }
 

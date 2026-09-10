@@ -78,7 +78,11 @@ public final class GrowthCatchUp {
         store.saveAsync(data);
 
         // 소환 중이었다면 모델과 능력을 지금 상태에 맞춘다. 보관함에 있으면 할 일이 없다.
-        pets.refreshAfterGrowth(owner, data);
+        if (pets.refreshAfterGrowth(owner, data) == PetService.RefreshResult.DETACHED) {
+            // 진화한 종류의 모델이 없어서 눈앞의 펫이 사라졌다. "다 자랐습니다!" 만
+            // 보내고 넘어가면 플레이어는 빈자리를 보며 무슨 일인지 알 수 없다.
+            messages.send(owner, "pet.model-missing");
+        }
         announce(owner, data, result);
         return result;
     }

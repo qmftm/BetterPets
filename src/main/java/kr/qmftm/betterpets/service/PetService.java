@@ -226,23 +226,39 @@ public final class PetService {
      * <p>탑승 중에 종류가 바뀌었다면 {@link #summon} 안의 {@link #dismiss} 가 안전하게
      * 내려준다 — 드래곤이 돼지가 됐는데 그대로 하늘에 떠 있으면 곤란하다.
      *
-     * @return 소환 중이어서 실제로 손볼 것이 있었으면 true
+     * @return 이번 마무리의 결과. 호출부는 {@link RefreshResult#DETACHED} 를 반드시
+     *         플레이어에게 알려야 한다 — 눈앞의 펫이 사라진 상황이다
      */
-    public boolean refreshAfterGrowth(final Player owner, final PetData data) {
+    public RefreshResult refreshAfterGrowth(final Player owner, final PetData data) {
         final ActivePet current = registry.of(owner.getUniqueId(), data.petId()).orElse(null);
         if (current == null) {
-            return false;   // 소환 중이 아니다. 다음 소환 때 알아서 맞춰진다
+            return RefreshResult.NOT_ACTIVE;   // 소환 중이 아니다. 다음 소환 때 맞춰진다
         }
         if (!current.type().id().equals(data.typeId())) {
             // 종류가 바뀌었다. 모델부터 다시 붙여야 하고, 그 과정에서 능력도 다시 붙는다.
             // 이미 소환 중인 펫이라 동시 소환 한도를 새로 잡아먹지 않는다 — summon 이
             // 같은 petId 를 먼저 해제하고 그 자리에 다시 넣는다.
             final SummonResult result = summon(owner, data);
-            return result == SummonResult.OK || result == SummonResult.OK_REPLACED;
+            if (result == SummonResult.OK || result == SummonResult.OK_REPLACED) {
+                return RefreshResult.OK;
+            }
+            // 새 종류의 모델이 없다. summon 이 이미 예전 개체를 해제했으므로 눈앞에서
+            // 펫이 사라진 상태다. 조용히 넘기면 "다 자랐습니다!" 와 빈자리만 남는다.
+            return RefreshResult.DETACHED;
         }
         abilities.unequip(owner, data, current.type());
         abilities.equip(owner, data, current.type());
-        return true;
+        return RefreshResult.OK;
+    }
+
+    /** {@link #refreshAfterGrowth} 의 결과. */
+    public enum RefreshResult {
+        /** 소환 중이 아니었다. 할 일이 없었다. */
+        NOT_ACTIVE,
+        /** 모델과 능력을 지금 상태에 맞췄다. */
+        OK,
+        /** 새 종류를 붙이지 못해 펫이 보관함으로 돌아갔다. 설정이나 모델이 빠진 것이다. */
+        DETACHED
     }
 
     /** 소환 지점을 찾을 때 소유자 뒤에서부터 돌려볼 각도. 뒤 → 좌우 → 앞 순이다. */
