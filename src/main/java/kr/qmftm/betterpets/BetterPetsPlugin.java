@@ -204,8 +204,10 @@ public final class BetterPetsPlugin extends JavaPlugin {
             messages, catchUp, () -> {
                 reloadConfig();
                 reloadDefinitions(abilityRegistry);
-                // 아래 넷은 값을 들고 있는 쪽이라 다시 밀어 넣어야 반영된다.
+                // 아래 다섯은 값을 들고 있는 쪽이라 다시 밀어 넣어야 반영된다.
                 // 빠뜨리면 "설정을 다시 읽었습니다" 가 거짓말이 된다.
+                // 새로 무언가를 들고 있게 만들었다면 여기도 같이 늘려야 한다 —
+                // 더 나은 답은 아예 들고 있지 않는 것이다(PetItems 가 그렇게 한다).
                 rides.reloadTuning();
                 pets.limits(readLimits());
                 broadcasts.rules(readBroadcastRules());
