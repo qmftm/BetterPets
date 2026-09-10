@@ -84,6 +84,7 @@ admin:
   egg-given: "<green><white>%player%<green> 에게 알 <white>%id%<green> 을 줬습니다."
   feed-given: "<green><white>%player%<green> 에게 먹이 <white>%id%<green> 을 줬습니다."
   growth-given: "<green>성장도 <white>%amount%<green> 를 줬습니다."
+  inventory-full: "<yellow>%player% 의 인벤토리가 꽉 차서 발밑에 떨어뜨렸습니다."
   growth-model-missing: "<red>진화한 종류 '<white>%type%<red>' 의 모델을 붙이지 못해 펫이 보관함으로 돌아갔습니다."
   growth-not-positive: "<red>성장도는 1 이상이어야 합니다. <gray>(받은 값: <white>%amount%<gray>)"
   reloaded: "<green>설정을 다시 읽었습니다. <gray>펫 <white>%pets%<gray>종, 알 <white>%eggs%<gray>종, 먹이 <white>%feeds%<gray>종"

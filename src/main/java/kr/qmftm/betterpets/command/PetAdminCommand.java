@@ -7,6 +7,7 @@ import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.render.PetRenderer;
 import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.PetRegistry;
+import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import net.kyori.adventure.text.Component;
@@ -36,6 +37,15 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
     private final Messages messages;
     private final Runnable reloadAction;
 
+    /**
+     * 성장 뒤처리를 여기에 또 적지 않기 위해서다.
+     *
+     * <p>성장이 일어나는 경로가 셋(급여·시간 경과·이 명령)인데, 마무리(단계 전이·모델·
+     * 능력·알림)를 각각에 적으면 셋이 갈린다. 실제로 이 명령만 주인에게 아무 말도
+     * 하지 않고 있었다 — 관리자가 성장도를 부어 성체로 만들어도 본인은 몰랐다.
+     */
+    private final GrowthCatchUp catchUp;
+
     public PetAdminCommand(final PetService pets,
                            final PetStore store,
                            final PetCatalog catalog,
@@ -43,6 +53,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
                            final PetRegistry registry,
                            final PetRenderer renderer,
                            final Messages messages,
+                           final GrowthCatchUp catchUp,
                            final Runnable reloadAction) {
         this.pets = pets;
         this.store = store;
@@ -51,6 +62,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
         this.registry = registry;
         this.renderer = renderer;
         this.messages = messages;
+        this.catchUp = catchUp;
         this.reloadAction = reloadAction;
     }
 
@@ -112,7 +124,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             return;
         }
         final int amount = args.length > 3 ? parseInt(args[3], 1) : 1;
-        target.getInventory().addItem(items.createEgg(definition.get(), amount));
+        deliver(sender, target, items.createEgg(definition.get(), amount));
         messages.send(sender, "admin.egg-given", "player", target.getName(), "id", args[2]);
     }
 
@@ -132,7 +144,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             return;
         }
         final int amount = args.length > 3 ? parseInt(args[3], 1) : 1;
-        target.getInventory().addItem(items.createFeed(definition.get(), amount));
+        deliver(sender, target, items.createFeed(definition.get(), amount));
         messages.send(sender, "admin.feed-given", "player", target.getName(), "id", args[2]);
     }
 
@@ -161,18 +173,42 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "admin.growth-not-positive", "amount", args[3]);
             return;
         }
-        final PetData target2 = pet.get();
-        target2.addGrowth(amount, pets.growth().maxOf(target2));
-        pets.growth().promoteIfGrown(target2);
-        store.saveAsync(target2);
+        final PetData grown = pet.get();
+        // 급여 경로와 같은 순서다. 경과분을 먼저 반영해야 준 만큼이 정확히 얹힌다.
+        pets.growth().refresh(grown);
+        grown.addGrowth(amount, pets.growth().maxOf(grown));
+        store.saveAsync(grown);
 
-        // 성장은 재소환 없이 일어난다. 이걸 빼면 관리자가 성장도를 부어 성체로
-        // 만들어도 모델과 능력이 예전 상태로 남는다 — 급여 경로와 같은 마무리다.
-        if (pets.refreshAfterGrowth(target, target2) == PetService.RefreshResult.DETACHED) {
-            // 진화한 종류의 모델이 없다. 관리자에게 알린다 — 설정을 고칠 수 있는 사람이다.
-            messages.send(sender, "admin.growth-model-missing", "type", target2.typeId());
+        // 나머지 마무리(단계 전이·모델·능력·주인 알림·방송)는 성장이 일어나는 다른 두
+        // 경로와 같은 곳에 맡긴다. 여기에 따로 적으면 셋이 갈린다.
+        final boolean wasOut = registry.of(target.getUniqueId(), grown.petId()).isPresent();
+        catchUp.one(target, grown);
+        if (wasOut && registry.of(target.getUniqueId(), grown.petId()).isEmpty()) {
+            // 나와 있던 펫이 사라졌다 = 진화한 종류의 모델을 못 붙였다는 뜻이다.
+            // 주인에게는 catchUp 이 알렸고, 여기서는 설정을 고칠 수 있는 사람에게 알린다.
+            messages.send(sender, "admin.growth-model-missing", "type", grown.typeId());
         }
         messages.send(sender, "admin.growth-given", "amount", String.valueOf(amount));
+    }
+
+    /**
+     * 아이템을 건넨다.
+     *
+     * <p><b>{@code addItem} 의 반환값을 버리면 안 된다.</b> 인벤토리가 꽉 찼을 때
+     * 들어가지 못한 아이템이 거기 담겨 오는데, 그걸 무시하면 아이템은 사라지고
+     * 화면에는 "줬습니다"가 뜬다. 관리자는 준 줄 알고, 플레이어는 못 받는다.
+     */
+    private void deliver(final CommandSender sender, final Player target,
+                         final org.bukkit.inventory.ItemStack stack) {
+        final var leftover = target.getInventory().addItem(stack);
+        if (leftover.isEmpty()) {
+            return;
+        }
+        // 발밑에 떨어뜨린다. 거절하고 되돌리면 관리자가 다시 쳐야 하는데,
+        // 그 사이에 인벤토리가 비어 있으리라는 보장이 없다.
+        leftover.values().forEach(rest ->
+            target.getWorld().dropItemNaturally(target.getLocation(), rest));
+        messages.send(sender, "admin.inventory-full", "player", target.getName());
     }
 
     private void reload(final CommandSender sender) {

@@ -84,6 +84,7 @@ admin:
   egg-given: "<green>Gave egg <white>%id%<green> to <white>%player%<green>."
   feed-given: "<green>Gave food <white>%id%<green> to <white>%player%<green>."
   growth-given: "<green>Gave <white>%amount%<green> growth."
+  inventory-full: "<yellow>%player%'s inventory was full, so it was dropped at their feet."
   growth-model-missing: "<red>Could not attach the model for '<white>%type%<red>', so the pet went back to the box."
   growth-not-positive: "<red>Growth must be 1 or more. <gray>(got <white>%amount%<gray>)"
   reloaded: "<green>Config reloaded. <gray><white>%pets%<gray> pets, <white>%eggs%<gray> eggs, <white>%feeds%<gray> foods"

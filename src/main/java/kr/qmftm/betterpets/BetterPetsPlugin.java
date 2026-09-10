@@ -208,7 +208,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
                                   final GrowthCatchUp catchUp) {
         bind("pet", new PetCommand(pets, store, menus, rides, messages, catchUp));
         bind("petadmin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
-            messages, () -> {
+            messages, catchUp, () -> {
                 reloadConfig();
                 reloadDefinitions(abilityRegistry);
                 // 아래 셋은 값을 들고 있는 쪽이라 다시 밀어 넣어야 반영된다.
