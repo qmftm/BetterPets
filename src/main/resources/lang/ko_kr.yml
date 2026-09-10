@@ -133,6 +133,15 @@ gui:
   abilities-locked: "<yellow>성체가 되어야 발현됩니다."
   abilities-locked-entry: "<dark_gray>· %ability%"
   abilities-entry: "<gray>· <white>%ability% <dark_gray>+%value%"
+  abilities-entry-chance: "<gray>· <white>%ability% <dark_gray>%value%%"
+
+# 능력 이름. pets/*.yml 의 abilities[].id 가 그대로 키다.
+# 여기 없는 id 는 id 그대로 보인다 — 직접 추가한 능력이면 이 절에 한 줄 더하면 된다.
+ability:
+  attribute_speed: "이동 속도"
+  attribute_health: "최대 체력"
+  attribute_damage: "공격력"
+  on_kill_extra_drop: "추가 드랍"
 
 # 생애주기 이름. LifeStage 의 이름을 소문자로 바꾼 것이 키다.
 stage:

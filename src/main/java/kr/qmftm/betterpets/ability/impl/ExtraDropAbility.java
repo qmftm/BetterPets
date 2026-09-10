@@ -1,7 +1,10 @@
 package kr.qmftm.betterpets.ability.impl;
 
 import kr.qmftm.betterpets.ability.AbilityContext;
+import kr.qmftm.betterpets.ability.AbilityDefinition;
 import kr.qmftm.betterpets.ability.PetAbility;
+import kr.qmftm.betterpets.domain.PetData;
+import kr.qmftm.betterpets.domain.PetType;
 import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
@@ -40,8 +43,7 @@ public final class ExtraDropAbility implements PetAbility {
         if (!ctx.owner().equals(death.getEntity().getKiller())) {
             return;
         }
-        final double chance = Math.min(1.0, ctx.definition().value("chance-base", 0.0)
-            + ctx.definition().value("chance-per-growth", 0.0) * ctx.pet().growth());
+        final double chance = chance(ctx.pet(), ctx.definition());
         if (chance <= 0.0 || ThreadLocalRandom.current().nextDouble() >= chance) {
             return;
         }
@@ -50,5 +52,26 @@ public final class ExtraDropAbility implements PetAbility {
         for (final ItemStack stack : extra) {
             death.getDrops().add(stack.clone());
         }
+    }
+
+    /**
+     * 실제로 굴리는 확률. <b>보관함에 보여주는 값과 같은 함수여야 한다</b> —
+     * 두 곳에 따로 적으면 "표시는 30%인데 체감은 아니다"가 된다.
+     */
+    private static double chance(final PetData pet, final AbilityDefinition definition) {
+        return Math.min(1.0, definition.value("chance-base", 0.0)
+            + definition.value("chance-per-growth", 0.0) * pet.growth());
+    }
+
+    @Override
+    public double displayValue(final PetData pet,
+                               final PetType type,
+                               final AbilityDefinition definition) {
+        return chance(pet, definition);
+    }
+
+    @Override
+    public boolean displayAsChance() {
+        return true;
     }
 }

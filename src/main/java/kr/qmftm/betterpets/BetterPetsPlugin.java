@@ -123,7 +123,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
         final PetItems items = new PetItems(this, catalog, messages,
             getConfig().getInt("growth.feed-amount", 10));
-        final PetMenuFactory menus = new PetMenuFactory(catalog, growth, registry, pets, messages);
+        final PetMenuFactory menus = new PetMenuFactory(
+            catalog, growth, registry, pets, abilityRegistry, messages);
 
         // 기동 시 청소. 정상 종료였다면 지울 게 없고, 크래시였다면 여기서 정리된다.
         final int orphanCarriers = carriers.purgeOrphans(this);

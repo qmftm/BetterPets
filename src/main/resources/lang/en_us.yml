@@ -133,6 +133,15 @@ gui:
   abilities-locked: "<yellow>Unlocks when fully grown."
   abilities-locked-entry: "<dark_gray>· %ability%"
   abilities-entry: "<gray>· <white>%ability% <dark_gray>+%value%"
+  abilities-entry-chance: "<gray>· <white>%ability% <dark_gray>%value%%"
+
+# Ability names. The key is the abilities[].id from pets/*.yml.
+# An id that is missing here shows as the raw id — add a line for your own abilities.
+ability:
+  attribute_speed: "Move Speed"
+  attribute_health: "Max Health"
+  attribute_damage: "Attack Damage"
+  on_kill_extra_drop: "Extra Drops"
 
 # Life stage names. The key is the LifeStage name in lowercase.
 stage:

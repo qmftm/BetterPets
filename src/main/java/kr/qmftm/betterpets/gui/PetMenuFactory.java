@@ -1,5 +1,8 @@
 package kr.qmftm.betterpets.gui;
 
+import kr.qmftm.betterpets.ability.AbilityDefinition;
+import kr.qmftm.betterpets.ability.AbilityRegistry;
+import kr.qmftm.betterpets.ability.PetAbility;
 import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.config.Tags;
@@ -49,6 +52,14 @@ public final class PetMenuFactory {
     private final PetService pets;
 
     /**
+     * 능력 구현체를 찾기 위해서다.
+     *
+     * <p>수치 공식을 여기서 직접 계산하면 안 된다 — 능력마다 읽는 설정 키가 다르다.
+     * 구현체에게 물어야 {@code chance-base} 를 쓰는 능력이 {@code +0.00} 으로 보이지 않는다.
+     */
+    private final AbilityRegistry abilities;
+
+    /**
      * GUI 문구도 번역 대상이다.
      *
      * <p>전에는 이 클래스가 한국어를 그대로 들고 있었다. {@code language: en_us} 로
@@ -61,11 +72,13 @@ public final class PetMenuFactory {
                           final GrowthService growth,
                           final PetRegistry registry,
                           final PetService pets,
+                          final AbilityRegistry abilities,
                           final Messages messages) {
         this.catalog = catalog;
         this.growth = growth;
         this.registry = registry;
         this.pets = pets;
+        this.abilities = abilities;
         this.messages = messages;
     }
 
@@ -202,19 +215,58 @@ public final class PetMenuFactory {
         } else if (!pet.stage().abilitiesActive()) {
             // 아기와 돼지는 능력이 없다. 왜 안 보이는지 알려줘야 한다.
             lore.add(line("gui.abilities-locked"));
-            type.abilities().forEach(ability ->
-                lore.add(line("gui.abilities-locked-entry", "ability", ability.id())));
+            type.abilities().forEach(definition ->
+                lore.add(line("gui.abilities-locked-entry",
+                    "ability", abilityLabel(definition.id()))));
         } else {
-            for (final var ability : type.abilities()) {
-                final double value = ability.scaled(pet.growth(), type.stats().moveSpeedMultiplier());
-                lore.add(line("gui.abilities-entry",
-                    "ability", ability.id(),
-                    "value", String.format(java.util.Locale.ROOT, "%.2f", value)));
+            for (final AbilityDefinition definition : type.abilities()) {
+                lore.add(abilityLine(pet, type, definition));
             }
         }
         meta.lore(lore);
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    /**
+     * 능력 한 줄.
+     *
+     * <p>수치는 <b>구현체에게 묻는다.</b> 전에는 여기서 {@code base}/{@code per-growth}
+     * 를 직접 계산했는데, {@code chance-base} 를 읽는 능력은 그 키가 없어 언제나
+     * {@code +0.00} 으로 보였다 — "능력이 안 붙는다"는 오해를 살 화면이었다.
+     */
+    private Component abilityLine(final PetData pet,
+                                  final PetType type,
+                                  final AbilityDefinition definition) {
+        final PetAbility ability = abilities.find(definition.id()).orElse(null);
+        if (ability == null) {
+            // 카탈로그 검증에서 걸러지는 상황이지만, 그래도 줄을 통째로 삼키지는 않는다.
+            return line("gui.abilities-locked-entry", "ability", abilityLabel(definition.id()));
+        }
+        final double value = ability.displayValue(pet, type, definition);
+        if (ability.displayAsChance()) {
+            return line("gui.abilities-entry-chance",
+                "ability", abilityLabel(definition.id()),
+                "value", String.format(java.util.Locale.ROOT, "%.1f", value * 100.0));
+        }
+        return line("gui.abilities-entry",
+            "ability", abilityLabel(definition.id()),
+            "value", String.format(java.util.Locale.ROOT, "%.2f", value));
+    }
+
+    /**
+     * 능력 이름.
+     *
+     * <p>설정의 id({@code attribute_speed})를 그대로 보여주고 있었다. 다른 문구는 전부
+     * 번역해 놓고 능력만 영문 식별자가 튀어나오는 화면이었다.
+     *
+     * <p>번역이 없으면 <b>id 를 그대로</b> 쓴다 — 관리자가 추가한 능력에 {@code
+     * ability.무엇} 이라는 키 이름이 뜨는 것보다 낫다.
+     */
+    private String abilityLabel(final String id) {
+        final String key = "ability." + id;
+        final String label = messages.raw(key);
+        return Tags.strip(key.equals(label) ? id : label);
     }
 
     /**
