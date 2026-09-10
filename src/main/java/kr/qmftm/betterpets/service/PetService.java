@@ -35,7 +35,14 @@ public final class PetService {
     private final RideController rides;
     private final AbilityService abilities;
     private final GrowthService growth;
-    private final PetLimits limits;
+    /**
+     * 보유·동시 소환 한도.
+     *
+     * <p>{@code final} 이 아닌 이유는 {@code /petadmin reload} 때문이다. 설정을 다시
+     * 읽었는데 한도만 예전 값으로 남으면, "리로드했다"는 메시지가 거짓말이 된다.
+     * 그런 침묵은 관리자의 오후를 통째로 잡아먹는다.
+     */
+    private volatile PetLimits limits;
 
     public PetService(final PetCatalog catalog,
                       final PetStore store,
@@ -60,6 +67,11 @@ public final class PetService {
     /** 설정된 보유·동시 소환 한도. GUI 표시와 지급 판정이 같은 값을 본다. */
     public PetLimits limits() {
         return limits;
+    }
+
+    /** {@code /petadmin reload} 가 부른다. */
+    public void limits(final PetLimits value) {
+        limits = value;
     }
 
     public enum SummonResult {

@@ -27,46 +27,49 @@ public final class BroadcastService {
     private final Messages messages;
     private final DiscordBridge discord;
 
-    private final boolean enabled;
-    private final Rarity minRarity;
-    private final int minGrowthStage;
-    private final boolean onObtain;
-    private final boolean onGrown;
-    private final boolean onStageUp;
-    private final boolean sound;
+    /**
+     * 방송 조건. {@code /petadmin reload} 로 통째로 갈아끼운다 —
+     * 설정을 다시 읽었는데 방송 문턱만 예전 값이면 "리로드했다"가 거짓말이 된다.
+     */
+    public record Rules(boolean enabled,
+                        Rarity minRarity,
+                        int minGrowthStage,
+                        boolean onObtain,
+                        boolean onGrown,
+                        boolean onStageUp,
+                        boolean sound) {
+        public Rules {
+            minGrowthStage = Math.max(1, minGrowthStage);
+        }
+    }
+
+    private volatile Rules rules;
 
     public BroadcastService(final Server server,
                             final Messages messages,
                             final DiscordBridge discord,
-                            final boolean enabled,
-                            final Rarity minRarity,
-                            final int minGrowthStage,
-                            final boolean onObtain,
-                            final boolean onGrown,
-                            final boolean onStageUp,
-                            final boolean sound) {
+                            final Rules rules) {
         this.server = server;
         this.messages = messages;
         this.discord = discord;
-        this.enabled = enabled;
-        this.minRarity = minRarity;
-        this.minGrowthStage = Math.max(1, minGrowthStage);
-        this.onObtain = onObtain;
-        this.onGrown = onGrown;
-        this.onStageUp = onStageUp;
-        this.sound = sound;
+        this.rules = rules;
+    }
+
+    /** {@code /petadmin reload} 가 부른다. */
+    public void rules(final Rules value) {
+        rules = value;
     }
 
     /** 알에서 펫이 나왔을 때. 뽑기 결과를 자랑하는 자리다. */
     public void onObtained(final Player owner, final PetData data, final PetType type) {
-        if (onObtain) {
+        if (rules.onObtain()) {
             announce("broadcast.obtained", owner, data, type);
         }
     }
 
     /** 성체가 됐을 때. 키운 결과라 획득보다 이쪽이 알릴 값어치가 크다. */
     public void onGrown(final Player owner, final PetData data, final PetType type) {
-        if (onGrown) {
+        if (rules.onGrown()) {
             announce("broadcast.grown", owner, data, type);
         }
     }
@@ -79,13 +82,14 @@ public final class BroadcastService {
      * 켠 사람의 의도가 아닐 것이다. "일정 단계를 넘겼다"를 알리려면 넘긴 순간이 필요하다.
      */
     public void onStageUp(final Player owner, final PetData data, final PetType type) {
-        if (onStageUp) {
+        if (rules.onStageUp()) {
             announce("broadcast.stage-up", owner, data, type);
         }
     }
 
     private void announce(final String key, final Player owner, final PetData data, final PetType type) {
-        if (!enabled || !qualifies(data, type)) {
+        final Rules current = rules;
+        if (!current.enabled() || !qualifies(current, data, type)) {
             return;
         }
         final String[] placeholders = {
@@ -99,7 +103,7 @@ public final class BroadcastService {
 
         final Component line = messages.bare(key, placeholders);
         server.sendMessage(line);   // 콘솔까지 한 번에 간다
-        if (sound) {
+        if (current.sound()) {
             for (final Player online : server.getOnlinePlayers()) {
                 online.playSound(online.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.0f);
             }
@@ -109,8 +113,8 @@ public final class BroadcastService {
     }
 
     /** 알릴 만한 일인가. 등급과 성장 단계를 모두 넘겨야 한다. */
-    private boolean qualifies(final PetData data, final PetType type) {
-        return type.rarity().atLeast(minRarity) && data.growthStage() >= minGrowthStage;
+    private static boolean qualifies(final Rules rules, final PetData data, final PetType type) {
+        return type.rarity().atLeast(rules.minRarity()) && data.growthStage() >= rules.minGrowthStage();
     }
 
 }

@@ -3,11 +3,11 @@ package kr.qmftm.betterpets.integration;
 import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.PetData;
-import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.GrowthService;
+import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
@@ -49,20 +49,21 @@ public final class PetPlaceholders extends PlaceholderExpansion {
     private final PetRegistry registry;
     private final PetCatalog catalog;
     private final GrowthService growth;
-    private final PetLimits limits;
+    /** 한도는 값을 들고 있지 않고 매번 묻는다 — 리로드로 바뀐 값이 바로 보여야 한다. */
+    private final PetService pets;
 
     private PetPlaceholders(final Plugin plugin,
                             final PetStore store,
                             final PetRegistry registry,
                             final PetCatalog catalog,
                             final GrowthService growth,
-                            final PetLimits limits) {
+                            final PetService pets) {
         this.plugin = plugin;
         this.store = store;
         this.registry = registry;
         this.catalog = catalog;
         this.growth = growth;
-        this.limits = limits;
+        this.pets = pets;
     }
 
     /**
@@ -78,12 +79,12 @@ public final class PetPlaceholders extends PlaceholderExpansion {
                                       final PetRegistry registry,
                                       final PetCatalog catalog,
                                       final GrowthService growth,
-                                      final PetLimits limits) {
+                                      final PetService pets) {
         if (!plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             return false;
         }
         try {
-            final boolean ok = new PetPlaceholders(plugin, store, registry, catalog, growth, limits)
+            final boolean ok = new PetPlaceholders(plugin, store, registry, catalog, growth, pets)
                 .register();
             plugin.getLogger().info(ok
                 ? "PlaceholderAPI 연동됨. %betterpets_...% 를 쓸 수 있습니다."
@@ -134,13 +135,13 @@ public final class PetPlaceholders extends PlaceholderExpansion {
                 return String.valueOf(store.owned(player.getUniqueId()).size());
             }
             case "owned_max" -> {
-                return limits.ownedUnlimited() ? "∞" : String.valueOf(limits.maxOwned());
+                return pets.limits().ownedUnlimited() ? "∞" : String.valueOf(pets.limits().maxOwned());
             }
             case "active" -> {
                 return String.valueOf(registry.countOf(player.getUniqueId()));
             }
             case "active_max" -> {
-                return limits.activeUnlimited() ? "∞" : String.valueOf(limits.maxActive());
+                return pets.limits().activeUnlimited() ? "∞" : String.valueOf(pets.limits().maxActive());
             }
             default -> { /* 아래 펫별 키로 넘어간다 */ }
         }

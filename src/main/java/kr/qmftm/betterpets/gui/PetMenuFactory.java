@@ -9,6 +9,7 @@ import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.GrowthService;
+import kr.qmftm.betterpets.service.PetService;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -38,16 +39,24 @@ public final class PetMenuFactory {
     private final PetCatalog catalog;
     private final GrowthService growth;
     private final PetRegistry registry;
-    private final PetLimits limits;
+    private final PetService pets;
 
     public PetMenuFactory(final PetCatalog catalog,
                           final GrowthService growth,
                           final PetRegistry registry,
-                          final PetLimits limits) {
+                          final PetService pets) {
         this.catalog = catalog;
         this.growth = growth;
         this.registry = registry;
-        this.limits = limits;
+        this.pets = pets;
+    }
+
+    /**
+     * 현재 한도. 값을 들고 있지 않고 매번 서비스에 묻는다 —
+     * {@code /petadmin reload} 로 바뀐 값이 GUI 에도 바로 보여야 한다.
+     */
+    private PetLimits limits() {
+        return pets.limits();
     }
 
     /**
@@ -94,9 +103,9 @@ public final class PetMenuFactory {
 
         final int active = registry.countOf(ownerId);
         final List<Component> lore = new ArrayList<>();
-        lore.add(Messages.plain("<gray>보유 <white>" + limits.ownedLabel(owned)));
-        lore.add(Messages.plain("<gray>소환 중 <white>" + limits.activeLabel(active)));
-        if (!limits.canOwnMore(owned)) {
+        lore.add(Messages.plain("<gray>보유 <white>" + limits().ownedLabel(owned)));
+        lore.add(Messages.plain("<gray>소환 중 <white>" + limits().activeLabel(active)));
+        if (!limits().canOwnMore(owned)) {
             lore.add(Messages.plain("<red>보유 한도가 찼습니다. 놓아줘야 더 받습니다."));
         }
         if (owned == 0) {
@@ -135,7 +144,7 @@ public final class PetMenuFactory {
             return simple(Material.LEAD, "<red>소환 해제");
         }
         final ItemStack stack = simple(Material.LEAD, "<green>소환하기");
-        if (!limits.canSummonMore(registry.countOf(pet.ownerId()))) {
+        if (!limits().canSummonMore(registry.countOf(pet.ownerId()))) {
             final ItemMeta meta = stack.getItemMeta();
             meta.lore(List.of(Messages.plain(
                 "<yellow>동시 소환 한도가 찼습니다. <gray>가장 먼저 부른 펫이 돌아갑니다.")));

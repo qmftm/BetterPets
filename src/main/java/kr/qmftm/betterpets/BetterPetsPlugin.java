@@ -53,6 +53,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
     private CarrierFactory carriers;
     private BedrockSupport bedrock;
     private DiscordBridge discord;
+    private BroadcastService broadcasts;
 
     @Override
     public void onEnable() {
@@ -104,10 +105,6 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getString("gimmick.overfeed.becomes", "pig"),
             getConfig().getInt("growth.max-stage", 1));
 
-        final PetLimits limits = new PetLimits(
-            getConfig().getInt("pets.max-owned", 20),
-            getConfig().getInt("pets.max-active", 1));
-
         bedrock = new BedrockSupport(this);
         bedrock.detect();
 
@@ -116,24 +113,14 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getString("integrations.discord.channel", "global"));
         discord.connect();
 
-        final BroadcastService broadcasts = new BroadcastService(
-            getServer(),
-            messages,
-            discord,
-            getConfig().getBoolean("broadcast.enabled", true),
-            broadcastFloor(),
-            getConfig().getInt("broadcast.min-growth-stage", 1),
-            getConfig().getBoolean("broadcast.on-obtain", true),
-            getConfig().getBoolean("broadcast.on-grown", true),
-            getConfig().getBoolean("broadcast.on-stage-up", false),
-            getConfig().getBoolean("broadcast.sound", true));
+        broadcasts = new BroadcastService(getServer(), messages, discord, readBroadcastRules());
 
         final AbilityService abilities = new AbilityService(this, abilityRegistry);
         pets = new PetService(
-            catalog, store, renderer, carriers, registry, rides, abilities, growth, limits);
+            catalog, store, renderer, carriers, registry, rides, abilities, growth, readLimits());
 
         final PetItems items = new PetItems(this);
-        final PetMenuFactory menus = new PetMenuFactory(catalog, growth, registry, limits);
+        final PetMenuFactory menus = new PetMenuFactory(catalog, growth, registry, pets);
 
         // 기동 시 청소. 정상 종료였다면 지울 게 없고, 크래시였다면 여기서 정리된다.
         final int orphanCarriers = carriers.purgeOrphans(this);
@@ -150,7 +137,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
         ticker.start();
 
         // 스코어보드·홀로그램에서 쓸 %betterpets_...%. 없으면 건너뛴다.
-        PetPlaceholders.tryRegister(this, store, registry, catalog, growth, limits);
+        // 한도는 서비스에 물어보게 넘긴다 — 리로드로 바뀐 값이 바로 보여야 한다.
+        PetPlaceholders.tryRegister(this, store, registry, catalog, growth, pets);
 
         // 리로드로 들어온 경우 이미 접속해 있는 플레이어의 데이터를 읽어야 한다.
         for (final var online : getServer().getOnlinePlayers()) {
@@ -202,7 +190,11 @@ public final class BetterPetsPlugin extends JavaPlugin {
             messages, () -> {
                 reloadConfig();
                 reloadDefinitions(abilityRegistry);
-                rides.reloadTuning();   // 비행 수치는 캐시돼 있다. 다시 읽어야 반영된다
+                // 아래 셋은 값을 들고 있는 쪽이라 다시 밀어 넣어야 반영된다.
+                // 빠뜨리면 "설정을 다시 읽었습니다" 가 거짓말이 된다.
+                rides.reloadTuning();
+                pets.limits(readLimits());
+                broadcasts.rules(readBroadcastRules());
             }));
     }
 
@@ -238,6 +230,23 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getLogger().warning("gimmick.overfeed.becomes 가 가리키는 펫 '" + pigType
                 + "' 가 없습니다. 과급식해도 모습은 그대로 남습니다.");
         }
+    }
+
+    private PetLimits readLimits() {
+        return new PetLimits(
+            getConfig().getInt("pets.max-owned", 20),
+            getConfig().getInt("pets.max-active", 1));
+    }
+
+    private BroadcastService.Rules readBroadcastRules() {
+        return new BroadcastService.Rules(
+            getConfig().getBoolean("broadcast.enabled", true),
+            broadcastFloor(),
+            getConfig().getInt("broadcast.min-growth-stage", 1),
+            getConfig().getBoolean("broadcast.on-obtain", true),
+            getConfig().getBoolean("broadcast.on-grown", true),
+            getConfig().getBoolean("broadcast.on-stage-up", false),
+            getConfig().getBoolean("broadcast.sound", true));
     }
 
     /**
