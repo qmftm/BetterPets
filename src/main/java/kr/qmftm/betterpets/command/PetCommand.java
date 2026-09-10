@@ -205,7 +205,9 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             return;
         }
         // 첫 인자가 소유한 펫의 id 앞자리이고 이름이 뒤에 더 있으면 그쪽을 대상으로 본다.
-        Optional<PetData> target = args.length >= 3 ? resolve(player, args[1]) : Optional.empty();
+        Optional<PetData> target = args.length >= 3 && looksLikeId(args[1])
+            ? resolve(player, args[1])
+            : Optional.empty();
         final int nameFrom = target.isPresent() ? 2 : 1;
 
         if (target.isEmpty()) {
@@ -237,6 +239,22 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         target.get().nickname(name);
         store.saveAsync(target.get());
         messages.send(player, "pet.renamed", "name", name);
+    }
+
+    /**
+     * 이 토큰을 펫 id 로 볼 만한가.
+     *
+     * <p><b>{@code /pet rename} 에만 쓴다.</b> 거기서는 첫 인자가 id 일 수도 있고 이름의
+     * 첫 단어일 수도 있어서 추측해야 한다. 그런데 그냥 앞자리 일치로 두면
+     * {@code /pet rename a b} 가 "이름을 'a b' 로" 가 아니라 "id 가 a 로 시작하는 펫을
+     * 'b' 로" 가 된다 — 한 글자로 남의 펫 이름을 엉뚱하게 바꾸는 셈이다.
+     *
+     * <p>화면에 보여주는 id 가 여덟 자리라 최소 네 자리를 요구한다. 16진수 네 자리가
+     * 우연히 이름의 첫 단어와 겹칠 확률은 무시할 만하고, 겹치더라도 그 값이 실제
+     * 소유한 펫의 id 앞자리와 같아야 한다.
+     */
+    static boolean looksLikeId(final String token) {
+        return token.length() >= 4 && token.matches("[0-9a-fA-F-]+");
     }
 
     /**

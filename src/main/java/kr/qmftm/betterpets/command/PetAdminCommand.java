@@ -296,6 +296,16 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             if (args[0].equalsIgnoreCase("feed")) {
                 return matching(catalog.feeds().keySet(), args[2]);
             }
+            if (args[0].equalsIgnoreCase("growth")) {
+                // /pet summon 은 펫 id 를 완성해 주는데 여기만 손으로 치게 하고 있었다.
+                // 여덟 자리 16진수를 옮겨 적는 건 오타를 부르는 일이다.
+                final Player owner = sender.getServer().getPlayer(args[1]);
+                if (owner != null) {
+                    return matching(store.owned(owner.getUniqueId()).stream()
+                        .map(pet -> pet.petId().toString().substring(0, 8))
+                        .toList(), args[2]);
+                }
+            }
         }
         return List.of();
     }
