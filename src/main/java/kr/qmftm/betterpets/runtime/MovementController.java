@@ -145,7 +145,7 @@ public final class MovementController {
             behind.setX(0).setZ(1);
         }
         behind.normalize().multiply(-profile.followDistance());
-        rotateAroundY(behind, slotAngleRadians());
+        Vectors.rotateAroundY(behind, slotAngleRadians());
         return base.clone().add(behind);
     }
 
@@ -165,18 +165,6 @@ public final class MovementController {
         return Math.toRadians(Math.min(150.0, step * 35.0)) * sign;
     }
 
-    /** y축 회전. 수평 방향만 다루므로 y 성분은 건드리지 않는다. */
-    private static void rotateAroundY(final Vector vector, final double radians) {
-        if (radians == 0.0) {
-            return;
-        }
-        final double cos = Math.cos(radians);
-        final double sin = Math.sin(radians);
-        final double x = vector.getX();
-        final double z = vector.getZ();
-        vector.setX(x * cos - z * sin);
-        vector.setZ(x * sin + z * cos);
-    }
 
     private void step(final Location current, final Location target, final double distance) {
         final double speed = state == State.RUN ? runStep : walkStep;

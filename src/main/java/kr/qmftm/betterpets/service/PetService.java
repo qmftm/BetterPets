@@ -10,10 +10,12 @@ import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.CarrierFactory;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.runtime.RideController;
+import kr.qmftm.betterpets.runtime.Vectors;
 import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.Location;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.Optional;
@@ -243,14 +245,47 @@ public final class PetService {
         return true;
     }
 
+    /** 소환 지점을 찾을 때 소유자 뒤에서부터 돌려볼 각도. 뒤 → 좌우 → 앞 순이다. */
+    private static final int[] SPAWN_ANGLES = {0, 45, -45, 90, -90, 135, -135, 180};
+
+    /** 소유자로부터 떨어뜨릴 거리. 너무 붙으면 시야를 가리고, 멀면 소환한 티가 안 난다. */
+    private static final double SPAWN_DISTANCE = 1.5;
+
+    /**
+     * 펫을 내려놓을 자리를 찾는다.
+     *
+     * <p>기본은 소유자 뒤 {@value #SPAWN_DISTANCE} 블록이지만, <b>거기가 벽이나 바닥
+     * 속일 수 있다.</b> 캐리어는 충돌하지 않으므로 끼이지는 않지만 모델이 블록에 파묻혀
+     * 보이고, {@code MovementController} 의 갇힘 폴백이 3초 뒤에야 꺼내준다. 소환하자마자
+     * 3초간 벽에 박혀 있는 건 첫인상으로 최악이다.
+     *
+     * <p>그래서 소유자를 중심으로 각도를 돌려가며 빈 자리를 찾는다. 전부 막혔으면
+     * <b>소유자가 서 있는 자리</b>를 쓴다 — 사람이 서 있으니 반드시 비어 있다.
+     */
     private Location spawnLocation(final Player owner) {
         final Location base = owner.getLocation();
-        final var behind = base.getDirection().setY(0);
-        if (behind.lengthSquared() < 1.0e-4) {
-            behind.setX(0).setZ(1);
+        final Vector facing = base.getDirection().setY(0);
+        if (facing.lengthSquared() < 1.0e-4) {
+            facing.setX(0).setZ(1);
         }
-        return base.clone().add(behind.normalize().multiply(-1.5));
+        facing.normalize().multiply(-SPAWN_DISTANCE);   // 뒤쪽
+
+        for (final int degrees : SPAWN_ANGLES) {
+            final Vector offset = facing.clone();
+            Vectors.rotateAroundY(offset, Math.toRadians(degrees));
+            final Location candidate = base.clone().add(offset);
+            if (isOpen(candidate)) {
+                return candidate;
+            }
+        }
+        return base.clone();
     }
+
+    /** 발치와 머리 높이가 모두 비어 있는가. 한 칸만 보면 반쯤 파묻힌다. */
+    private static boolean isOpen(final Location at) {
+        return at.getBlock().isPassable() && at.clone().add(0, 1, 0).getBlock().isPassable();
+    }
+
 
     public PetCatalog catalog() {
         return catalog;
