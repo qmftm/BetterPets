@@ -84,6 +84,7 @@ admin:
   egg-given: "<green><white>%player%<green> 에게 알 <white>%id%<green> 을 줬습니다."
   feed-given: "<green><white>%player%<green> 에게 먹이 <white>%id%<green> 을 줬습니다."
   growth-given: "<green>성장도 <white>%amount%<green> 를 줬습니다."
+  reloaded-active-note: "<yellow>이미 소환된 펫 <white>%count%<yellow>마리는 예전 정의로 계속 돕니다. <gray>다시 소환하면 새 설정이 붙습니다."
   inventory-full: "<yellow>%player% 의 인벤토리가 꽉 차서 발밑에 떨어뜨렸습니다."
   # /petadmin debug 의 진단 줄.
   debug-pets: "<gray>활성 펫 <white>%active%<gray> (소유자 %owners%명 · 1인 동시 소환 한도 %max-active% · 1인 보유 한도 %max-owned%)"

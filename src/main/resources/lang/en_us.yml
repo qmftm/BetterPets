@@ -84,6 +84,7 @@ admin:
   egg-given: "<green>Gave egg <white>%id%<green> to <white>%player%<green>."
   feed-given: "<green>Gave food <white>%id%<green> to <white>%player%<green>."
   growth-given: "<green>Gave <white>%amount%<green> growth."
+  reloaded-active-note: "<yellow><white>%count%<yellow> pet(s) already out keep their old definition. <gray>Re-summon them to pick up the new config."
   inventory-full: "<yellow>%player%'s inventory was full, so it was dropped at their feet."
   # Diagnostic lines for /petadmin debug.
   debug-pets: "<gray>Active pets <white>%active%<gray> (%owners% owners · max active %max-active% · max owned %max-owned% per player)"

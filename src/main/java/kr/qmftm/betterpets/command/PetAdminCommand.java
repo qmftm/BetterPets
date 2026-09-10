@@ -211,8 +211,22 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "admin.inventory-full", "player", target.getName());
     }
 
+    /**
+     * 설정을 다시 읽는다.
+     *
+     * <p><b>이미 소환된 펫은 예전 정의를 그대로 들고 있다.</b> {@code ActivePet} 은 소환
+     * 시점의 {@link kr.qmftm.betterpets.domain.PetType} 을 붙들고, 이동 속도는 그때
+     * 계산해 굳혀둔다. 여기서 전부 재소환하면 화면이 반짝이고, 무엇보다 <b>설정 오타
+     * 하나로 전원의 펫이 사라진다</b> — 새 모델 id 가 없으면 재소환이 실패한다.
+     * 그래서 건드리지 않고, 대신 그 사실을 알린다. 모르고 "왜 안 바뀌지"로 헤매는 것이
+     * 이 기능에서 제일 흔한 오해다.
+     */
     private void reload(final CommandSender sender) {
         reloadAction.run();
+        final int stillOut = registry.size();
+        if (stillOut > 0) {
+            messages.send(sender, "admin.reloaded-active-note", "count", String.valueOf(stillOut));
+        }
         final List<String> problems = catalog.problems();
         if (problems.isEmpty()) {
             messages.send(sender, "admin.reloaded",
