@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 펫 "종류" 정의. {@code pets/*.yml} 에서 로드하는 불변 객체다.
@@ -84,7 +85,7 @@ public record PetType(
          * <p>뒤 넷은 <b>아직 재생되지 않지만</b> MODELING 이 자리를 잡아둔 이름이라
          * 오타로 치지 않는다. 미리 만들어 둔 사람에게 경고를 띄울 이유가 없다.
          */
-        public static final java.util.Set<String> KNOWN = java.util.Set.of(
+        public static final Set<String> KNOWN = Set.of(
             IDLE, WALK, RUN, RIDE, FLY, EAT,
             "fly_idle", "sit", "attack", "spawn");
 
