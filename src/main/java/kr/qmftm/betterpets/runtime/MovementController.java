@@ -15,11 +15,18 @@ import org.bukkit.util.Vector;
  *
  * <p><b>여기는 초당 5번, 소환된 펫마다 도는 자리다.</b> 두 가지를 아낀다:
  * <ul>
- *   <li><b>할당</b> — {@code getLocation()} 은 호출마다 새 {@link Location} 을 만든다.
- *       재사용 버퍼를 넘기는 오버로드를 써서 틱마다 생기는 쓰레기를 없앤다
  *   <li><b>패킷</b> — {@code teleport}/{@code setRotation} 은 시청자 수만큼 패킷이 된다.
  *       원작이 렉으로 무너진 지점이 여기라, <b>바뀐 게 없으면 부르지 않는다</b>
+ *   <li><b>블록 검사</b> — 지형 확인은 한 걸음에 최대 다섯 번인데, 예전엔 검사마다
+ *       {@code clone()} 이 하나씩 났다. 버퍼({@link #probe})를 y 만 바꿔가며 돌려 쓴다
  * </ul>
+ *
+ * <p><b>할당을 전부 없애지는 않았다.</b> {@link #followTarget} 과 {@link #step} 은
+ * 여전히 틱마다 {@code Location}·{@code Vector} 를 몇 개 만든다. 없애려면 목표 지점
+ * 계산을 yaw 삼각함수와 버퍼로 직접 다시 쓰고 부채꼴 각도까지 손으로 돌려야 하는데,
+ * <b>서버 없이는 추종이 여전히 자연스러운지 확인할 방법이 없다.</b> 5명 규모에서
+ * 아끼는 양(초당 수백 개의 짧은 수명 객체)보다 "펫이 이상하게 걷는다"가 훨씬 비싸다.
+ * 실측할 수 있게 되면 그때 판단한다 — ROADMAP 의 확인 목록에 있다.
  */
 public final class MovementController {
 

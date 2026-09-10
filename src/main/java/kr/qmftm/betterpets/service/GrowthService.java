@@ -260,7 +260,10 @@ public final class GrowthService {
 
     /** 창이 지난 항목을 지운다. 지나면 어차피 새 창으로 다시 시작하므로 값이 없다. */
     private void pruneExpired(final long now) {
-        bursts.entrySet().removeIf(entry -> now - entry.getValue().since() > tuning.overfeedWindowMillis());
+        // 창 길이를 한 번만 읽는다. 람다 안에서 읽으면 항목마다 volatile 을 다시 읽고,
+        // 훑는 도중 리로드가 끼면 앞뒤 항목이 다른 기준으로 지워진다.
+        final long window = tuning.overfeedWindowMillis();
+        bursts.entrySet().removeIf(entry -> now - entry.getValue().since() > window);
     }
 
     /**
