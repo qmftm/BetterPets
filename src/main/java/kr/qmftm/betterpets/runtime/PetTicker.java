@@ -77,12 +77,17 @@ public final class PetTicker {
             final Player owner = plugin.getServer().getPlayer(pet.ownerId());
 
             // 소유자가 없으면 소환된 채로 둘 이유가 없다. 즉시 정리한다.
-            if (owner == null || !owner.isOnline()
-                || pet.isClosed()
-                || pet.carrier().isDead() || !pet.carrier().isValid()) {
-                // 소유자가 없거나 캐리어가 사라졌다(청크 언로드, 외부 플러그인).
-                // 소환된 채로 둘 이유가 없다.
+            if (owner == null || !owner.isOnline()) {
+                // 소유자가 나갔다. 능력 모디파이어는 다음 접속의 purge 가 걷는다.
                 registry.remove(pet.ownerId(), pet.petId());
+                return;
+            }
+            // 캐리어가 어떤 이유로든 사라졌다(청크 언로드, 외부 플러그인).
+            if (pet.isClosed() || pet.carrier().isDead() || !pet.carrier().isValid()) {
+                // 여기서 registry.remove 로 끝내면 안 된다. 소유자가 접속 중인데
+                // 능력을 떼지 않아, 펫 없는 플레이어에게 버프가 남는다. 탑승 중이었다면
+                // 마운트도 정리해야 한다. dismiss 가 그 순서를 지킨다.
+                pets.dismiss(owner, pet.petId());
                 return;
             }
             // 월드가 갈리면 추종으로는 못 따라간다. 즉시 옮긴다.

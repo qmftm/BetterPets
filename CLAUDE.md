@@ -52,6 +52,10 @@ sqlite-jdbc 를 넣으면 jar 이 16KB → 14MB 가 된다. 저장은 YAML 로 �
 - **설정을 읽어 들고 있는 쪽은 `/petadmin reload` 때 다시 밀어 넣어야 한다.**
   지금은 셋이다: `RideController.reloadTuning`, `PetService.limits`, `BroadcastService.rules`.
   빠뜨리면 "설정을 다시 읽었습니다"가 거짓말이 된다.
+- **레지스트리에서 펫을 뺄 때 소유자가 접속 중이면 `registry.remove` 가 아니라
+  `PetService.dismiss` 를 쓴다.** 레지스트리는 능력을 모른다. 직접 빼면 펫 없는
+  플레이어에게 능력치 모디파이어가 남는다 (접속 중에는 `purge` 가 돌지 않는다).
+  소유자가 이미 나갔다면 `registry.remove` 로 충분하다 — 다음 접속의 `purge` 가 걷는다.
 - **성체·성장 알림은 두 경로 모두에서 나가야 한다** — 먹여서 자란 쪽(`InteractionListener`)과
   시간이 흘러 자란 쪽(`PetTicker`). 후자를 빠뜨리면 조용히 성체가 된다.
 

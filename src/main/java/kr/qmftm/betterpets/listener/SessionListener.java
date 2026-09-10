@@ -6,6 +6,7 @@ import kr.qmftm.betterpets.service.AbilityService;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -60,7 +61,15 @@ public final class SessionListener implements Listener {
     public void onWorldUnload(final WorldUnloadEvent event) {
         final World world = event.getWorld();
         for (final ActivePet pet : registry.all()) {
-            if (world.equals(pet.carrier().getWorld())) {
+            if (!world.equals(pet.carrier().getWorld())) {
+                continue;
+            }
+            // 소유자가 접속 중이면 dismiss 로 내려야 능력 모디파이어까지 걷힌다.
+            // registry.remove 만 부르면 펫 없는 플레이어에게 버프가 남는다.
+            final Player owner = org.bukkit.Bukkit.getPlayer(pet.ownerId());
+            if (owner != null && owner.isOnline()) {
+                pets.dismiss(owner, pet.petId());
+            } else {
                 registry.remove(pet.ownerId(), pet.petId());
             }
         }
