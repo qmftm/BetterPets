@@ -7,6 +7,7 @@ import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
@@ -54,6 +55,19 @@ public final class RideController {
 
     /** 하차 직후 완강 낙하를 걸어두는 시간(틱). 공중에서 내려도 떨어져 죽지 않게 한다. */
     private static final int SAFE_LANDING_TICKS = 100;
+
+    /**
+     * 마운트에서 잠글 슬롯. 아머스탠드가 실제로 가진 여섯 개다.
+     *
+     * <p><b>{@code EquipmentSlot.values()} 를 쓰지 않는다.</b> 그 enum 에는 몹용
+     * {@code BODY} 와 {@code SADDLE} 도 들어 있는데, 아머스탠드에 없는 슬롯을 넘겼을 때
+     * 구현이 어떻게 반응하는지 서버 없이 확인할 수 없다. 스폰 콜백 안에서 예외가 나면
+     * 탑승이 통째로 실패하므로, 확실한 것만 적는다.
+     */
+    private static final EquipmentSlot[] ARMOR_STAND_SLOTS = {
+        EquipmentSlot.HAND, EquipmentSlot.OFF_HAND,
+        EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
+    };
 
     private final Plugin plugin;
     private final NamespacedKey ownerKey;
@@ -165,8 +179,8 @@ public final class RideController {
             entity.setSilent(true);
             // 보이지 않아도 아머스탠드는 아머스탠드다 — 우클릭하면 손에 든 것을 입는다.
             // 남이 지나가다 클릭해 갑옷을 잃거나, 반대로 남의 마운트에서 갑옷을 벗겨
-            // 가져갈 수 있다. 슬롯을 통째로 잠가 바닐라 쪽에서 막는다.
-            entity.setDisabledSlots(org.bukkit.inventory.EquipmentSlot.values());
+            // 가져갈 수 있다. 슬롯을 잠가 바닐라 쪽에서 막는다.
+            entity.setDisabledSlots(ARMOR_STAND_SLOTS);
             entity.addScoreboardTag(RIDE_TAG);
             entity.getPersistentDataContainer()
                 .set(ownerKey, PersistentDataType.STRING, player.getUniqueId().toString());
