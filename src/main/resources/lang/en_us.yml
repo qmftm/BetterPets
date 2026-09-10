@@ -27,8 +27,8 @@ pet:
   rename-hint: "<gray>Use /pet rename %id% <name> to rename it."
   rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."
   list-header: "<gray>Your pets <white>%max%<gray> — click a name to summon it."
-  list-entry: "<dark_gray> %mark% <gray>[<white>%id%<gray>] <white>%name% <dark_gray>%stage%"
-  list-hover: "<green>Click to summon <white>%name%"
+  list-entry: "<dark_gray> %mark% <gray>[<white>%id%<gray>] <white>%name% <dark_gray>%rarity%"
+  list-hover: "<green>Click to summon <white>%name%\n<gray>%stage% · growth %growth%"
   list-empty: "<gray>You have no pets. <dark_gray>Right-click an egg to get one."
 
 egg:

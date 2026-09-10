@@ -27,8 +27,8 @@ pet:
   rename-hint: "<gray>/pet rename %id% <이름> 으로 바꿀 수 있습니다."
   rename-pick: "<yellow>여러 마리를 소환 중입니다. <gray>/pet rename <펫id> <이름> 으로 지정하세요."
   list-header: "<gray>보유한 펫 <white>%max%<gray> — 이름을 클릭하면 소환합니다."
-  list-entry: "<dark_gray> %mark% <gray>[<white>%id%<gray>] <white>%name% <dark_gray>%stage%"
-  list-hover: "<green>클릭해서 <white>%name%<green> 소환"
+  list-entry: "<dark_gray> %mark% <gray>[<white>%id%<gray>] <white>%name% <dark_gray>%rarity%"
+  list-hover: "<green>클릭해서 <white>%name%<green> 소환\n<gray>%stage% · 성장도 %growth%"
   list-empty: "<gray>가진 펫이 없습니다. <dark_gray>알을 우클릭해 얻으세요."
 
 egg:

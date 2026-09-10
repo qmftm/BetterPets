@@ -3,6 +3,7 @@ package kr.qmftm.betterpets.command;
 import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.PetData;
+import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
 import kr.qmftm.betterpets.runtime.RideController;
 import kr.qmftm.betterpets.service.PetService;
@@ -139,18 +140,28 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
 
         for (final PetData pet : owned) {
             final String id = pet.petId().toString().substring(0, 8);
-            final String name = Tags.strip(pets.catalog().type(pet.typeId())
-                .map(type -> pet.displayNameOr(type.displayName()))
-                .orElse(pet.typeId()));
+            final PetType type = pets.catalog().type(pet.typeId()).orElse(null);
+            final String name = Tags.strip(type == null
+                ? pet.typeId() : pet.displayNameOr(type.displayName()));
+            final String rarity = type == null ? "?" : type.rarity().name();
+
+            // 줄은 짧게, 자세한 건 호버로. 20마리를 훑을 때 한 줄이 길면 눈이 못 따라간다.
             player.sendMessage(messages.bare("pet.list-entry",
+                    "mark", pet.active() ? "●" : "○",
                     "id", id,
                     "name", name,
-                    "stage", pet.stage().name(),
-                    "mark", pet.active() ? "●" : "○")
-                // 클릭하면 소환. 호버로 무엇이 실행되는지 미리 보여준다.
+                    "rarity", rarity)
                 .clickEvent(ClickEvent.runCommand("/pet summon " + id))
-                .hoverEvent(HoverEvent.showText(messages.bare("pet.list-hover", "name", name))));
+                .hoverEvent(HoverEvent.showText(messages.bare("pet.list-hover",
+                    "name", name,
+                    "stage", stageLabel(pet.stage()),
+                    "growth", pet.growth() + "/" + pets.growth().maxOf(pet)))));
         }
+    }
+
+    /** 생애주기 이름. enum 이름을 그대로 쓰면 한국어 화면에 BABY 가 튀어나온다. */
+    private String stageLabel(final kr.qmftm.betterpets.domain.LifeStage stage) {
+        return Tags.strip(messages.raw("stage." + stage.name().toLowerCase(java.util.Locale.ROOT)));
     }
 
     /** {@code /pet help} — 무엇을 할 수 있는지. 하위 명령이 늘어난 만큼 필요해졌다. */
