@@ -35,6 +35,10 @@ egg:
   unknown: "<red>Unknown egg."
   broken-definition: "<red>This egg is misconfigured. Tell an admin."
   opened: "<green>A <white>%name%<green> came out of the egg!"
+  lore-guaranteed: "<gray>→ <white>%pet%"
+  lore-header: "<gray>Possible pets"
+  lore-entry: "<dark_gray>· <white>%pet% <gray>%chance%"
+  lore-more: "<dark_gray>and %count% more"
 
 feed:
   fed: "<green>Fed. <gray>Growth <white>%growth%<gray>/<white>%max%"

@@ -143,6 +143,42 @@ rarities:
 **성체부터 발현돼요.** 아기와 돼지는 능력이 없고, 보관함 상세 화면이 그 사실과 현재
 수치를 같이 보여줍니다. 꺼내둔 채로 성체가 되면 다시 부르지 않아도 바로 붙어요.
 
+### 🥚 알과 먹이
+
+`items.yml` 에서 알과 먹이를 정합니다.
+
+```yaml
+eggs:
+  wolf_egg:
+    display-name: "<white>늑대 알"
+    material: TURTLE_EGG
+    gives: wolf              # 고정 알 — 이 펫이 확정으로 나옵니다
+
+  random_egg:
+    display-name: "<white>수상한 알"
+    material: EGG
+    weights:                 # 랜덤 알 — 가중치 추첨
+      wolf: 50
+      dragon: 1
+```
+
+**알 아이템에 무엇이 들었는지 자동으로 적힙니다.** 고정 알은 나올 펫 이름을, 랜덤 알은
+가능한 펫과 확률을 흔한 순으로 보여줘요. 확률을 모르면 뽑을 이유가 없으니까요.
+종류가 많으면 여섯 줄까지만 적고 나머지는 "그 외 N종" 으로 접습니다.
+
+```yaml
+feeds:
+  milk:
+    display-name: "<white>우유"
+    material: MILK_BUCKET
+    growth: 10               # 안 적으면 config 의 feed-amount 를 씁니다
+```
+
+`item-model` 로 리소스팩 모델을 지정할 수 있어요 (`betterpets:egg_wolf` 형식).
+**소문자만 됩니다** — 대문자를 쓰면 기동할 때 알려줍니다.
+
+지급은 `/petadmin egg <플레이어> <알id> [개수]` 와 `/petadmin feed …` 로 합니다.
+
 ### 🌱 성장 속도
 
 ```yaml

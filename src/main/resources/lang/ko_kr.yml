@@ -35,6 +35,10 @@ egg:
   unknown: "<red>알 수 없는 알입니다."
   broken-definition: "<red>이 알의 설정이 잘못됐습니다. 관리자에게 문의하세요."
   opened: "<green>알에서 <white>%name%<green> 이(가) 나왔습니다!"
+  lore-guaranteed: "<gray>→ <white>%pet%"
+  lore-header: "<gray>나올 수 있는 펫"
+  lore-entry: "<dark_gray>· <white>%pet% <gray>%chance%"
+  lore-more: "<dark_gray>그 외 %count%종"
 
 feed:
   fed: "<green>먹이를 줬습니다. <gray>성장도 <white>%growth%<gray>/<white>%max%"

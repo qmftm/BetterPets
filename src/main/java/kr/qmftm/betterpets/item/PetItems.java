@@ -1,6 +1,8 @@
 package kr.qmftm.betterpets.item;
 
 import kr.qmftm.betterpets.config.Messages;
+import kr.qmftm.betterpets.config.PetCatalog;
+import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.FeedDefinition;
 import org.bukkit.Material;
@@ -11,6 +13,11 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
+import net.kyori.adventure.text.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -21,12 +28,19 @@ import java.util.Optional;
  */
 public final class PetItems {
 
+    /** 로어에 적을 최대 줄 수. 넘치면 "그 외 N종" 으로 접는다. */
+    private static final int LORE_LIMIT = 6;
+
     private final NamespacedKey eggKey;
     private final NamespacedKey feedKey;
+    private final PetCatalog catalog;
+    private final Messages messages;
 
-    public PetItems(final Plugin plugin) {
+    public PetItems(final Plugin plugin, final PetCatalog catalog, final Messages messages) {
         this.eggKey = new NamespacedKey(plugin, "egg_id");
         this.feedKey = new NamespacedKey(plugin, "feed");
+        this.catalog = catalog;
+        this.messages = messages;
     }
 
     public ItemStack createEgg(final EggDefinition definition, final int amount) {
@@ -35,6 +49,7 @@ public final class PetItems {
             material == null || !material.isItem() ? Material.EGG : material, clamp(amount));
         final ItemMeta meta = stack.getItemMeta();
         meta.displayName(Messages.plain(definition.displayName()));
+        meta.lore(contentsLore(definition));
         applyItemModel(meta, definition.itemModel());
         meta.getPersistentDataContainer()
             .set(eggKey, PersistentDataType.STRING, definition.id());
@@ -54,6 +69,63 @@ public final class PetItems {
             .set(feedKey, PersistentDataType.STRING, definition.id());
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    /**
+     * 알에 무엇이 들었는지 로어로 보여준다.
+     *
+     * <p><b>랜덤 알은 확률을 모르면 뽑을 이유가 없다.</b> 기본 설정의 "수상한 알"은
+     * 늑대 50 : 드래곤 1 인데, 손에 든 플레이어에게는 그걸 알 방법이 아예 없었다.
+     * 설정 파일을 열어볼 수 있는 건 관리자뿐이다.
+     *
+     * <p>가중치가 큰 순으로 적는다 — 흔한 것부터 보여야 "이 알이 대체로 뭘 주는지"가
+     * 한눈에 들어온다. 종류가 많으면 뒤는 접는다. 로어가 화면을 덮으면 아이템을
+     * 못 본다.
+     */
+    private List<Component> contentsLore(final EggDefinition definition) {
+        final List<Component> lore = new ArrayList<>();
+        if (!definition.isRandom()) {
+            lore.add(messages.bare("egg.lore-guaranteed", "pet", petName(definition.gives())));
+            return lore;
+        }
+        final int total = definition.weights().values().stream()
+            .filter(w -> w != null && w > 0)
+            .mapToInt(Integer::intValue)
+            .sum();
+        if (total <= 0) {
+            return lore;    // 설정이 깨진 알. 기동 시 경고가 이미 나갔다
+        }
+        lore.add(messages.bare("egg.lore-header"));
+
+        final List<Map.Entry<String, Integer>> sorted = definition.weights().entrySet().stream()
+            .filter(e -> e.getValue() != null && e.getValue() > 0)
+            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+            .toList();
+
+        for (int i = 0; i < Math.min(LORE_LIMIT, sorted.size()); i++) {
+            final var entry = sorted.get(i);
+            lore.add(messages.bare("egg.lore-entry",
+                "pet", petName(entry.getKey()),
+                "chance", percent(entry.getValue(), total)));
+        }
+        if (sorted.size() > LORE_LIMIT) {
+            lore.add(messages.bare("egg.lore-more",
+                "count", String.valueOf(sorted.size() - LORE_LIMIT)));
+        }
+        return lore;
+    }
+
+    /** 소수점 한 자리까지. 0.05% 같은 값이 "0%" 로 보이면 뽑을 마음이 사라진다. */
+    static String percent(final int weight, final int total) {
+        final double ratio = 100.0 * weight / total;
+        return (ratio < 0.1
+            ? String.format(java.util.Locale.ROOT, "%.2f", ratio)
+            : String.format(java.util.Locale.ROOT, "%.1f", ratio)) + "%";
+    }
+
+    /** 펫 종류의 표시 이름. 설정에서 지워진 종류면 id 를 그대로 보여준다. */
+    private String petName(final String typeId) {
+        return catalog.type(typeId).map(type -> Tags.strip(type.displayName())).orElse(typeId);
     }
 
     /**

@@ -120,7 +120,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         pets = new PetService(
             catalog, store, renderer, carriers, registry, rides, abilities, growth, readLimits());
 
-        final PetItems items = new PetItems(this);
+        final PetItems items = new PetItems(this, catalog, messages);
         final PetMenuFactory menus = new PetMenuFactory(catalog, growth, registry, pets);
 
         // 기동 시 청소. 정상 종료였다면 지울 게 없고, 크래시였다면 여기서 정리된다.
