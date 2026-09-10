@@ -8,6 +8,8 @@ import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.Weighted;
 
+import java.util.Optional;
+
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -24,7 +26,15 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class GrowthService {
 
-    private final PetCatalog catalog;
+    /**
+     * 종류 id → 정의.
+     *
+     * <p>{@link PetCatalog} 를 통째로 받지 않고 조회 함수만 받는다. 카탈로그는 파일과
+     * {@code AbilityRegistry}(그리고 그 뒤의 {@code Plugin})에 묶여 있어서, 그대로 두면
+     * <b>플러그인의 핵심 로직인 성장·진화·과급식이 서버 없이는 한 줄도 검증되지 않는다.</b>
+     * 필요한 건 조회 하나뿐이라 값이 맞지 않는다.
+     */
+    private final java.util.function.Function<String, Optional<PetType>> types;
     private final int feedAmount;
     private final boolean overfeedGimmick;
     private final int overfeedCount;
@@ -53,6 +63,7 @@ public final class GrowthService {
 
     private record FeedBurst(int count, long since) {}
 
+    /** 운영용. 조회를 카탈로그에 맡긴다. */
     public GrowthService(final PetCatalog catalog,
                          final int feedAmount,
                          final boolean overfeedGimmick,
@@ -60,7 +71,18 @@ public final class GrowthService {
                          final long overfeedWindowMillis,
                          final String overfeedBecomes,
                          final int maxStage) {
-        this.catalog = catalog;
+        this(catalog::type, feedAmount, overfeedGimmick, overfeedCount,
+            overfeedWindowMillis, overfeedBecomes, maxStage);
+    }
+
+    public GrowthService(final java.util.function.Function<String, Optional<PetType>> types,
+                         final int feedAmount,
+                         final boolean overfeedGimmick,
+                         final int overfeedCount,
+                         final long overfeedWindowMillis,
+                         final String overfeedBecomes,
+                         final int maxStage) {
+        this.types = types;
         this.feedAmount = feedAmount;
         this.overfeedGimmick = overfeedGimmick;
         this.overfeedCount = overfeedCount;
@@ -133,7 +155,7 @@ public final class GrowthService {
         if (data.stage() != LifeStage.BABY) {
             return StageResult.NONE;
         }
-        final PetType type = catalog.type(data.typeId()).orElse(null);
+        final PetType type = types.apply(data.typeId()).orElse(null);
         if (type == null || data.growth() < type.growthMax()) {
             return StageResult.NONE;
         }
@@ -172,7 +194,7 @@ public final class GrowthService {
         if (overfeedBecomes == null || overfeedBecomes.isBlank()) {
             return;
         }
-        if (catalog.type(overfeedBecomes).isEmpty()) {
+        if (types.apply(overfeedBecomes).isEmpty()) {
             return;
         }
         data.typeId(overfeedBecomes);
@@ -214,7 +236,7 @@ public final class GrowthService {
     }
 
     public int maxOf(final PetData data) {
-        return catalog.type(data.typeId()).map(PetType::growthMax).orElse(100);
+        return types.apply(data.typeId()).map(PetType::growthMax).orElse(100);
     }
 
     /** 설정된 최대 성장 단계. GUI 에서 "성장 단계 N/max" 표시에 쓴다. */

@@ -852,6 +852,14 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 | `Messages` | 언어 코드가 파일 경로로 새지 않는다 (`../../`) |
 | `LanguageFilesTest` | ko_kr 과 en_us 의 키·치환 자리가 어긋나지 않는다 |
 | `AbilityDefinition` | 성장도 비례 수치와 등급 배율 |
+| `GrowthService` | 급여 → 성장 → 단계 진화 → 성체, 과급식 기믹 |
+| `YamlPetRepository` | 저장·복원, 손상 파일 격리, 한 마리가 깨져도 나머지 보존 |
+| `PetOrder` | 보관함 정렬이 흔들리지 않는다 |
+
+`GrowthService` 가 여기 들어온 것은 **카탈로그 대신 조회 함수를 받게 바꾼 덕분**이다.
+`PetCatalog` 는 파일과 `AbilityRegistry`(그 뒤의 `Plugin`)에 묶여 있어서, 그대로 두면
+플러그인이 하는 일의 핵심인 성장·진화·과급식이 서버 없이는 한 줄도 검증되지 않는다.
+필요한 건 `id → Optional<PetType>` 조회 하나뿐이라 값이 맞지 않았다.
 
 ### 수동 체크리스트
 
