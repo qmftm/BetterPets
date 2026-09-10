@@ -11,6 +11,7 @@ import kr.qmftm.betterpets.domain.RarityTable;
 import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.render.PetRenderer;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -119,6 +120,30 @@ public final class PetCatalog {
                 readColor(key, node.getString("color"), fallback.color())));
         }
         return RarityTable.of(overrides);
+    }
+
+    /**
+     * {@code item-model:} 을 읽는다.
+     *
+     * <p><b>형식이 틀리면 조용히 무시된다.</b> {@code NamespacedKey.fromString} 이 null 을
+     * 돌려주고, 아이템은 리소스팩 모델 없이 기본 모양으로 나온다. 관리자 입장에서는
+     * "모델을 지정했는데 안 나온다"가 되는데 로그에도 아무것도 없다. 흔한 실수는
+     * 대문자다 — {@code betterpets:Egg_Wolf} 은 잘못된 키다.
+     *
+     * @return 쓸 수 있는 키 문자열. 비었거나 형식이 틀리면 null (모델 없이 진행)
+     */
+    private String readItemModel(final ConfigurationSection node, final String where) {
+        final String raw = node.getString("item-model");
+        if (raw == null || raw.isBlank()) {
+            return null;    // 안 적은 것은 실수가 아니다
+        }
+        if (NamespacedKey.fromString(raw) == null) {
+            problems.add(where + ": item-model '" + raw
+                + "' 은 잘못된 키입니다. 소문자로 '네임스페이스:경로' 형식이어야 합니다"
+                + " (예: betterpets:egg_wolf).");
+            return null;
+        }
+        return raw;
     }
 
     /** {@code "FFAA00"} 또는 {@code "#FFAA00"} 을 받는다. 잘못됐으면 기본색으로 두고 알린다. */
@@ -309,7 +334,7 @@ public final class PetCatalog {
             id,
             node.getString("display-name", id),
             materialName,
-            node.getString("item-model"),
+            readItemModel(node, "items.yml/eggs/" + id),
             node.getString("gives"),
             readWeights(node.getConfigurationSection("weights"))
         ));
@@ -334,7 +359,7 @@ public final class PetCatalog {
             id,
             node.getString("display-name", id),
             materialName,
-            node.getString("item-model"),
+            readItemModel(node, "items.yml/feeds/" + id),
             growth
         ));
     }

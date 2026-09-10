@@ -31,8 +31,21 @@ public final class AbilityRegistry {
         register(new ExtraDropAbility());
     }
 
+    /**
+     * 능력을 등록한다.
+     *
+     * <p><b>같은 id 를 두 번 등록하면 던진다.</b> {@code put} 으로 조용히 덮어쓰면 먼저
+     * 등록한 능력이 사라지는데, 증상은 "설정에 적은 능력이 안 먹는다"로 나타난다 —
+     * 원인에서 한참 떨어진 자리다. 이건 설정 실수가 아니라 코드 실수라서, 기동할 때
+     * 바로 터지는 편이 낫다.
+     */
     public void register(final PetAbility ability) {
-        abilities.put(ability.id(), ability);
+        final PetAbility previous = abilities.putIfAbsent(ability.id(), ability);
+        if (previous != null) {
+            throw new IllegalStateException("능력 id 가 중복입니다: '" + ability.id()
+                + "' (" + previous.getClass().getSimpleName()
+                + " vs " + ability.getClass().getSimpleName() + ")");
+        }
     }
 
     public Optional<PetAbility> find(final String id) {
