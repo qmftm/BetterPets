@@ -242,7 +242,9 @@ public final class RideController {
             return false;
         }
         drive(player, ride);
-        return true;
+        // drive 안에서 스니크 하차가 일어날 수 있다. 무조건 true 를 돌려주면
+        // 호출부는 아직 타고 있는 줄 알고, 추종으로 되돌리는 쪽이 실행되지 않는다.
+        return rides.containsKey(player.getUniqueId());
     }
 
     private void drive(final Player player, final Ride ride) {

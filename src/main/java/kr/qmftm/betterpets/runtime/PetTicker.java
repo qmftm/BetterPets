@@ -90,6 +90,17 @@ public final class PetTicker {
                 return;
             }
 
+            // 탑승이 어떤 경로로 끝났든 추종으로 되돌린다.
+            //
+            // 되돌리는 자리가 탑승 루프뿐이었는데, 그 루프는 "지금 타고 있는 사람"만
+            // 돈다. 이미 내린 뒤에는 아무도 방문하지 않는다는 뜻이다 — 스니크로
+            // 내리면(문서가 안내하는 하차 방법이다) 펫이 RIDDEN 인 채로 남아
+            // 주인을 따라오지 않았다. 여기는 소환된 펫을 전부 도는 자리라
+            // 어느 경로로 내렸든 걸린다.
+            if (pet.movement().mode().ridden() && !rides.isRiding(owner, pet.petId())) {
+                pet.movement().mode(MovementController.Mode.GROUND);
+            }
+
             catchUp.one(owner, pet.data());
             pet.tick(owner);
         });
@@ -122,7 +133,7 @@ public final class PetTicker {
                 // 탑승 중에는 펫 본체가 마운트를 밀착 추적한다.
                 pet.carrier().teleport(ride.mount().getLocation());
             } else {
-                // 하차했다. 추종으로 되돌린다.
+                // 하차했다. 추종으로 되돌린다. tickFollow 의 보정보다 한 틱 빠르다.
                 pet.movement().mode(MovementController.Mode.GROUND);
             }
         }
