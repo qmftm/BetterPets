@@ -92,12 +92,6 @@ class PetTypeTest {
     }
 
     @Test
-    @DisplayName("필수 애니메이션 목록은 이동 상태 셋을 덮는다")
-    void requiredAnimationsCoverMovement() {
-        assertEquals(List.of("idle", "walk", "run"), PetType.AnimationSet.REQUIRED);
-    }
-
-    @Test
     @DisplayName("능력 목록도 밖에서 고칠 수 없다")
     void abilitiesAreImmutable() {
         final PetType wolf = simple();

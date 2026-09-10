@@ -241,7 +241,10 @@ public final class InteractionListener implements Listener {
 
         final double speed = type.stats().rideSpeed();
         if (rides.start(player, pet.petId(), pet.carrier().getLocation(), flying, speed)) {
-            pet.movement().mode(MovementController.Mode.RIDDEN);
+            // 비행이면 fly 애니메이션이 걸리게 모드를 나눠 준다.
+            pet.movement().mode(flying
+                ? MovementController.Mode.RIDDEN_FLYING
+                : MovementController.Mode.RIDDEN);
             messages.send(player, flying ? "ride.started-flying" : "ride.started-ground");
         } else {
             messages.send(player, "ride.failed");

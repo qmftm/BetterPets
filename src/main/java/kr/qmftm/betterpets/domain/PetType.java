@@ -74,9 +74,6 @@ public record PetType(
         public static final String RIDE = "ride";
         public static final String EAT = "eat";
 
-        /** 이게 없으면 펫이 정지 상태로만 보인다. 로드 시 경고 대상. */
-        public static final List<String> REQUIRED = List.of(IDLE, WALK, RUN);
-
         public AnimationSet {
             mapping = Map.copyOf(mapping);
         }

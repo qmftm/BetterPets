@@ -23,8 +23,27 @@ import org.bukkit.util.Vector;
  */
 public final class MovementController {
 
-    /** 이동 모드. 탑승 중에는 추종을 멈춰야 하므로 모드로 분리한다. */
-    public enum Mode { GROUND, FLY, RIDDEN }
+    /**
+     * 이동 모드. 탑승 중에는 추종을 멈춰야 하므로 모드로 분리한다.
+     *
+     * <p>탑승을 둘로 나눈 이유는 <b>애니메이션</b> 하나다. MODELING 은 비행 펫에게
+     * {@code fly} 애니메이션을 만들라고 요구하는데, 정작 코드에는 그걸 거는 자리가
+     * 없어서 하늘을 나는 드래곤이 {@code ride} 를 재생하고 있었다 — 모델 제작자에게
+     * 만들라고 해놓고 쓰지 않는 셈이었다.
+     */
+    public enum Mode {
+        /** 주인을 따라다닌다. */
+        GROUND,
+        /** 지상 탑승 중. */
+        RIDDEN,
+        /** 비행 탑승 중. */
+        RIDDEN_FLYING;
+
+        /** 누가 타고 있는 상태인가. 추종을 멈춰야 하는지 판단한다. */
+        public boolean ridden() {
+            return this != GROUND;
+        }
+    }
 
     public enum State {
         IDLE, WALK, RUN, TELEPORT
@@ -95,8 +114,8 @@ public final class MovementController {
     }
 
     public void tick(final Player owner) {
-        if (mode == Mode.RIDDEN) {
-            return;
+        if (mode.ridden()) {
+            return;     // 타고 있는 동안은 RideController 가 위치를 정한다
         }
         final Location target = followTarget(owner);
         final Location current = carrier.getLocation(here);

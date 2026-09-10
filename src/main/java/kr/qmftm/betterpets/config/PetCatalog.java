@@ -432,12 +432,6 @@ public final class PetCatalog {
                     + " 이대로면 항상 걷는 탑승이 됩니다 (등급 " + type.rarity().name()
                     + " 의 기본 비행 확률은 " + type.stats().flyChance() + ").");
             }
-            for (final String required : PetType.AnimationSet.REQUIRED) {
-                if (!type.animations().mapping().containsKey(required)) {
-                    // 매핑이 없으면 논리 이름을 그대로 쓴다. 경고만 하고 막지는 않는다.
-                    continue;
-                }
-            }
         }
         for (final EggDefinition egg : eggs.values()) {
             if (!egg.isRandom() && !types.containsKey(egg.gives())) {
