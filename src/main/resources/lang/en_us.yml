@@ -26,6 +26,10 @@ pet:
   released: "<gray>You released the pet."
   rename-hint: "<gray>Use /pet rename %id% <name> to rename it."
   rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."
+  list-header: "<gray>Your pets <white>%max%<gray> — click a name to summon it."
+  list-entry: "<dark_gray> %mark% <gray>[<white>%id%<gray>] <white>%name% <dark_gray>%stage%"
+  list-hover: "<green>Click to summon <white>%name%"
+  list-empty: "<gray>You have no pets. <dark_gray>Right-click an egg to get one."
 
 egg:
   unknown: "<red>Unknown egg."
@@ -72,3 +76,10 @@ broadcast:
   obtained: "<gray>[<gold>Pets<gray>] <white>%player%<gray> obtained a <white>%rarity%<gray> <white>%pet%<gray>!"
   grown: "<gray>[<gold>Pets<gray>] <white>%player%<gray>'s <white>%rarity%<gray> <white>%pet%<gray> is fully grown!"
   stage-up: "<gray>[<gold>Pets<gray>] <white>%player%<gray>'s <white>%pet%<gray> reached stage <white>%stage%<gray>!"
+
+help:
+  summon: "<gray>/pet summon <petId> <dark_gray>— summon"
+  dismiss: "<gray>/pet dismiss [petId] <dark_gray>— one pet if given an id, otherwise all of them"
+  dismount: "<gray>/pet dismount <dark_gray>— dismount"
+  rename: "<gray>/pet rename [petId] <name> <dark_gray>— rename"
+  list: "<gray>/pet list <dark_gray>— list in chat (click to summon)"

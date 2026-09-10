@@ -41,7 +41,7 @@ dependencies:
 commands:
   pet:
     description: 펫 보관함을 열고 소환/해제한다
-    usage: /pet [summon|dismiss|dismount|rename]
+    usage: /pet [summon|dismiss|dismount|rename|list|help]
     permission: betterpets.use
   petadmin:
     description: 펫 관리자 명령

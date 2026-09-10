@@ -26,6 +26,10 @@ pet:
   released: "<gray>펫을 놓아줬습니다."
   rename-hint: "<gray>/pet rename %id% <이름> 으로 바꿀 수 있습니다."
   rename-pick: "<yellow>여러 마리를 소환 중입니다. <gray>/pet rename <펫id> <이름> 으로 지정하세요."
+  list-header: "<gray>보유한 펫 <white>%max%<gray> — 이름을 클릭하면 소환합니다."
+  list-entry: "<dark_gray> %mark% <gray>[<white>%id%<gray>] <white>%name% <dark_gray>%stage%"
+  list-hover: "<green>클릭해서 <white>%name%<green> 소환"
+  list-empty: "<gray>가진 펫이 없습니다. <dark_gray>알을 우클릭해 얻으세요."
 
 egg:
   unknown: "<red>알 수 없는 알입니다."
@@ -72,3 +76,10 @@ broadcast:
   obtained: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님이 <white>%rarity%<gray> 등급 <white>%pet%<gray> 을(를) 얻었습니다!"
   grown: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님의 <white>%rarity%<gray> 등급 <white>%pet%<gray> 이(가) 다 자랐습니다!"
   stage-up: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님의 <white>%pet%<gray> 이(가) <white>%stage%<gray>단계가 됐습니다!"
+
+help:
+  summon: "<gray>/pet summon <펫id> <dark_gray>— 소환"
+  dismiss: "<gray>/pet dismiss [펫id] <dark_gray>— id 를 주면 그 한 마리만, 없으면 전부 돌려보냄"
+  dismount: "<gray>/pet dismount <dark_gray>— 하차"
+  rename: "<gray>/pet rename [펫id] <이름> <dark_gray>— 이름 변경"
+  list: "<gray>/pet list <dark_gray>— 채팅으로 목록 보기 (클릭해서 소환)"

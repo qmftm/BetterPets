@@ -149,9 +149,11 @@
 | --- | --- | --- |
 | `/pet` | `betterpets.use` | 보관함 GUI |
 | `/pet summon <petId>` | `betterpets.use` | 소환 |
-| `/pet dismiss` | `betterpets.use` | 소환 중인 펫 전부 해제 (한 마리만 넣으려면 보관함에서) |
+| `/pet dismiss [petId]` | `betterpets.use` | `petId` 를 주면 그 한 마리만, 없으면 전부 해제 |
 | `/pet dismount` | `betterpets.use` | 하차 |
 | `/pet rename [petId] <이름>` | `betterpets.use` | 이름 변경. 여러 마리를 소환 중이면 `petId` 가 필요하다 |
+| `/pet list` | `betterpets.use` | 채팅으로 목록. **이름을 클릭하면 바로 소환** |
+| `/pet help` | `betterpets.use` | 하위 명령 안내 |
 | `/petadmin give <플레이어> <타입>` | `betterpets.admin` | 펫 지급 |
 | `/petadmin egg <플레이어> <알> [개수]` | `betterpets.admin` | 알 아이템 지급 |
 | `/petadmin feed <플레이어> <먹이> [개수]` | `betterpets.admin` | 먹이 아이템 지급 |

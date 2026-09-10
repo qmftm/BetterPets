@@ -1,11 +1,14 @@
 package kr.qmftm.betterpets.command;
 
 import kr.qmftm.betterpets.config.Messages;
+import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
 import kr.qmftm.betterpets.runtime.RideController;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,10 +20,17 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /** {@code /pet} — 플레이어용 명령. */
 public final class PetCommand implements CommandExecutor, TabCompleter {
+
+    private static final List<String> SUBCOMMANDS =
+        List.of("summon", "dismiss", "dismount", "rename", "list", "help");
+
+    /** 두 번째 인자로 펫 id 를 받는 하위 명령들. */
+    private static final Set<String> PET_ID_ARG = Set.of("summon", "dismiss", "rename");
 
     private final PetService pets;
     private final PetStore store;
@@ -55,9 +65,11 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "summon" -> summon(player, args);
-            case "dismiss" -> dismiss(player);
+            case "dismiss" -> dismiss(player, args);
             case "dismount" -> dismount(player);
             case "rename" -> rename(player, args);
+            case "list" -> list(player);
+            case "help" -> help(player);
             default -> messages.send(player, "command.unknown");
         }
         return true;
@@ -86,13 +98,66 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    /** 소환 중인 펫을 전부 돌려보낸다. 한 마리만 넣고 싶으면 보관함에서 고른다. */
-    private void dismiss(final Player player) {
+    /**
+     * {@code /pet dismiss [펫id]} — id 를 주면 그 한 마리만, 없으면 전부 돌려보낸다.
+     *
+     * <p>여러 마리를 데리고 다닐 수 있게 된 뒤로 "한 마리만 넣기"를 채팅에서 할 수 없었다.
+     * 보관함을 열어 고르는 수밖에 없었는데, 타고 있는 중이면 그것도 번거롭다.
+     */
+    private void dismiss(final Player player, final String[] args) {
+        if (args.length >= 2) {
+            final Optional<PetData> target = resolve(player, args[1]);
+            if (target.isEmpty()) {
+                messages.send(player, "pet.not-found");
+                return;
+            }
+            messages.send(player, pets.dismiss(player, target.get().petId())
+                ? "pet.dismissed" : "pet.none-active");
+            return;
+        }
         final int count = pets.dismissAll(player);
         if (count == 0) {
             messages.send(player, "pet.none-active");
         } else {
             messages.send(player, "pet.dismissed-count", "count", String.valueOf(count));
+        }
+    }
+
+    /**
+     * {@code /pet list} — 채팅으로 보는 목록.
+     *
+     * <p>보관함 GUI 가 있는데도 두는 이유는 <b>클릭해서 바로 소환</b>할 수 있어서다.
+     * 이름을 클릭하면 {@code /pet summon <id>} 가 실행된다 — GUI 를 열고 쪽을 넘겨
+     * 아이콘을 찾는 것보다 빠를 때가 있고, 여덟 자리 id 를 손으로 옮겨 적을 일도 없앤다.
+     */
+    private void list(final Player player) {
+        final List<PetData> owned = sorted(player.getUniqueId());
+        if (owned.isEmpty()) {
+            messages.send(player, "pet.list-empty");
+            return;
+        }
+        messages.send(player, "pet.list-header", "max", pets.limits().ownedLabel(owned.size()));
+
+        for (final PetData pet : owned) {
+            final String id = pet.petId().toString().substring(0, 8);
+            final String name = Tags.strip(pets.catalog().type(pet.typeId())
+                .map(type -> pet.displayNameOr(type.displayName()))
+                .orElse(pet.typeId()));
+            player.sendMessage(messages.bare("pet.list-entry",
+                    "id", id,
+                    "name", name,
+                    "stage", pet.stage().name(),
+                    "mark", pet.active() ? "●" : "○")
+                // 클릭하면 소환. 호버로 무엇이 실행되는지 미리 보여준다.
+                .clickEvent(ClickEvent.runCommand("/pet summon " + id))
+                .hoverEvent(HoverEvent.showText(messages.bare("pet.list-hover", "name", name))));
+        }
+    }
+
+    /** {@code /pet help} — 무엇을 할 수 있는지. 하위 명령이 늘어난 만큼 필요해졌다. */
+    private void help(final Player player) {
+        for (final String key : List.of("summon", "dismiss", "dismount", "rename", "list")) {
+            messages.send(player, "help." + key);
         }
     }
 
@@ -171,14 +236,18 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             return List.of();
         }
         if (args.length == 1) {
-            return List.of("summon", "dismiss", "dismount", "rename").stream()
+            return SUBCOMMANDS.stream()
                 .filter(option -> option.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
                 .toList();
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("summon")
-            || args[0].equalsIgnoreCase("rename"))) {
+        if (args.length == 2 && PET_ID_ARG.contains(args[0].toLowerCase(java.util.Locale.ROOT))) {
+            // 입력한 앞자리로 걸러서 준다. 전부 돌려주면 20마리 서버에서 제안 목록이
+            // 화면을 덮고, 무엇을 더 쳐야 좁혀지는지 알 수 없다.
+            final String typed = args[1].toLowerCase(java.util.Locale.ROOT);
             return store.owned(player.getUniqueId()).stream()
                 .map(pet -> pet.petId().toString().substring(0, 8))
+                .filter(id -> id.startsWith(typed))
+                .sorted()
                 .toList();
         }
         return List.of();
