@@ -898,7 +898,9 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 | `AbilityDefinition` | 성장도 비례 수치와 등급 배율 |
 | `GrowthService` | 급여 → 성장 → 단계 진화 → 성체, 과급식 기믹 |
 | `YamlPetRepository` | 저장·복원, 손상 파일 격리, 한 마리가 깨져도 나머지 보존 |
-| `PetOrder` | 보관함 정렬이 흔들리지 않는다 |
+| `PetSort` · `PetFilter` | 정렬이 흔들리지 않고, 아기·성체가 모든 생애주기를 빠짐없이 덮는다 |
+| `PetAbility` · `AbilityContext` | 보관함이 보여주는 수치가 실제로 붙는 수치와 같다 |
+| `PetCatalog.gachaTable` | `gacha-weight` 0 인 펫이 뽑기에서 빠지고, 구간 순서가 기계와 무관하다 |
 
 `GrowthService` 가 여기 들어온 것은 **카탈로그 대신 조회 함수를 받게 바꾼 덕분**이다.
 `PetCatalog` 는 파일과 `AbilityRegistry`(그 뒤의 `Plugin`)에 묶여 있어서, 그대로 두면

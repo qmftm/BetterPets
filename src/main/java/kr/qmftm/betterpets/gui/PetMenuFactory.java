@@ -138,13 +138,13 @@ public final class PetMenuFactory {
     /**
      * 보유 목록.
      *
-     * <p>한 쪽에 {@value #BOX_CONTENT} 마리씩 보여주고, 마지막 줄에 쪽 넘김과
+     * <p>한 쪽에 {@value #BOX_CONTENT} 마리씩 보여주고, 마지막 줄에 쪽 넘김·정렬·보기와
      * 현황({@link #SLOT_SUMMARY})을 둔다. 보유 한도가 있는 서버에서는 "몇 마리를
      * 더 받을 수 있는지"가 알을 까기 전에 보여야 한다.
-     */
-    /**
+     *
      * @param owned 소유한 펫 <b>전부</b>. 거르고 정렬하는 건 여기서 한다 — 호출부가
-     *              미리 걸러 넘기면 "현황"에 적을 전체 마릿수를 잃는다
+     *              미리 걸러 넘기면 현황에 적을 전체 마릿수를 잃는다
+     * @param view  보고 있는 쪽·정렬·보기. 쪽 번호는 실제 마지막 쪽으로 접어서 쓴다
      */
     public Inventory box(final UUID ownerId,
                          final Collection<PetData> owned,
