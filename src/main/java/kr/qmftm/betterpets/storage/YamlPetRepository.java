@@ -68,11 +68,6 @@ public final class YamlPetRepository implements PetRepository {
         return result;
     }
 
-    @Override
-    public void save(final PetData pet) {
-        saveAll(List.of(pet));
-    }
-
     /**
      * 소유자별로 묶어 <b>파일당 한 번만</b> 읽고 쓴다.
      *
@@ -117,20 +112,6 @@ public final class YamlPetRepository implements PetRepository {
     }
 
     @Override
-    public void delete(final UUID petId) {
-        // 소유자를 모르면 파일을 특정할 수 없다. 전체를 훑는 대신 호출부가
-        // deleteFrom 을 쓰게 한다. 이 오버로드는 인터페이스 호환을 위해 남긴다.
-        for (final File file : listFiles()) {
-            final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-            if (yaml.contains("pets." + petId)) {
-                yaml.set("pets." + petId, null);
-                write(file, yaml);
-                return;
-            }
-        }
-    }
-
-    /** 소유자를 아는 경우. 파일 하나만 건드리므로 이쪽이 훨씬 싸다. */
     public void delete(final UUID ownerId, final UUID petId) {
         final File file = fileOf(ownerId);
         if (!file.exists()) {
@@ -187,20 +168,23 @@ public final class YamlPetRepository implements PetRepository {
         }
     }
 
+    /**
+     * 실제 쓰기.
+     *
+     * <p><b>실패를 삼키면 안 된다.</b> {@link PetStore} 는 예외가 났을 때만 dirty 를
+     * 유지해 다음 기회에 다시 쓴다. 여기서 로그만 남기고 정상 종료하면 저장에 실패한
+     * 펫이 깨끗한 것으로 표시돼 <b>그 변경은 영영 사라진다</b> — 디스크가 차거나 권한이
+     * 없을 때 조용히 데이터를 잃는다는 뜻이다. 로그는 호출부가 남긴다.
+     */
     private void write(final File file, final YamlConfiguration yaml) {
         try {
             yaml.save(file);
         } catch (final IOException error) {
-            logger.log(Level.SEVERE, "펫 데이터를 저장하지 못했습니다: " + file, error);
+            throw new IllegalStateException("펫 데이터를 저장하지 못했습니다: " + file, error);
         }
     }
 
     private File fileOf(final UUID ownerId) {
         return new File(directory, ownerId + ".yml");
-    }
-
-    private File[] listFiles() {
-        final File[] files = directory.listFiles((dir, name) -> name.endsWith(".yml"));
-        return files == null ? new File[0] : files;
     }
 }

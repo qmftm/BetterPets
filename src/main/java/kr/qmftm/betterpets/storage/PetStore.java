@@ -101,10 +101,12 @@ public final class PetStore {
         final UUID ownerId = pet.ownerId();
         final UUID petId = pet.petId();
         io.execute(() -> {
-            if (repository instanceof YamlPetRepository yaml) {
-                yaml.delete(ownerId, petId);
-            } else {
-                repository.delete(petId);
+            try {
+                repository.delete(ownerId, petId);
+            } catch (final RuntimeException error) {
+                // 실행자 스레드가 예외로 죽으면 스택트레이스가 우리 로그가 아닌 곳으로
+                // 간다. 여기서 잡아야 "무엇을 못 지웠는지"가 남는다.
+                logger.log(Level.SEVERE, "펫 삭제 실패: " + ownerId + "/" + petId, error);
             }
         });
     }

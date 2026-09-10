@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -33,6 +34,20 @@ class YamlPetRepositoryTest {
 
     private static File fileOf(final Path dir) {
         return dir.resolve(OWNER + ".yml").toFile();
+    }
+
+    @Test
+    @DisplayName("저장에 실패하면 던진다 — 조용히 넘어가면 그 변경은 영영 사라진다")
+    void failedSaveThrows(@TempDir final Path dir) {
+        final YamlPetRepository repository = repo(dir);
+
+        // 파일이 놓일 자리에 폴더를 만들어 쓰기를 실패시킨다.
+        assertTrue(fileOf(dir).mkdirs());
+
+        // PetStore 는 예외가 났을 때만 dirty 를 유지해 다음 기회에 다시 쓴다.
+        // 여기서 조용히 성공한 척하면 디스크가 찼을 때 데이터를 잃는다.
+        assertThrows(RuntimeException.class,
+            () -> repository.save(PetData.newBaby(OWNER, "wolf", 0L)));
     }
 
     @Test
