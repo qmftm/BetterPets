@@ -31,8 +31,9 @@
 | **M6** | **GUI** — 보관함, 상세, 등급·성장도 표시 | ✅ **코드 완료** |
 | **M7** | **등급 · 능력** — D~S 등급, 패시브/트리거 능력, 모디파이어 누적 방지 | ✅ **코드 완료** |
 | **M8** | **획득 · 진화** — 알 아이템 우클릭으로 펫 지급(PDC 식별), 고정/랜덤 알, 진화 | ✅ **코드 완료** |
-| **M9** | **폴리시** — 성능 실측, PlaceholderAPI, 문서 정리 | ⬜ |
-| **M10** | **Bedrock 지원** — 전체 모델 변환, 리소스팩 파이프라인, Bedrock 실기 테스트 | ⬜ |
+| **M9** | **폴리시** — 다국어, 전체 알림, DiscordSRV, 틱 루프 최적화 | ✅ **코드 완료** |
+| **M9.5** | **남은 폴리시** — 성능 실측(Spark), PlaceholderAPI | ⬜ |
+| **M10** | **Bedrock 지원** — 전체 모델 변환, 리소스팩 파이프라인, Bedrock 실기 테스트 | 🔶 **연동 코드만 완료** |
 
 남은 작업은 대부분 **직접 서버에서 확인**하는 일이다. 코드 작성은 끝났다.
 
@@ -89,6 +90,13 @@
 - [x] 성장 단계 — 성장도가 찰 때마다 확률로 다음 형태 결정, 최대 단계는 `config.yml` 에서 설정 (기본 1 = 예전과 동일)
 - [x] 패시브 능력 (상시 버프)
 - [x] 트리거 능력 (이벤트 반응)
+
+**알림과 연동**
+- [x] 다국어 — `lang/<코드>.yml`, `ko_kr` · `en_us` 기본 제공, 빠진 키는 내장 한국어로 채움
+- [x] 희귀 펫 획득 · 성체 달성 시 서버 전체 알림 (등급·성장 단계 문턱은 설정)
+- [x] DiscordSRV 연동 — 같은 알림을 Discord 채널로 (없으면 조용히 꺼짐)
+- [x] Geyser/Floodgate 감지 — Bedrock 플레이어는 비행 이륙 확인을 건너뜀
+- [ ] PlaceholderAPI 연동
 
 **관리**
 - [x] 펫 보관함 GUI — 가진 펫 전부를 등급·상태·성장도와 함께 한 화면에서 본다 (한 쪽에 45마리, 쪽 넘김)
@@ -160,12 +168,49 @@
 
 ```
 plugins/BetterPets/
-├─ config.yml       보유/소환 한도 · 성장 · 기믹 · 비행 설정
-├─ messages.yml     사용자 노출 문자열 (MiniMessage)
+├─ config.yml       언어 · 알림 · 연동 · 한도 · 성장 · 기믹 · 비행 설정
+├─ lang/*.yml       사용자 노출 문자열 (MiniMessage). ko_kr · en_us 제공
 ├─ items.yml        알 · 먹이 아이템 정의
 ├─ pets/*.yml       펫 종류 정의 (wolf · dragon · pig 예시 제공)
 └─ playerdata/      플레이어별 펫 데이터 (자동 생성)
 ```
+
+### 언어
+
+```yaml
+# config.yml
+language: ko_kr     # plugins/BetterPets/lang/ko_kr.yml 을 읽는다
+```
+
+`lang/ko_kr.yml` 을 복사해 `lang/<코드>.yml` 로 저장하면 새 언어가 된다.
+**빠진 키는 내장 한국어로 채워지므로 바꾸고 싶은 줄만 남겨도 된다** — 플러그인이
+올라가 문구가 늘어도 번역 파일이 깨지지 않는다.
+
+### 전체 알림과 연동
+
+```yaml
+broadcast:
+  enabled: true
+  min-rarity: A          # 이 등급 이상만. D 로 두면 채팅이 밀린다
+  min-growth-stage: 1
+  on-obtain: true        # 알에서 나왔을 때
+  on-grown: true         # 다 자랐을 때
+  sound: true
+
+integrations:
+  discord:
+    enabled: true
+    channel: global      # DiscordSRV 의 게임 채널 이름
+  bedrock:
+    skip-mount-confirm: true
+```
+
+- **DiscordSRV** 는 리플렉션으로 붙는다 — 컴파일 의존이 없어서 DiscordSRV 없이도 빌드된다.
+  플러그인이 없거나 채널을 못 찾으면 기동 로그에 한 줄 남기고 조용히 꺼진다. 전송은 비동기다.
+- **Bedrock 구분**에는 Floodgate 가 필요하다. 없으면 전원 자바로 취급한다 — 반대로 하면
+  자바 플레이어의 조작까지 바뀌어서 틀렸을 때의 피해가 더 크다.
+- **GeyserModelEngine** 이 없으면 Bedrock 플레이어에게는 모델이 보이지 않는다(히트박스만).
+  기동 시 경고한다.
 
 ### 보유·소환 한도
 
@@ -273,7 +318,10 @@ kr.qmftm.betterpets
 │   ├─ AnimationStateMachine  전이 시에만 animate() 호출
 │   ├─ RideController      ArmorStand 마운트, 서브스텝 충돌
 │   └─ PetTicker           전역 틱 루프 (추종 2틱 / 탑승 1틱)
-├─ service/                PetService · GrowthService · AbilityService
+├─ integration/            선택적 외부 연동 (전부 리플렉션 — 없어도 돌아간다)
+│   ├─ DiscordBridge       DiscordSRV 채널로 알림 전송 (비동기)
+│   └─ BedrockSupport      Geyser/Floodgate 감지, Bedrock 플레이어 판별
+├─ service/                PetService · GrowthService · AbilityService · BroadcastService
 ├─ ability/                능력 인터페이스 + 등록소 + 구현체
 ├─ storage/                PetRepository · YamlPetRepository · PetStore
 ├─ config/                 PetCatalog (검증 포함) · Messages
