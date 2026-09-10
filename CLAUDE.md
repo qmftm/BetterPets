@@ -1,7 +1,12 @@
 # BetterPets 작업 규칙
 
 악어의 놀이터 2 스타일 펫 시스템. Paper 26.2 / Java 25 / BetterModel 3.4.1.
-설계 근거는 [docs/DESIGN.md](docs/DESIGN.md), 모델 규격은 [docs/MODELING.md](docs/MODELING.md).
+설계 근거는 [docs/DESIGN.md](docs/DESIGN.md), 모델 규격은 [docs/MODELING.md](docs/MODELING.md),
+진행 상황은 [docs/ROADMAP.md](docs/ROADMAP.md). 사용법은 [README](README.md).
+
+**README 는 플러그인 사용자를 위한 문서다.** 개발 진행 상황이나 설계 근거를 거기 쓰지 않는다 —
+각각 ROADMAP 과 DESIGN 으로 간다. 문체도 다르다: README 는 존댓말로 친근하게,
+DESIGN 과 CLAUDE.md 는 평서형으로 간결하게.
 
 ## 빌드
 

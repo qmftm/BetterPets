@@ -3,172 +3,133 @@
 ![Minecraft](https://img.shields.io/badge/Minecraft%20%2F%20Paper-26.2-brightgreen)
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![BetterModel](https://img.shields.io/badge/BetterModel-3.4.1-blue)
-![Build](https://img.shields.io/badge/Build-Maven-C71A36)
-![Status](https://img.shields.io/badge/Status-검증%20대기%20(M9)-yellow)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-악어의 놀이터 스타일 펫 시스템. 알에서 나온 펫을 키우고, 성장한 펫을 타고 다니며, 일부는 하늘을 난다.
+**악어의 놀이터 스타일 펫 플러그인이에요.** 알을 까서 펫을 얻고, 먹이를 주며 키우고,
+다 자란 펫에 올라타 돌아다닐 수 있습니다. 운 좋은 펫은 하늘도 날아요.
 
-렌더링은 [BetterModel](https://github.com/toxicity188/BetterModel)이 맡는다 — 리소스팩이나 데이터팩을 직접 다룰 필요 없이 BlockBench 모델을 그대로 쓴다.
+펫 모습은 [BetterModel](https://github.com/toxicity188/BetterModel)이 그려줍니다.
+BlockBench 로 만든 `.bbmodel` 을 그대로 넣으면 되고, 리소스팩이나 데이터팩을 직접
+만질 필요가 없어요.
 
-> ⚠️ **아직 실제 서버에서 검증되지 않았다.** 기능 전체가 구현돼 빌드와 단위 테스트는 통과하지만, **모델 파일이 있어야 실제로 펫이 뜨는지 확인할 수 있다.** 진행 상황은 아래 [개발 단계](#개발-단계) 참고.
+> ### ⚠️ 먼저 알아두세요
+>
+> **아직 실제 서버에서 돌려본 적이 없습니다.** 기능은 전부 구현됐고 빌드와 단위 테스트
+> 128개를 통과하지만, 펫이 화면에 제대로 뜨는지는 `.bbmodel` 모델 파일이 있어야 확인할
+> 수 있어요. 자세한 상태는 [ROADMAP.md](docs/ROADMAP.md)에 정리해 뒀습니다.
 
 ---
 
-## 개발 단계
+## 어떻게 노나요
 
-전체 11단계 중 **9단계 코드 완료**. 남은 것은 실제 서버 검증과 Bedrock 대응이다.
+```
+  알 아이템 우클릭          먹이 주기 · 시간 경과          성체
+   🥚  ──────────▶  🐺 아기  ──────────────────▶  🐺 성체  🏇 탑승 가능
+                      │                                    ✨ 능력 발현
+                      │  짧은 시간에 몰아 먹이면
+                      ▼
+                     🐷 (이스터에그)
+```
 
-"코드 완료"는 구현·빌드·단위 테스트가 끝났다는 뜻이고, **테스트 서버에서 확인된 것은 아니다.** 그건 모델 파일이 필요하다.
-
-| 단계 | 내용 | 상태 |
-| :---: | --- | :---: |
-| **M0** | **프로젝트 뼈대** — Maven 빌드, `paper-plugin.yml`, 진입점, 렌더 격리 계층, 도메인(등급·생애주기·성장도) | ✅ **완료** |
-| **M1** | **렌더링** — `/pet summon`, 캐리어 엔티티(보이지 않는 Mob), 트래커 격리 계층 | ✅ **코드 완료** |
-| **M2** | **이동 · 애니메이션** — 추종 상태 머신, 텔레포트 폴백, 전이 시에만 애니메이션 호출 | ✅ **코드 완료** |
-| **M3** | **데이터 · 명령어** — YAML 저장소, 단일 스레드 비동기 I/O, `/pet` `/petadmin` | ✅ **코드 완료** |
-| **M4** | **생애주기** — 아기 → 성체, 성장도(시간 + 먹이), 과급식 기믹 | ✅ **코드 완료** |
-| **M5** | **탑승 · 비행** — ArmorStand 마운트, Paper Input 조향, 서브스텝/벽 슬라이딩, 안전 하차 | ✅ **코드 완료** |
-| **M6** | **GUI** — 보관함, 상세, 등급·성장도 표시 | ✅ **코드 완료** |
-| **M7** | **등급 · 능력** — D~S 등급, 패시브/트리거 능력, 모디파이어 누적 방지 | ✅ **코드 완료** |
-| **M8** | **획득 · 진화** — 알 아이템 우클릭으로 펫 지급(PDC 식별), 고정/랜덤 알, 진화 | ✅ **코드 완료** |
-| **M9** | **폴리시** — 다국어, 전체 알림, DiscordSRV, 틱 루프 최적화 | ✅ **코드 완료** |
-| **M9.5** | **남은 폴리시** — 성능 실측(Spark) | ⬜ |
-| **M10** | **Bedrock 지원** — 전체 모델 변환, 리소스팩 파이프라인, Bedrock 실기 테스트 | 🔶 **연동 코드만 완료** |
-
-남은 작업은 대부분 **직접 서버에서 확인**하는 일이다. 코드 작성은 끝났다.
-
-> **Bedrock 검증은 M1에서 미리 한 번 한다.** 서버가 Bedrock 플레이어를 받으므로 [GeyserModelEngine](https://github.com/GeyserExtensionists/GeyserModelEngine)이 필요한데, 조합(BetterModel 3.4.1 + GME + MC 26.2)이 검증된 적 없다. **모델을 여러 개 만든 뒤에 안 되는 걸 알면 늦으므로**, M1에서 첫 모델이 자바에 뜨자마자 그 하나로 Bedrock 변환을 시험한다. 되면 M10에서 나머지를 처리하고, 안 되면 그때 대안을 찾는다.
-
-### 각 단계의 완료 조건
-
-1. 기능이 테스트 서버에서 동작한다
-2. 해당 범위의 단위 테스트가 통과한다
-3. [수동 체크리스트](docs/DESIGN.md#테스트)를 통과한다
-4. README를 갱신하고 커밋·푸시한다
-
-### 지금까지 확정된 것
-
-- **빌드가 통과한다** — JDK 25로 BetterModel 3.4.1 API에 대해 실제 컴파일, 단위 테스트 128개 통과
-- **캐리어 엔티티는 보이지 않는 `Mob`** — `ItemDisplay` 대신 고른 이유는 자체 히트박스가 있어서다. 모델에 히트박스 본(`b_`)이 없어도 우클릭이 먹는다
-- **BetterModel API 격리** — `BetterModelRenderer` 가 그 API를 import하는 유일한 파일이다
-- **탑승은 `ArmorStand` + Paper `Input`** — `allowFlight` 를 쓰지 않으므로 비행 권한이 샐 위험 자체가 없다
-- **선택적 연동은 리플렉션** — DiscordSRV·Floodgate 가 없어도 빌드되고 돌아간다. 상속이 필요한 PlaceholderAPI 만 예외로 컴파일 의존(`provided`)을 건다
-
-### 다음에 직접 확인할 것
-
-코드로는 더 할 게 없고, **테스트 서버에서 확인해야 하는 것들**이다.
-
-1. **모델이 실제로 뜨는가** — `.bbmodel` 하나를 넣고 `/petadmin egg`, 우클릭, `/pet summon` 순으로
-2. **트래커 누수가 없는가** — `/petadmin debug` 의 세 숫자(활성 펫 / 캐리어 / 트래커)가 일치하는지
-3. **추종 이동이 자연스러운가** — 계단·언덕에서 끊기지 않는지, 텔레포트 폴백이 과하지 않은지
-4. **탑승·비행 조작감** — 벽 슬라이딩과 하차 안전 처리가 실제로 먹는지
-5. **Bedrock 변환** — 모델 하나로 GeyserModelEngine 파이프라인을 끝까지 통과시켜 본다
-6. **연동이 실제로 붙는가** — `/petadmin debug` 의 연동 줄에서 DiscordSRV·PlaceholderAPI·floodgate·GeyserModelEngine 상태 확인
-7. **여러 마리 소환** — `max-active` 를 2 이상으로 두고, 한 마리에 탔을 때 나머지가 제자리에 남는지
+1. **알을 우클릭**하면 안에 든 펫이 아기로 나옵니다. 랜덤 알이면 뽑기가 되고요.
+2. **먹이를 주거나 그냥 데리고 다니면** 자랍니다 — 시간이 흘러도 1분에 1씩 오릅니다.
+3. **다 자라면** 등에 탈 수 있고, 등급별 능력이 주인에게 붙습니다.
+4. 하지만 **짧은 시간에 너무 몰아 먹이면**... 돼지가 됩니다. 조심하세요.
 
 ---
 
 ## 기능
 
-체크된 것은 **코드가 있고 빌드·테스트를 통과했다**는 뜻이다. 실제 서버 확인은 별개다.
-
 **펫 기르기**
-- [x] 알 아이템 우클릭 — 안에 담긴 펫을 아기로 바로 준다 (고정 알 / 가중치 랜덤 알)
-- [x] 성장도 — 시간 경과 1분당 +1, 먹이 +10
-- [x] 아기 → 성체 생애주기 (성장 단계마다 다음 형태를 확률로 추첨)
-- [x] 과급식 시 돼지로 변하는 기믹 — 종류까지 실제로 바뀐다 (`pets/pig.yml`)
+- 알 아이템 우클릭으로 펫 획득 — 고정 알과 가중치 랜덤 알
+- 시간(1분당 +1)과 먹이로 자라는 성장도
+- 성장 단계마다 다음 형태를 확률로 결정 — 아기 늑대가 드래곤이 될 수도
+- 과급식하면 돼지가 되는 이스터에그 (끄고 켤 수 있어요)
 
 **데리고 다니기**
-- [x] 3D 모델 렌더링 (BetterModel)
-- [x] 추종 이동 — 정지 / 걷기 / 달리기 / 텔레포트
-- [x] 상태별 애니메이션 전환
+- 3D 모델로 따라다니는 펫 — 정지 / 걷기 / 달리기 / 텔레포트
+- 여러 마리 동시 소환 (마릿수는 설정), 부채꼴로 펼쳐 따라옵니다
+- 탑승 3종 — 탈 수 없음 / 걸어서 탑승 / 날아서 탑승
+- 비행은 등급이 높을수록 확률이 올라가고, 연료 없이 무제한
 
-**타고 다니기**
-- [x] 탑승 방식 3가지 — 펫 종류마다 `NONE`(불가) / `GROUND`(걷는 탑승) / `FLY`(나는 탑승)
-- [x] 비행 — `FLY` 종류가 확률로 확정, 실패하면 걷는 탑승. 연료 없이 무제한
-- [x] 스니크 하차, 낙하 피해 방지
+**등급과 능력**
+- D~S 5등급 — 높을수록 빠르고, A등급부터 비행 가능
+- 등급별 수치는 `rarity.yml` 에서 직접 조정
+- 능력 4종 — 이동속도 · 최대체력 · 공격력 · 처치 시 드롭 추가
 
-**성장과 능력**
-- [x] 등급 D~S — 등급이 오를수록 이동속도 상승, A등급부터 비행 가능
-- [x] 등급 수치를 `rarity.yml` 로 외부화 (속도 · 비행 확률 · 표시색 · 이름)
-- [x] 성장 단계 — 성장도가 찰 때마다 확률로 다음 형태 결정, 최대 단계는 `config.yml` 에서 설정 (기본 1 = 예전과 동일)
-- [x] 능력 — 펫이 **주인에게** 주는 효과. 패시브(상시 버프) 3종 + 트리거(이벤트 반응) 1종
-- [x] 능력 수치가 성장도·등급에 비례해 커짐, 성체부터 발현
-
-**알림과 연동**
-- [x] 다국어 — `lang/<코드>.yml`, `ko_kr` · `en_us` 기본 제공, 빠진 키는 내장 한국어로 채움
-- [x] 희귀 펫 획득 · 성체 달성 시 서버 전체 알림 (등급·성장 단계 문턱은 설정)
-- [x] DiscordSRV 연동 — 같은 알림을 Discord 채널로 (없으면 조용히 꺼짐)
-- [x] Geyser/Floodgate 감지 — Bedrock 플레이어는 비행 이륙 확인을 건너뜀
-- [x] PlaceholderAPI — `%betterpets_owned%` · `%betterpets_pet_name%` 등
-
-**관리**
-- [x] 펫 보관함 GUI — 가진 펫 전부를 등급·상태·성장도와 함께 한 화면에서 본다 (한 쪽에 45마리, 쪽 넘김)
-- [x] 정렬 — 소환 중 → 등급 높은 순 → 획득 순
-- [x] 상세 화면에 능력 목록 (지금 성장도 기준 수치)
-- [x] 최대 보유 · 최대 동시 소환 마릿수를 `config.yml` 에서 설정 (0 = 무제한)
-- [x] 이름 변경 · 해방
-- [ ] PlaceholderAPI 연동
+**서버 운영**
+- 보관함 GUI — 등급·상태·성장도를 한눈에, 소환 중인 펫이 맨 위
+- 보유/동시 소환 마릿수 제한
+- 희귀 펫을 얻거나 다 키우면 전체 알림 (문턱은 설정)
+- 한국어·영어 지원, 언어 추가 가능
+- DiscordSRV · PlaceholderAPI · Geyser 연동 (없어도 정상 동작)
 
 ---
 
-## 요구 사항
+## 필요한 것
 
-| 항목 | 버전 | 비고 |
+| | 버전 | |
 | --- | --- | --- |
-| 서버 | **Paper 26.2** | Spigot은 지원하지 않는다 |
-| Java | **25** | 아래 주의 참고 |
-| [BetterModel](https://hangar.papermc.io/toxicity188/BetterModel) | **3.4.1+** | 필수. 없으면 플러그인이 비활성화된다 |
+| Paper | **26.2+** | Spigot 은 지원하지 않아요 |
+| Java | **25** | 아래 참고 |
+| [BetterModel](https://hangar.papermc.io/toxicity188/BetterModel) | **3.4.1+** | 필수. 없으면 플러그인이 스스로 꺼집니다 |
 | PlaceholderAPI | — | 선택 |
+| DiscordSRV | — | 선택 |
 
-**Bedrock 플레이어를 받는다면** 아래가 추가로 필요하다. Bedrock 클라이언트는 BetterModel의 커스텀 모델을 그대로 볼 수 없다.
+> **Java 25가 꼭 필요합니다.** BetterModel 3.x 는 모든 버전이 Java 25로 컴파일돼 있어서,
+> JDK 24 이하에서는 BetterModel 자체가 로드되지 않아요. 서버와 빌드 머신 둘 다 25가 필요합니다.
 
-| 위치 | 플러그인 |
+**Bedrock(모바일·콘솔) 플레이어를 받는다면** 아래가 더 필요해요. Bedrock 클라이언트는
+BetterModel 의 커스텀 모델을 그냥은 못 봅니다.
+
+| 넣는 곳 | 플러그인 |
 | --- | --- |
 | `plugins/` | [GeyserModelEngine](https://github.com/GeyserExtensionists/GeyserModelEngine), geyserutils-spigot, packetevents |
 | `plugins/[Geyser]/extensions/` | GeyserModelEngineExtension, geyserutils-geyser |
 
-모델도 Bedrock용으로 따로 내보내야 한다 — [MODELING.md](docs/MODELING.md#bedrockgeyser-대응) 참고.
-
-> ⚠️ **Java 25가 필수다.** BetterModel 3.x는 모든 버전이 클래스 파일 major 69(Java 25)로 배포되므로, JDK 24 이하에서는 BetterModel 자체가 로드되지 않는다. 서버와 빌드 머신 모두 JDK 25가 필요하다.
-
-**대상 규모** — 동시 접속 5명 내외의 소규모 서버를 전제로 설계했다. 거리 LOD나 커넥션 풀 같은 대규모 최적화는 의도적으로 넣지 않았다. 근거는 [DESIGN.md](docs/DESIGN.md#설계-전제--서버-규모)에 있다.
+모델도 Bedrock 용으로 따로 내보내야 합니다 — [MODELING.md](docs/MODELING.md#bedrockgeyser-대응) 참고.
 
 ---
 
 ## 설치
 
-1. [BetterModel](https://hangar.papermc.io/toxicity188/BetterModel) 3.4.1 이상을 `plugins/` 에 넣는다
-2. `BetterPets-*.jar` 를 `plugins/` 에 넣는다
-3. `.bbmodel` 파일을 `plugins/BetterModel/models/` 에 넣는다 — 규격은 [MODELING.md](docs/MODELING.md)
-4. 서버를 재시작한다
+1. [BetterModel](https://hangar.papermc.io/toxicity188/BetterModel) 3.4.1 이상을 `plugins/` 에 넣기
+2. `BetterPets-*.jar` 를 `plugins/` 에 넣기
+3. `.bbmodel` 모델 파일을 `plugins/BetterModel/models/` 에 넣기 — 규격은 [MODELING.md](docs/MODELING.md)
+4. 서버 재시작
+5. `/petadmin egg <닉네임> wolf_egg` 로 알을 하나 받아서 우클릭해 보기
+
+처음 켜면 `plugins/BetterPets/` 에 설정 파일이 자동으로 생깁니다. 예시 펫 3종
+(늑대·드래곤·돼지)도 같이 들어 있어요.
 
 ---
 
 ## 명령어
 
-| 명령어 | 권한 | 설명 |
-| --- | --- | --- |
-| `/pet` | `betterpets.use` | 보관함 GUI |
-| `/pet summon <petId>` | `betterpets.use` | 소환 |
-| `/pet dismiss [petId]` | `betterpets.use` | `petId` 를 주면 그 한 마리만, 없으면 전부 해제 |
-| `/pet dismount` | `betterpets.use` | 하차 |
-| `/pet rename [petId] <이름>` | `betterpets.use` | 이름 변경. 여러 마리를 소환 중이면 `petId` 가 필요하다 |
-| `/pet list` | `betterpets.use` | 채팅으로 목록. **이름을 클릭하면 바로 소환** |
-| `/pet help` | `betterpets.use` | 하위 명령 안내 |
-| `/petadmin give <플레이어> <타입>` | `betterpets.admin` | 펫 지급 |
-| `/petadmin egg <플레이어> <알> [개수]` | `betterpets.admin` | 알 아이템 지급 |
-| `/petadmin feed <플레이어> <먹이> [개수]` | `betterpets.admin` | 먹이 아이템 지급 |
-| `/petadmin growth <플레이어> <petId> <양>` | `betterpets.admin` | 성장도 지급 |
-| `/petadmin reload` | `betterpets.admin` | 설정 리로드 |
-| `/petadmin debug` | `betterpets.admin` | 트래커 누수 진단 · 현재 한도 확인 |
+**플레이어용** — `betterpets.use` (기본 허용)
 
-## 권한
+| 명령어 | 설명 |
+| --- | --- |
+| `/pet` | 보관함 열기 |
+| `/pet list` | 채팅으로 목록 보기 — **이름을 클릭하면 바로 소환** |
+| `/pet summon <펫id>` | 소환 |
+| `/pet dismiss [펫id]` | 돌려보내기. id 를 주면 그 한 마리만, 없으면 전부 |
+| `/pet rename [펫id] <이름>` | 이름 바꾸기 |
+| `/pet dismount` | 내리기 |
+| `/pet help` | 명령어 안내 |
 
-| 권한 | 기본값 | 범위 |
-| --- | --- | --- |
-| `betterpets.use` | 모두 | 보관함, 소환/해제, 이름 변경 |
-| `betterpets.admin` | OP | 지급, 리로드, 진단 |
+**관리자용** — `betterpets.admin` (기본 OP)
+
+| 명령어 | 설명 |
+| --- | --- |
+| `/petadmin give <플레이어> <펫종류>` | 펫 바로 지급 |
+| `/petadmin egg <플레이어> <알id> [개수]` | 알 아이템 지급 |
+| `/petadmin feed <플레이어> <먹이id> [개수]` | 먹이 아이템 지급 |
+| `/petadmin growth <플레이어> <펫id> <양>` | 성장도 지급 |
+| `/petadmin reload` | 설정 다시 읽기 |
+| `/petadmin debug` | 누수 진단 · 현재 한도 · 연동 상태 |
+
+펫 id 는 **앞 8자리만** 쳐도 됩니다. 탭 완성도 되고요.
 
 ---
 
@@ -176,72 +137,105 @@
 
 ```
 plugins/BetterPets/
-├─ config.yml       언어 · 알림 · 연동 · 한도 · 성장 · 기믹 · 비행 설정
-├─ lang/*.yml       사용자 노출 문자열 (MiniMessage). ko_kr · en_us 제공
-├─ items.yml        알 · 먹이 아이템 정의
-├─ rarity.yml      등급별 수치 (속도 · 비행 확률 · 색)
-├─ pets/*.yml       펫 종류 정의 (wolf · dragon · pig 예시 제공)
-└─ playerdata/      플레이어별 펫 데이터 (자동 생성)
+├─ config.yml       한도 · 알림 · 연동 · 성장 · 기믹 · 비행
+├─ rarity.yml       등급별 수치 (속도 · 비행 확률 · 색)
+├─ items.yml        알 · 먹이 아이템
+├─ lang/*.yml       화면에 보이는 모든 문구 (ko_kr · en_us)
+├─ pets/*.yml       펫 종류 정의
+└─ playerdata/      플레이어별 펫 데이터 (건드리지 마세요)
 ```
 
-### 언어
+### 펫 만들기
 
-```yaml
-# config.yml
-language: ko_kr     # plugins/BetterPets/lang/ko_kr.yml 을 읽는다
-```
-
-`lang/ko_kr.yml` 을 복사해 `lang/<코드>.yml` 로 저장하면 새 언어가 된다.
-**빠진 키는 내장 한국어로 채워지므로 바꾸고 싶은 줄만 남겨도 된다** — 플러그인이
-올라가 문구가 늘어도 번역 파일이 깨지지 않는다.
-
-### 능력
-
-**능력은 펫이 아니라 주인에게 붙는다.** 펫이 싸우지 않고, 주인을 강하게 만든다.
-
-| id | 종류 | 하는 일 | 수치 키 |
-| --- | --- | --- | --- |
-| `attribute_speed` | 패시브 | 주인 이동속도 증가 (비율) | `base` · `per-growth` |
-| `attribute_health` | 패시브 | 주인 최대 체력 증가 (칸) | `base` · `per-growth` |
-| `attribute_damage` | 패시브 | 주인 공격력 증가 | `base` · `per-growth` |
-| `on_kill_extra_drop` | 트리거 | 몹 처치 시 확률로 드롭을 한 벌 더 | `chance-base` · `chance-per-growth` |
-
-펫마다 `pets/*.yml` 에 적는다:
+`pets/` 에 파일을 하나 더 넣으면 새 펫이 됩니다.
 
 ```yaml
 # pets/dragon.yml
+id: dragon
+display-name: "<gold>드래곤"
+model: pet_dragon          # plugins/BetterModel/models/pet_dragon.bbmodel
+rarity: S
+growth-max: 100
+
+ride: FLY                  # NONE(못 탐) / GROUND(걸어서) / FLY(날아서)
+fly-chance: 0.35           # FLY 라도 실제로 날 확률. 실패하면 걷는 탑승
+
+animations:                # 모델의 애니메이션 이름과 연결
+  idle: idle
+  walk: walk
+  run: run
+  fly: fly
+  ride: ride
+
 abilities:
   - id: attribute_speed
-    base: 0.05           # 기본값
-    per-growth: 0.0005   # 성장도 1당 추가 → 성장도 100이면 +0.05 더
-  - id: on_kill_extra_drop
-    chance-base: 0.05
-    chance-per-growth: 0.002
+    base: 0.05
+    per-growth: 0.0005
+
+acquire:
+  gacha-weight: 1          # 랜덤 알에서 뽑힐 가중치
 ```
 
-**계산식** — 패시브는 `(base + per-growth × 성장도) × 등급 이동속도 배율`.
-등급 배율은 `rarity.yml` 의 `move-speed` 값을 그대로 쓴다.
+### 보유·소환 마릿수
 
-> ⚠️ `on_kill_extra_drop` 은 **등급 배율을 곱하지 않는다.** 확률에 1.0~1.7배를 곱하면
-> 상한 1.0에 금방 붙어 등급 차이가 오히려 뭉개진다. 등급별 차이는 `chance-base` 로 낸다.
-> 바꾸려면 `ExtraDropAbility.onEvent` 한 줄이다.
+```yaml
+# config.yml
+pets:
+  max-owned: 20    # 한 명이 가질 수 있는 마릿수. 0 = 무제한
+  max-active: 1    # 동시에 꺼내둘 수 있는 마릿수. 0 = 무제한
+```
 
-**성체부터 발현된다.** 아기와 돼지는 능력이 없고, 보관함 상세 화면이 그 사실과
-현재 수치를 함께 보여준다. 소환 중에 성체가 되면 **재소환 없이 바로 붙는다.**
+- 보유 한도가 차면 알을 우클릭해도 **아이템이 사라지지 않아요.** 안내만 나갑니다.
+- 동시 소환 한도가 찬 상태에서 새로 부르면 **가장 먼저 부른 펫이 돌아갑니다.**
+  그래서 기본값 1은 "부르면 교체"로 동작해요.
+- `max-active` 를 올리면 소환한 마릿수만큼 능력 보너스가 **겹쳐서** 붙습니다.
 
-새 능력을 추가하려면 `PetAbility` 를 구현하고 `AbilityRegistry` 에 등록한다.
-수치를 이름→값 맵으로 들고 있어서 능력을 늘려도 정의 클래스를 고칠 필요가 없다.
+### 등급 수치
 
-### 전체 알림과 연동
+```yaml
+# rarity.yml — 안 적은 등급·항목은 기본값을 씁니다
+rarities:
+  S:
+    display-name: "전설"
+    move-speed: 1.70     # 추종 이동 배율
+    ride-speed: 0.42     # 탑승 속도
+    fly-chance: 0.35     # 성체가 될 때 비행이 붙을 확률
+    color: "FFAA00"      # 모델 색 · GUI 표시색
+```
+
+> 기본 수치는 **전부 임시값이에요.** 원작의 실제 값은 확인하지 못했습니다. 확실한 건
+> "등급이 오를수록 빨라진다"와 "비행은 A등급부터" 둘뿐이라, 서버에 맞게 고쳐 쓰시라고
+> 파일로 뺐어요.
+
+### 능력
+
+**능력은 펫이 아니라 주인에게 붙습니다.** 펫이 싸우는 게 아니라, 주인이 강해져요.
+
+| id | 종류 | 하는 일 | 수치 키 |
+| --- | --- | --- | --- |
+| `attribute_speed` | 패시브 | 이동속도 증가 | `base` · `per-growth` |
+| `attribute_health` | 패시브 | 최대 체력 증가 | `base` · `per-growth` |
+| `attribute_damage` | 패시브 | 공격력 증가 | `base` · `per-growth` |
+| `on_kill_extra_drop` | 트리거 | 몹 처치 시 확률로 드롭 한 벌 더 | `chance-base` · `chance-per-growth` |
+
+패시브 수치는 `(base + per-growth × 성장도) × 등급 이동속도 배율` 로 계산합니다.
+
+**성체부터 발현돼요.** 아기와 돼지는 능력이 없고, 보관함 상세 화면이 그 사실과 현재
+수치를 같이 보여줍니다. 꺼내둔 채로 성체가 되면 다시 부르지 않아도 바로 붙어요.
+
+> `on_kill_extra_drop` 은 등급 배율을 곱하지 않습니다. 확률에 1.7배를 곱하면 상한(100%)에
+> 금방 붙어서 등급 차이가 오히려 뭉개지거든요. 등급별 차이는 `chance-base` 로 냅니다.
+
+### 알림과 연동
 
 ```yaml
 broadcast:
   enabled: true
-  min-rarity: A          # 이 등급 이상만. D 로 두면 채팅이 밀린다
+  min-rarity: A          # 이 등급 이상만 알림. D 로 두면 채팅이 밀려요
   min-growth-stage: 1
   on-obtain: true        # 알에서 나왔을 때
   on-grown: true         # 다 자랐을 때
-  on-stage-up: false     # 성장 단계가 올랐을 때 (max-stage 가 2 이상일 때만 일어난다)
+  on-stage-up: false     # 성장 단계가 올랐을 때
   sound: true
 
 integrations:
@@ -252,172 +246,74 @@ integrations:
     skip-mount-confirm: true
 ```
 
-**PlaceholderAPI** — 설정이 없다. 있으면 자동으로 붙는다.
+- **DiscordSRV** — 같은 알림이 디스코드로도 갑니다. 없으면 조용히 꺼져요.
+- **PlaceholderAPI** — 설정 없이 자동으로 붙습니다. `%betterpets_pet_name%`,
+  `%betterpets_owned%`, `%betterpets_active%` 등.
+- **Bedrock** — Floodgate 가 있으면 Bedrock 플레이어를 알아보고, 비행 이륙 확인
+  (한 번 더 우클릭)을 건너뜁니다. 터치로는 맞히기 어려우니까요.
 
-| 키 | 값 |
-| --- | --- |
-| `%betterpets_owned%` · `%betterpets_owned_max%` | 보유 마릿수 / 한도 (무제한이면 `∞`) |
-| `%betterpets_active%` · `%betterpets_active_max%` | 소환 중 / 동시 소환 한도 |
-| `%betterpets_pet_name%` | 소환 중인 첫 펫의 이름 |
-| `%betterpets_pet_rarity%` · `%betterpets_pet_stage%` | 등급 · 생애주기 |
-| `%betterpets_pet_growth%` · `%betterpets_pet_growth_max%` · `%betterpets_pet_growth_percent%` | 성장도 |
-
-소환 중인 펫이 없으면 `-` 를 준다. **모르는 키는 원문을 그대로 남긴다** — `-` 로 바꾸면 오타가 조용히 묻힌다.
-
-> **`min-growth-stage` 를 2 이상으로 둘 때 주의.** 알에서 갓 나온 펫은 언제나 1단계라
-> `on-obtain` 알림이 사실상 꺼진다. "일정 단계를 넘겼을 때 알린다"가 목적이라면
-> `on-stage-up` 을 켜는 쪽이 맞다 — 넘긴 그 순간에 나간다.
-
-- **DiscordSRV** 는 리플렉션으로 붙는다 — 컴파일 의존이 없어서 DiscordSRV 없이도 빌드된다.
-  플러그인이 없거나 채널을 못 찾으면 기동 로그에 한 줄 남기고 조용히 꺼진다. 전송은 비동기다.
-- **Bedrock 구분**에는 Floodgate 가 필요하다. 없으면 전원 자바로 취급한다 — 반대로 하면
-  자바 플레이어의 조작까지 바뀌어서 틀렸을 때의 피해가 더 크다.
-- **GeyserModelEngine** 이 없으면 Bedrock 플레이어에게는 모델이 보이지 않는다(히트박스만).
-  기동 시 경고한다.
-
-### 등급 수치
-
-```yaml
-# rarity.yml — 적지 않은 등급·항목은 내장 기본값을 쓴다
-rarities:
-  S:
-    display-name: "전설"
-    move-speed: 1.70     # 추종 이동 배율
-    ride-speed: 0.42     # 탑승 속도 (블록/틱)
-    fly-chance: 0.35     # 성체가 될 때 비행이 붙을 확률
-    color: "FFAA00"      # 모델 틴트 · GUI 표시색
-```
-
-> ⚠️ **기본 수치는 전부 플레이스홀더다.** 원작의 실제 값은 확인하지 못했다. 확정된 규칙은
-> "등급이 오를수록 빨라진다"와 "비행은 A등급부터" 두 가지뿐이라, 서버에 맞게 고쳐 쓰라고
-> 파일로 뺐다. `S` 만 손보고 싶으면 `S` 만 남겨도 된다.
-
-### 보유·소환 한도
+### 언어
 
 ```yaml
 # config.yml
-pets:
-  max-owned: 20    # 한 명이 가질 수 있는 마릿수. 0 = 무제한
-  max-active: 1    # 동시에 소환해 둘 수 있는 마릿수. 0 = 무제한
+language: ko_kr
 ```
 
-- **보유 한도가 차면 알을 우클릭해도 아이템이 소비되지 않는다.** 안내만 나가고 알은 그대로 남는다.
-- **동시 소환 한도가 찬 상태에서 새로 소환하면 가장 먼저 부른 펫이 돌아간다.** 그래서 기본값 1은
-  "소환하면 교체"로 동작한다 — 거절하지 않는다.
-- `max-active` 를 올리면 소환한 마릿수만큼 캐리어 엔티티와 렌더 트래커가 늘고, 성체 펫의
-  능력치 보너스도 **마리 수만큼 겹쳐서** 붙는다.
-
-### 펫 종류
-
-펫 하나를 정의하는 예:
-
-```yaml
-# pets/dragon.yml
-id: dragon
-display-name: "<gold>드래곤"
-model: pet_dragon          # plugins/BetterModel/models/pet_dragon.bbmodel
-rarity: S
-growth-max: 100
-
-ride: FLY                  # NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승)
-fly-chance: 0.35           # FLY 종류가 실제로 날 확률. 실패하면 걷는 탑승
-
-animations:
-  idle: idle
-  walk: walk
-  run: run
-  fly: fly
-  ride: ride
-
-movement:
-  follow-distance: 2.0
-  walk-speed: 0.25
-  run-speed: 0.45
-  teleport-distance: 24.0
-
-acquire:
-  gacha-weight: 1          # 랜덤 알에서 뽑힐 가중치
-```
-
-설정 항목 전체는 [DESIGN.md](docs/DESIGN.md#설정-파일) 참고.
+`lang/ko_kr.yml` 을 복사해서 `lang/<코드>.yml` 로 저장하면 새 언어가 됩니다.
+**안 적은 키는 한국어로 채워지니까 바꾸고 싶은 줄만 남겨도 돼요.** 플러그인이
+업데이트돼서 문구가 늘어도 번역 파일이 깨지지 않습니다.
 
 ---
 
-## 모델 제작
+## 모델 만들기
 
-펫 모델은 직접 만든다. 플러그인이 기대하는 규격이 있다:
+펫 모델은 직접 만드셔야 해요. 플러그인이 기대하는 규격이 있습니다:
 
 - **애니메이션 이름** — `idle` · `walk` · `run` 은 필수. 비행 펫은 `fly`, 탑승 펫은 `ride` 추가
-- **본 태그** — `h_head`(머리 회전), `b_body`(히트박스), `p_seat`(탑승 좌석) 등 접두사로 기능을 붙인다
+- **본 태그** — `h_head`(머리 회전), `b_body`(히트박스), `p_seat`(탑승 좌석) 처럼
+  접두사로 기능을 붙입니다
 
-전체 규격은 **[docs/MODELING.md](docs/MODELING.md)** 에 있다.
+전체 규격과 예시는 **[docs/MODELING.md](docs/MODELING.md)** 에 있어요.
 
-> 악어의 놀이터에서 쓰는 실제 모델·텍스처를 추출해 쓰는 것은 저작권 침해다. 시스템 구조를 참고하는 것과 에셋을 복제하는 것은 다르다.
+> 악어의 놀이터에서 쓰는 실제 모델·텍스처를 추출해 쓰는 건 저작권 침해입니다.
+> 시스템 구조를 참고하는 것과 에셋을 복제하는 건 다른 얘기예요.
+
+---
+
+## 자주 묻는 것
+
+**펫이 안 보여요**
+`.bbmodel` 파일이 `plugins/BetterModel/models/` 에 있는지, `pets/*.yml` 의 `model:` 값이
+파일 이름과 같은지 확인해 주세요. `/petadmin debug` 로 트래커가 잡혔는지도 볼 수 있어요.
+
+**펫이 벽에 끼거나 뒤처져요**
+3초 동안 가까워지지 못하면 자동으로 순간이동합니다. 너무 자주 그러면 `pets/*.yml` 의
+`teleport-distance` 를 줄여 보세요.
+
+**설정을 고쳤는데 그대로예요**
+`/petadmin reload` 를 쳐 주세요. 문제가 있으면 뭐가 잘못됐는지 하나씩 알려줍니다.
+
+**펫을 여러 마리 꺼내고 싶어요**
+`config.yml` 의 `pets.max-active` 를 올리세요. 소환한 마릿수만큼 능력이 겹치니
+밸런스도 같이 봐 주세요.
+
+**디스코드로 알림이 안 가요**
+`/petadmin debug` 의 연동 줄에서 DiscordSRV 가 `(O)` 인지 보세요. `(X)` 면 플러그인이
+없는 거고, `(O)` 인데도 안 가면 `integrations.discord.channel` 이름이 DiscordSRV 쪽
+채널 이름과 같은지 확인해 주세요.
 
 ---
 
 ## 빌드
 
 ```bash
-export JAVA_HOME=/path/to/jdk-25     # JDK 25 필수
+export JAVA_HOME=/path/to/jdk-25     # 25 필수
 mvn clean package                    # target/BetterPets-*.jar
-mvn test                             # 단위 테스트만
+mvn test                             # 테스트만
 ```
 
-빌드하며 실측으로 확인한 것 두 가지:
-
-1. **`maven-shade-plugin` 은 3.6.2 이상**이어야 한다. 3.6.0은 번들 ASM이 낡아 Java 25 클래스를 못 읽고 `Unsupported class file major version 69` 로 실패한다.
-2. **셰이딩보다 Paper 라이브러리 로더가 낫다.** sqlite-jdbc를 셰이딩했더니 전 플랫폼 네이티브가 딸려와 jar가 16KB → 14MB가 됐다.
-
-**외부 런타임 의존성이 없다.** 저장소는 YAML을 쓴다 — 5명 규모에 DB는 과잉이고, 문제가 생겼을 때 사람이 직접 열어 고칠 수 있다.
-
----
-
-## 프로젝트 구조
-
-```
-kr.qmftm.betterpets
-├─ BetterPetsPlugin        진입점 — 배선만 한다
-├─ domain/                 순수 로직. Bukkit 비의존이라 테스트 가능
-│   ├─ Rarity              등급 D~S
-│   ├─ LifeStage           BABY · ADULT · PIG
-│   ├─ GrowthCurve         성장도 지연 계산
-│   ├─ PetLimits           보유·동시 소환 한도 (0 = 무제한)
-│   ├─ PetOrder            보관함 정렬 기준
-│   ├─ PetType             펫 종류 정의 (설정에서 로드)
-│   ├─ PetData             펫 개체 (저장 대상)
-│   └─ EggDefinition       알 아이템 정의, 가중치 추첨
-├─ render/                 BetterModel 격리 계층
-│   ├─ PetRenderer         인터페이스
-│   ├─ PetRenderHandle     AutoCloseable 핸들
-│   └─ BetterModelRenderer ★ BetterModel API를 import하는 유일한 파일
-├─ runtime/                살아 움직이는 부분
-│   ├─ CarrierFactory      캐리어 엔티티 스폰 · 고아 청소
-│   ├─ ActivePet           캐리어 + 트래커 + 상태 한 덩어리
-│   ├─ PetRegistry         소유자 → 소환된 펫들 (소환 순서 유지)
-│   ├─ MovementController  추종 상태 머신
-│   ├─ AnimationStateMachine  전이 시에만 animate() 호출
-│   ├─ RideController      ArmorStand 마운트, 서브스텝 충돌
-│   └─ PetTicker           전역 틱 루프 (추종 2틱 / 탑승 1틱)
-├─ integration/            선택적 외부 연동 (전부 리플렉션 — 없어도 돌아간다)
-│   ├─ DiscordBridge       DiscordSRV 채널로 알림 전송 (비동기)
-│   ├─ BedrockSupport      Geyser/Floodgate 감지, Bedrock 플레이어 판별
-│   └─ PetPlaceholders     %betterpets_...% (유일하게 컴파일 의존이 있는 연동)
-├─ service/                PetService · GrowthService · AbilityService · BroadcastService
-├─ ability/                능력 — 펫이 주인에게 주는 효과
-│   ├─ PetAbility          인터페이스 (PASSIVE / TRIGGER)
-│   ├─ AbilityDefinition   설정에서 읽은 수치 (이름→값 맵)
-│   ├─ AbilityRegistry     id → 구현체
-│   └─ impl/               AttributeAbility(능력치) · ExtraDropAbility(처치 드롭)
-├─ storage/                PetRepository · YamlPetRepository · PetStore
-├─ config/                 PetCatalog (검증 포함) · Messages
-├─ item/                   PetItems — PDC 기반 알·먹이 식별
-├─ gui/                    Menus (홀더) · PetMenuFactory
-├─ command/                PetCommand · PetAdminCommand
-└─ listener/               Session · Interaction · Menu · AbilityTrigger
-```
-
-계층 분리를 유지하는 이유가 있다. 같은 일을 하는 참고 플러그인은 12,816줄 중 69%가 단 두 파일에 몰려 있다. **한 파일이 800줄을 넘으면 분리 신호로 본다.**
+**외부 런타임 의존성이 없습니다.** 저장은 YAML 로 해요 — 소규모 서버에 DB는 과하고,
+문제가 생겼을 때 사람이 직접 열어 고칠 수 있으니까요.
 
 ---
 
@@ -425,8 +321,10 @@ kr.qmftm.betterpets
 
 | 문서 | 내용 |
 | --- | --- |
-| **[docs/DESIGN.md](docs/DESIGN.md)** | 아키텍처, 검증된 BetterModel API, 원작 시스템 분석, 참고 구현 분석, 리스크 |
-| **[docs/MODELING.md](docs/MODELING.md)** | 모델 제작 규격 — 애니메이션 이름 계약, 본 태그, 권장 구성 |
+| **[docs/MODELING.md](docs/MODELING.md)** | 모델 제작 규격 — 애니메이션 이름, 본 태그, 권장 구성 |
+| **[docs/DESIGN.md](docs/DESIGN.md)** | 설계와 그 근거 — 아키텍처, BetterModel API, 원작 분석, 리스크 |
+| **[docs/ROADMAP.md](docs/ROADMAP.md)** | 개발 진행 상황과 남은 검증 |
+| **[CLAUDE.md](CLAUDE.md)** | 코드에 손댈 때 지키는 규칙 |
 
 ---
 
