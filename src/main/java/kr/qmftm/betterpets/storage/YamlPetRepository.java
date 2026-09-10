@@ -46,6 +46,10 @@ public final class YamlPetRepository implements PetRepository {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
         final ConfigurationSection root = yaml.getConfigurationSection("pets");
         if (root == null) {
+            // 파일이 있는데 pets 섹션이 없다. 정상적으로 비어 있을 수도 있고, YAML 이
+            // 깨져 Bukkit 이 빈 설정을 돌려준 것일 수도 있다. 후자라면 이대로 두면
+            // 다음 저장이 원본을 덮어써 데이터를 영영 잃는다. 구분이 안 되니 옮겨 둔다.
+            quarantineIfSuspicious(file);
             return List.of();
         }
         final List<PetData> result = new ArrayList<>();
@@ -153,6 +157,34 @@ public final class YamlPetRepository implements PetRepository {
             node.getLong("acquired-at", now),
             node.getLong("updated-at", now)
         );
+    }
+
+    /**
+     * 읽히지 않은 파일을 옆으로 치워 둔다.
+     *
+     * <p>Bukkit 의 {@code YamlConfiguration.loadConfiguration} 은 <b>파싱에 실패해도
+     * 예외를 던지지 않고 빈 설정을 돌려준다.</b> 그래서 "펫이 한 마리도 없는 플레이어"와
+     * "파일이 깨진 플레이어"가 호출부에서 똑같이 보인다. 그대로 두면 다음 저장이 원본을
+     * 덮어써 복구할 길이 사라진다.
+     *
+     * <p>내용이 있는 파일만 옮긴다. 진짜로 비어 있는 파일까지 옮기면 매 접속마다
+     * 쓰레기 파일이 쌓인다.
+     */
+    private void quarantineIfSuspicious(final File file) {
+        if (file.length() == 0) {
+            return;     // 정말 빈 파일이다. 옮길 것도 없다
+        }
+        final File backup = new File(file.getParentFile(),
+            file.getName() + ".broken-" + System.currentTimeMillis());
+        if (file.renameTo(backup)) {
+            logger.warning("펫 데이터를 읽지 못했습니다: " + file.getName()
+                + " → " + backup.getName() + " 로 옮겼습니다."
+                + " 내용이 남아 있으니 직접 확인해 복구할 수 있습니다.");
+        } else {
+            // 옮기지 못했으면 덮어쓰기가 더 위험하다. 사람이 개입해야 한다.
+            logger.severe("펫 데이터를 읽지도 옮기지도 못했습니다: " + file
+                + " — 이 파일을 직접 확인하세요. 그대로 두면 다음 저장에 덮어써집니다.");
+        }
     }
 
     private void write(final File file, final YamlConfiguration yaml) {

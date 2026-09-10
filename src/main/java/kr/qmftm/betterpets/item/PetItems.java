@@ -31,7 +31,8 @@ public final class PetItems {
 
     public ItemStack createEgg(final EggDefinition definition, final int amount) {
         final Material material = Material.matchMaterial(definition.material());
-        final ItemStack stack = new ItemStack(material == null ? Material.EGG : material, amount);
+        final ItemStack stack = new ItemStack(
+            material == null || !material.isItem() ? Material.EGG : material, clamp(amount));
         final ItemMeta meta = stack.getItemMeta();
         meta.displayName(Messages.plain(definition.displayName()));
         applyItemModel(meta, definition.itemModel());
@@ -43,7 +44,8 @@ public final class PetItems {
 
     public ItemStack createFeed(final FeedDefinition definition, final int amount) {
         final Material material = Material.matchMaterial(definition.material());
-        final ItemStack stack = new ItemStack(material == null ? Material.MILK_BUCKET : material, amount);
+        final ItemStack stack = new ItemStack(
+            material == null || !material.isItem() ? Material.MILK_BUCKET : material, clamp(amount));
         final ItemMeta meta = stack.getItemMeta();
         meta.displayName(Messages.plain(definition.displayName()));
         applyItemModel(meta, definition.itemModel());
@@ -52,6 +54,17 @@ public final class PetItems {
             .set(feedKey, PersistentDataType.STRING, definition.id());
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    /**
+     * 개수를 1..64 로 접는다.
+     *
+     * <p>{@code /petadmin egg <플레이어> <알> -5} 처럼 음수가 오면 {@link ItemStack}
+     * 생성 자체가 예외를 던져 명령이 스택트레이스로 끝난다. 관리자 오타를
+     * 크래시로 돌려주지 않는다.
+     */
+    private static int clamp(final int amount) {
+        return Math.max(1, Math.min(64, amount));
     }
 
     /**

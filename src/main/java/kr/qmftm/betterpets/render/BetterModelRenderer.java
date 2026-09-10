@@ -38,14 +38,31 @@ public final class BetterModelRenderer implements PetRenderer {
         return BetterModel.modelKeys();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p><b>여기서 예외가 새면 캐리어가 누수된다.</b> 호출부({@code PetService.summon})는
+     * 이미 엔티티를 스폰해 둔 상태이고, 빈 결과를 받았을 때만 그걸 되돌린다. BetterModel
+     * 이 던지는 예외를 그대로 통과시키면 되돌리기 코드가 실행되지 않아 보이지 않는
+     * 엔티티가 월드에 남는다.
+     *
+     * <p>이 격리 계층 전체가 "BetterModel 이 우리 기대와 다르게 굴어도 플러그인은 버틴다"는
+     * 목적이라, 실패는 여기서 흡수해 <b>모델이 없는 것과 같은 결과</b>로 돌려준다.
+     */
     @Override
     public Optional<PetRenderHandle> attach(final Entity carrier, final String modelId) {
         if (carrier == null || modelId == null) {
             return Optional.empty();
         }
-        return BetterModel.model(modelId)
-            .map(renderer -> renderer.getOrCreate(BukkitAdapter.adapt(carrier), TrackerModifier.DEFAULT))
-            .map(TrackerHandle::new);
+        try {
+            return BetterModel.model(modelId)
+                .map(renderer -> renderer.getOrCreate(BukkitAdapter.adapt(carrier), TrackerModifier.DEFAULT))
+                .map(TrackerHandle::new);
+        } catch (final RuntimeException | LinkageError error) {
+            carrier.getServer().getLogger().warning(
+                "[BetterPets] 모델 '" + modelId + "' 부착에 실패했습니다: " + error);
+            return Optional.empty();
+        }
     }
 
     @Override

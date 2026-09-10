@@ -344,10 +344,25 @@ public final class PetCatalog {
      *
      * @return 유효한 material 이름. 알 수 없는 값이면 문제로 기록하고 null
      */
+    /**
+     * {@code material:} 을 읽는다.
+     *
+     * <p><b>존재하는 것만으로는 모자라다. 아이템으로 들 수 있어야 한다.</b>
+     * {@code AIR} 은 {@code matchMaterial} 을 통과하지만 {@code ItemStack} 으로 만들면
+     * {@code getItemMeta()} 가 null 이라, 지급 명령이 NPE 로 죽는다. 블록 전용
+     * material 도 마찬가지 부류다. 설정 오타가 명령어 크래시로 나타나면 원인을
+     * 찾기 어려우니 여기서 잡는다.
+     */
     private String readMaterial(final ConfigurationSection node, final String fallback, final String where) {
         final String materialName = node.getString("material", fallback);
-        if (Material.matchMaterial(materialName) == null) {
+        final Material material = Material.matchMaterial(materialName);
+        if (material == null) {
             problems.add(where + ": 알 수 없는 material '" + materialName + "'");
+            return null;
+        }
+        if (!material.isItem()) {
+            problems.add(where + ": material '" + materialName
+                + "' 은 아이템으로 들 수 없습니다. 손에 쥘 수 있는 것을 지정하세요.");
             return null;
         }
         return materialName;
