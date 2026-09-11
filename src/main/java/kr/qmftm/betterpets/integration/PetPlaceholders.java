@@ -69,8 +69,13 @@ public final class PetPlaceholders extends PlaceholderExpansion {
     /**
      * PlaceholderAPI 가 있으면 확장을 등록한다.
      *
-     * <p>클래스 참조가 이 메서드 안에서만 일어나도록 감싼다. 없는 서버에서는
-     * {@code isPluginEnabled} 가 먼저 막아서 {@link NoClassDefFoundError} 가 나지 않는다.
+     * <p><b>호출자가 먼저 {@code isPluginEnabled("PlaceholderAPI")} 를 확인해야 한다.</b>
+     * 이 클래스는 {@link PlaceholderExpansion} 을 상속하고 있어서, 이 메서드를 부르는
+     * {@code invokestatic} 이 실행되는 순간 JVM 이 {@code PetPlaceholders} 를 로딩·링킹하며
+     * 상위 클래스까지 물고 들어간다 — 그 시점은 이 메서드 본문이 실행되기 전이라, 여기
+     * 안에서 검사해 봐야 이미 늦는다. 실제로 이렇게 한 번 터져서 호출부인
+     * {@code kr.qmftm.betterpets.BetterPetsPlugin} 쪽으로 검사를 옮겼다. 아래 검사는
+     * 그 방어선이 뚫렸을 때를 위한 이중 확인일 뿐이다.
      *
      * @return 등록했으면 true
      */

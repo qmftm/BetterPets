@@ -29,10 +29,17 @@ import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import kr.qmftm.betterpets.storage.YamlPetRepository;
-import org.bukkit.command.PluginCommand;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * BetterPets 진입점.
@@ -138,7 +145,17 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
         // 스코어보드·홀로그램에서 쓸 %betterpets_...%. 없으면 건너뛴다.
         // 한도는 서비스에 물어보게 넘긴다 — 리로드로 바뀐 값이 바로 보여야 한다.
-        PetPlaceholders.tryRegister(this, store, registry, catalog, growth, pets);
+        //
+        // 이 if 를 지우면 안 된다. PetPlaceholders 는 PlaceholderExpansion 을 상속해서,
+        // static 메서드 하나만 호출해도 그 순간 클래스 로딩·링킹이 걸리며 상위 클래스까지
+        // 물고 들어간다 — PlaceholderAPI 가 없는 서버에서 NoClassDefFoundError 로 onEnable
+        // 이 통째로 죽는 걸 실기에서 확인했다. tryRegister 안의 isPluginEnabled 검사는
+        // 이미 클래스가 로드된 뒤라 늦다; 호출 여부를 가르는 검사는 호출자 쪽에 있어야 한다.
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            PetPlaceholders.tryRegister(this, store, registry, catalog, growth, pets);
+        } else {
+            getLogger().info("PlaceholderAPI 가 없어 %betterpets_...% 를 건너뜁니다.");
+        }
 
         // 리로드로 들어온 경우 이미 접속해 있는 플레이어의 데이터를 읽어야 한다.
         for (final var online : getServer().getOnlinePlayers()) {
@@ -199,8 +216,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
                                   final AbilityRegistry abilityRegistry,
                                   final GrowthCatchUp catchUp,
                                   final GrowthService growth) {
-        bind("pet", new PetCommand(pets, store, menus, rides, messages, catchUp));
-        bind("petadmin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
+        bind("pet", "betterpets.use", new PetCommand(pets, store, menus, rides, messages, catchUp));
+        bind("petadmin", "betterpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
             messages, catchUp, () -> {
                 reloadConfig();
                 reloadDefinitions(abilityRegistry);
@@ -223,15 +240,63 @@ public final class BetterPetsPlugin extends JavaPlugin {
             }));
     }
 
-    private void bind(final String name, final Object handler) {
-        final PluginCommand command = getCommand(name);
-        if (command == null) {
-            getLogger().warning("명령어 '" + name + "' 가 paper-plugin.yml 에 없습니다.");
-            return;
+    /**
+     * paper-plugin.yml 로 선언된 플러그인은 {@link JavaPlugin#getCommand} 를 못 쓴다 —
+     * 기동 중 호출하면 {@code UnsupportedOperationException} 이 나서 onEnable 이 통째로
+     * 죽는다(첫 실기 테스트에서 이걸로 플러그인이 아예 안 켜졌다). 기존 {@link CommandExecutor}
+     * 를 새로 고치는 대신 {@link BasicCommand} 로 감싸 {@link #registerCommand} 로 붙인다.
+     */
+    private void bind(final String name, final String permission, final Object handler) {
+        final CommandExecutor executor = (CommandExecutor) handler;
+        final TabCompleter completer = handler instanceof TabCompleter tc ? tc : null;
+        registerCommand(name, new LegacyCommandAdapter(name, permission, executor, completer));
+    }
+
+    /** {@link CommandSourceStack} ↔ {@link CommandSender} 를 잇는 어댑터. Command 객체는 두 커맨드 모두 안 쓴다. */
+    private static final class LegacyCommandAdapter implements BasicCommand {
+
+        private final Command legacy;
+        private final String permission;
+        private final CommandExecutor executor;
+        private final TabCompleter completer;
+
+        LegacyCommandAdapter(final String name, final String permission,
+                             final CommandExecutor executor, final TabCompleter completer) {
+            this.legacy = new Command(name) {
+                @Override
+                public boolean execute(final CommandSender sender, final String label, final String[] args) {
+                    return false;
+                }
+            };
+            this.permission = permission;
+            this.executor = executor;
+            this.completer = completer;
         }
-        command.setExecutor((org.bukkit.command.CommandExecutor) handler);
-        if (handler instanceof org.bukkit.command.TabCompleter completer) {
-            command.setTabCompleter(completer);
+
+        @Override
+        public void execute(final CommandSourceStack source, final String[] args) {
+            executor.onCommand(source.getSender(), legacy, legacy.getName(), args);
+        }
+
+        @Override
+        public Collection<String> suggest(final CommandSourceStack source, final String[] args) {
+            if (completer == null) {
+                return List.of();
+            }
+            // 레거시 Bukkit onTabComplete 는 "/pet " 처럼 아무것도 안 친 자리를 빈 문자열
+            // 하나짜리 배열([""])로 받는다 — PetCommand/PetAdminCommand 의 args.length == 1
+            // 분기가 전부 이 관례를 전제한다. BasicCommand 경로는 그 자리를 빈 배열([])로
+            // 주는데, 그대로 넘기면 그 분기가 안 걸려서 "/pet " 뒤 첫 하위 명령 제안이
+            // 통째로 안 뜬다 — 실기에서 이걸로 자동완성이 죽어 있었다.
+            final String[] effective = args.length == 0 ? new String[] {""} : args;
+            final List<String> result =
+                completer.onTabComplete(source.getSender(), legacy, legacy.getName(), effective);
+            return result == null ? List.of() : result;
+        }
+
+        @Override
+        public String permission() {
+            return permission;
         }
     }
 
