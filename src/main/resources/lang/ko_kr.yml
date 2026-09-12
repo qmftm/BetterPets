@@ -55,7 +55,7 @@ feed:
 
 ride:
   started-ground: "<green>탑승했습니다. <gray>바라보며 이동, 스니크로 하차."
-  started-flying: "<gold>비행을 시작합니다. <gray>점프로 상승, 스니크로 하차."
+  started-flying: "<gold>비행을 시작합니다. <gray>점프로 상승, 스니크로 하강. <dark_gray>(하차는 /pet dismount)"
   confirm: "<gold>한 번 더 우클릭하면 날아오릅니다."
   stopped: "<gray>내렸습니다."
   not-riding: "<red>타고 있지 않습니다."

@@ -55,7 +55,7 @@ feed:
 
 ride:
   started-ground: "<green>Mounted. <gray>Look where you want to go; sneak to dismount."
-  started-flying: "<gold>Taking off. <gray>Jump to climb, sneak to dismount."
+  started-flying: "<gold>Taking off. <gray>Jump to climb, sneak to descend. <dark_gray>(use /pet dismount to land)"
   confirm: "<gold>Right-click once more to take off."
   stopped: "<gray>Dismounted."
   not-riding: "<red>You are not riding anything."

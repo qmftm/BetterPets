@@ -281,7 +281,11 @@ public final class RideController {
         if (input == null) {
             return;
         }
-        if (input.isSneak()) {
+        // 비행 중에는 스니크를 하차가 아니라 하강에 쓴다. 점프(상승)의 반대짝이
+        // 없으면 위로만 갈 수 있고 내려올 방법이 없다 — 실기에서 이걸로 막혔다.
+        // 지상 탑승은 상하 이동이 필요 없으니 스니크가 그대로 하차 단축키로 남는다.
+        // 비행 중 하차는 /pet dismount 로 한다.
+        if (input.isSneak() && !ride.flying) {
             stop(player);
             return;
         }
@@ -313,8 +317,12 @@ public final class RideController {
         }
 
         if (ride.flying) {
+            // 점프=상승, 스니크=하강. 정확히 반대짝이라 둘 다 눌리면 상쇄된다.
             if (input.isJump()) {
                 move.setY(move.getY() + flightLift);
+            }
+            if (input.isSneak()) {
+                move.setY(move.getY() - flightLift);
             }
         } else {
             // 지상 탑승은 수평 이동만. 지면 높이는 아래에서 맞춘다.

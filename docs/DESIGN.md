@@ -512,7 +512,8 @@ void tick() {
    - 스코어보드 태그 + PDC(소유자·펫 UUID)로 식별 — 서버 재시작 후 청소용
    - `addPassenger` 실패 시 마운트를 **즉시 제거**. 유령 아머스탠드를 남기지 않는다
 4. 펫 본체는 `setTeleportDuration(1)` 로 마운트에 밀착 추적. 하차 시 평상시 값(8틱) 복원
-5. **하차는 스니크 전용** 또는 `/pet dismount`
+5. **하차는 지상 탑승만 스니크 전용이다.** 비행 중에는 스니크가 하강에 쓰이므로
+   `/pet dismount` 로 내린다 — 이유는 아래 "조향" 참고
 
 ### 조향 — Paper `Input` API
 
@@ -526,8 +527,16 @@ Vector right = new Vector(-flat.getZ(), 0, flat.getX());
 if (input.isRight()) move.add(right);
 if (input.isLeft())  move.subtract(right);
 if (move.lengthSquared() > 1e-4) move.normalize().multiply(speed);
-if (input.isJump()) move.setY(move.getY() + lift);
+if (flying) {
+    if (input.isJump())  move.setY(move.getY() + lift);
+    if (input.isSneak()) move.setY(move.getY() - lift);   // 상승의 반대짝
+}
 ```
+
+**비행 중에는 스니크가 하차가 아니라 하강이다.** 처음에는 지상 탑승과 똑같이
+스니크로 내리게 해뒀는데, 그러면 점프(상승)의 반대짝이 없어서 **위로만 갈 수
+있고 내려올 방법이 아예 없었다** — 실기에서 이렇게 드러났다. 지상 탑승은 상하
+이동이 필요 없으니 스니크가 그대로 하차로 남는다.
 
 ### 이동 적용 — 서브스텝 + 벽 슬라이딩
 
