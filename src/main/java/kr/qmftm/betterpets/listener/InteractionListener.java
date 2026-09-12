@@ -222,6 +222,13 @@ public final class InteractionListener implements Listener {
             return;
         }
         final GrowthService.FeedResult result = growth.feed(data, definition.get());
+        if (result == GrowthService.FeedResult.TOO_FULL) {
+            // 거절이다. 아이템을 잃는 게 제일 나쁜 결과라 소비하지 않고 돌려준다 —
+            // 보관함이 꽉 찼을 때 알을 안 깨는 것과 같은 규칙이다.
+            messages.send(player, "feed.too-full");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
+            return;
+        }
         held.setAmount(held.getAmount() - 1);
         store.saveAsync(data);
 

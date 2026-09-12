@@ -97,6 +97,20 @@ class PetDataTest {
     }
 
     @Test
+    @DisplayName("포만도는 쌓이고, 음수로는 안 내려간다")
+    void fullnessAccumulatesAndFloorsAtZero() {
+        final PetData data = sample();
+        assertEquals(0, data.fullness());
+
+        data.addFullness(10);
+        data.addFullness(5);
+        assertEquals(15, data.fullness());
+
+        data.addFullness(-100);
+        assertEquals(0, data.fullness());
+    }
+
+    @Test
     @DisplayName("별명이 없으면 폴백 이름을 쓴다")
     void displayNameFallsBack() {
         final PetData data = sample();
@@ -128,7 +142,7 @@ class PetDataTest {
     @DisplayName("파일에서 읽어 온 별명도 같은 문을 지난다")
     void nicknameFromStorageIsSanitized() {
         final PetData loaded = new PetData(UUID.randomUUID(), UUID.randomUUID(), "wolf",
-            "<red>옛날에 저장된 이름", LifeStage.BABY, 0, 1, false, false, 0L, 0L);
+            "<red>옛날에 저장된 이름", LifeStage.BABY, 0, 1, 0, false, false, 0L, 0L);
 
         assertEquals("옛날에 저장된 이름", loaded.nickname(),
             "이 방어가 생기기 전 파일이나 관리자가 손으로 고친 파일에도 태그가 있을 수 있다");

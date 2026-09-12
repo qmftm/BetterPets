@@ -9,7 +9,6 @@ import kr.qmftm.betterpets.domain.PetFilter;
 import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetSort;
 import kr.qmftm.betterpets.domain.PetType;
-import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
@@ -291,10 +290,14 @@ public final class PetMenuFactory {
     }
 
     /**
-     * 펫 하나를 나타내는 아이콘. 등급·성장도를 한눈에 보여준다.
+     * 펫 하나를 나타내는 아이콘.
      *
-     * <p><b>아기·성체 구분은 안 보여준다.</b> 능력도 탑승도 생애주기와 무관하게 처음부터
-     * 되므로, 그 구분이 더 이상 "이 펫으로 뭘 할 수 있는가"를 말해주지 않는다.
+     * <p><b>로어는 등급·성장도·포만도 셋뿐이다.</b> 탑승 가능 여부·"소환 중" 문구·
+     * 성장 단계 같은 나머지는 일부러 뺐다 — 한눈에 훑는 목록에서는 이 셋이면 충분하고,
+     * 소환 중인지는 반짝임(아래 인챈트 글린트)으로 이미 구분된다.
+     *
+     * <p>성장도·포만도 둘 다 <b>다 자란 펫에게는 의미가 없다.</b> 다 자란 펫은 더 안
+     * 크고 더 못 먹이므로 성체·돼지 상태에서는 통째로 건너뛴다.
      */
     public ItemStack icon(final PetData pet) {
         final PetType type = catalog.type(pet.typeId()).orElse(null);
@@ -309,30 +312,15 @@ public final class PetMenuFactory {
         if (type != null) {
             lore.add(line("gui.pet-rarity", "rarity", type.rarity().name()));
         }
-
         if (pet.stage() != LifeStage.ADULT && pet.stage() != LifeStage.PIG) {
-            // max-stage 가 1(기본값)이면 단계 개념이 의미가 없으니 줄을 하나 아낀다.
-            if (growth.maxStage() > 1) {
-                lore.add(line("gui.pet-growth-stage",
-                    "stage", String.valueOf(pet.growthStage()),
-                    "max", String.valueOf(growth.maxStage())));
-            }
             lore.add(line("gui.pet-growth",
                 "growth", String.valueOf(pet.growth()),
                 "max", String.valueOf(growth.maxOf(pet))));
-            lore.add(line("gui.pet-growth-bar", "bar", bar(growth.progressOf(pet))));
-        }
-        if (type != null && type.ride().canRide()) {
-            // 생애주기와 무관하게 탈 수 있다. FLY 종류라도 추첨에 실패했으면 걷는 탑승으로
-            // 내려간다 — 그래도 "탑승 가능"이라는 사실 자체는 같으므로 문구를 안 가른다.
-            // 실제로 나는 개체만 별도 줄로 알려준다.
-            lore.add(line("gui.pet-ride"));
-            if (type.ride().effective(pet.canFly()) == RideMode.FLY) {
-                lore.add(line("gui.pet-ride-flying"));
-            }
+            lore.add(line("gui.pet-fullness",
+                "fullness", String.valueOf(Math.min(pet.fullness(), growth.fullnessMax())),
+                "max", String.valueOf(growth.fullnessMax())));
         }
         if (pet.active()) {
-            lore.add(line("gui.pet-active"));
             // 목록에서 한눈에 구분되게 반짝이게 한다. 로어 한 줄보다 눈에 먼저 들어온다.
             meta.setEnchantmentGlintOverride(true);
         }
@@ -348,12 +336,6 @@ public final class PetMenuFactory {
         }
         final Material material = Material.matchMaterial(type.iconMaterial());
         return material == null ? Material.LEAD : material;
-    }
-
-    /** 성장도 막대. 20칸을 채운다. */
-    private static String bar(final double progress) {
-        final int filled = (int) Math.round(Math.max(0.0, Math.min(1.0, progress)) * 20);
-        return "<green>" + "■".repeat(filled) + "<dark_gray>" + "■".repeat(20 - filled);
     }
 
     private ItemStack simple(final Material material, final String key) {

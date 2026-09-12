@@ -345,7 +345,10 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getInt("gimmick.overfeed.count", 10),
             getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L,
             getConfig().getString("gimmick.overfeed.becomes", "pig"),
-            getConfig().getInt("growth.max-stage", 1));
+            getConfig().getInt("growth.max-stage", 1),
+            getConfig().getInt("growth.fullness.min-gain", 5),
+            getConfig().getInt("growth.fullness.max-gain", 15),
+            getConfig().getInt("growth.fullness.max", 100));
     }
 
     private BroadcastService.Rules readBroadcastRules() {

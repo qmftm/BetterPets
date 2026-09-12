@@ -50,6 +50,7 @@ feed:
   grew-up: "<gold>Fully grown! You can ride it now."
   became-pig: "<yellow>You overfed it... it turned into a pig."
   already-grown: "<gray>This pet is already fully grown."
+  too-full: "<yellow>Too full to eat any more."
   unknown: "<red>That food is not in the config. Tell an admin."
   lore-growth: "<gray>Growth <white>+%growth%"
 
@@ -140,12 +141,8 @@ gui:
   summary-filtered-empty: "<yellow>No pets match this view. <gray>Try another one."
 
   pet-rarity: "<gray>Rarity <white>%rarity%"
-  pet-growth-stage: "<gray>Growth stage <white>%stage%<dark_gray>/%max%"
   pet-growth: "<gray>Growth <white>%growth%<dark_gray>/%max%"
-  pet-growth-bar: "<dark_gray>%bar%"
-  pet-ride: "<gray>Rideable"
-  pet-ride-flying: "<gray>Can fly"
-  pet-active: "<green>Out"
+  pet-fullness: "<gray>Fullness <white>%fullness%<dark_gray>/%max%"
 
   summon: "<green>Summon"
   summon-limit: "<yellow>You are at your active limit. <gray>Your oldest pet will go back."

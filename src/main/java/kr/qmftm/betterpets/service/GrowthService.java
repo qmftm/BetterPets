@@ -56,13 +56,22 @@ public final class GrowthService {
                          int overfeedCount,
                          long overfeedWindowMillis,
                          String overfeedBecomes,
-                         int maxStage) {
+                         int maxStage,
+                         int fullnessMinGain,
+                         int fullnessMaxGain,
+                         int fullnessMax) {
         public Tuning {
             // 0 이하로 두면 registerBurst 가 첫 급여에서 바로 참이 된다 — 먹이 한 번에
             // 모든 펫이 돼지가 된다는 뜻이다. 끄고 싶으면 enabled: false 를 쓴다.
             overfeedCount = Math.max(2, overfeedCount);
             // 0 이하로 설정되면 아무도 성체가 될 수 없다. 최소 1로 막는다.
             maxStage = Math.max(1, maxStage);
+            // 음수 증가량은 포만도를 먹일수록 깎는다는 뜻이라 의도가 아니다.
+            fullnessMinGain = Math.max(0, fullnessMinGain);
+            // 최소가 최대보다 크면 ThreadLocalRandom.nextInt(min, max+1) 이 예외를 던진다.
+            fullnessMaxGain = Math.max(fullnessMinGain, fullnessMaxGain);
+            // 0 이하로 두면 첫 급여부터 막힌다 — 급여 자체가 안 되는 펫이 나온다.
+            fullnessMax = Math.max(1, fullnessMax);
         }
     }
 
@@ -151,14 +160,21 @@ public final class GrowthService {
     /**
      * 먹이를 준다.
      *
+     * <p><b>포만도부터 본다.</b> 상한에 닿은 펫은 성장도를 건드리기 전에 거절한다 —
+     * 거절할 거면 아이템을 쓰기 전에 알아야 호출부가 소비하지 않고 돌려줄 수 있다.
+     *
      * @param feed 먹인 먹이. 성장도 증가량이 여기서 나온다 —
      *             {@code growth} 를 적지 않은 먹이는 전역 기본값을 쓴다
      * @return 이번 급여로 일어난 일
      */
     public FeedResult feed(final PetData data, final FeedDefinition feed) {
+        if (data.fullness() >= tuning.fullnessMax()) {
+            return FeedResult.TOO_FULL;
+        }
         final int max = maxOf(data);
         refresh(data);
         data.addGrowth(feed.growthOr(tuning.feedAmount()), max);
+        data.addFullness(randomFullnessGain());
 
         if (tuning.overfeedGimmick() && registerBurst(data)) {
             becomePig(data);
@@ -240,6 +256,13 @@ public final class GrowthService {
         data.canFly(false);
     }
 
+    /** 이번 급여로 오를 포만도. {@code min}~{@code max} 사이에서 고른다(양끝 포함). */
+    private int randomFullnessGain() {
+        final int min = tuning.fullnessMinGain();
+        final int max = tuning.fullnessMaxGain();
+        return min == max ? min : ThreadLocalRandom.current().nextInt(min, max + 1);
+    }
+
     /** 과급식 판정. 창 안에서 기준 횟수를 넘으면 true. */
     private boolean registerBurst(final PetData data) {
         if (data.stage() != LifeStage.BABY) {
@@ -284,6 +307,11 @@ public final class GrowthService {
         return tuning.maxStage();
     }
 
+    /** 포만도 상한. GUI 에서 "포만도 N/max" 표시에 쓴다. */
+    public int fullnessMax() {
+        return tuning.fullnessMax();
+    }
+
     public double progressOf(final PetData data) {
         return GrowthCurve.progress(data.growth(), maxOf(data));
     }
@@ -295,7 +323,9 @@ public final class GrowthService {
     }
 
     public enum FeedResult {
-        FED, STAGE_UP, GREW_UP, BECAME_PIG
+        FED, STAGE_UP, GREW_UP, BECAME_PIG,
+        /** 포만도가 상한에 닿아 먹이를 거절했다. 성장도도 포만도도 안 바뀌었다. */
+        TOO_FULL
     }
 
     /** {@link #promoteIfGrown} 의 결과. */

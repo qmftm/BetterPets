@@ -50,6 +50,7 @@ feed:
   grew-up: "<gold>다 자랐습니다! 이제 탈 수 있습니다."
   became-pig: "<yellow>너무 많이 먹여서... 돼지가 됐습니다."
   already-grown: "<gray>이미 다 자란 펫입니다."
+  too-full: "<yellow>배가 불러서 더 못 먹습니다."
   unknown: "<red>설정에 없는 먹이입니다. 관리자에게 문의하세요."
   lore-growth: "<gray>성장도 <white>+%growth%"
 
@@ -139,12 +140,8 @@ gui:
   summary-filtered-empty: "<yellow>이 보기에 해당하는 펫이 없습니다. <gray>보기를 바꿔보세요."
 
   pet-rarity: "<gray>등급 <white>%rarity%"
-  pet-growth-stage: "<gray>성장 단계 <white>%stage%<dark_gray>/%max%"
   pet-growth: "<gray>성장도 <white>%growth%<dark_gray>/%max%"
-  pet-growth-bar: "<dark_gray>%bar%"
-  pet-ride: "<gray>탑승 가능"
-  pet-ride-flying: "<gray>비행 가능"
-  pet-active: "<green>소환 중"
+  pet-fullness: "<gray>포만도 <white>%fullness%<dark_gray>/%max%"
 
   summon: "<green>소환하기"
   summon-limit: "<yellow>동시 소환 한도가 찼습니다. <gray>가장 먼저 부른 펫이 돌아갑니다."
