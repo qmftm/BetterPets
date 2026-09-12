@@ -3,6 +3,7 @@ package kr.qmftm.betterpets.runtime;
 import kr.qmftm.betterpets.domain.PetType;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -58,6 +59,13 @@ public final class MovementController {
 
     /** 목표 지점 근처에서 미세하게 떠는 것을 막는 데드존. */
     private static final double DEAD_ZONE = 0.8;
+
+    /**
+     * 경로 검사 서브스텝 간격. {@code RideController.SUB_STEP} 과 같은 기법이다 —
+     * 목적지만 보면 한 틱에 여러 블록을 가는 설정(빠른 run-speed)에서 중간의 얇은 벽을
+     * 못 보고 통과해버릴 수 있다.
+     */
+    private static final double SUB_STEP = 0.4;
 
     /** 이 시간 동안 목표에 가까워지지 못하면 텔레포트한다. */
     private static final long STUCK_MILLIS = 3_000L;
@@ -211,8 +219,10 @@ public final class MovementController {
         }
         direction.normalize().multiply(Math.min(speed, distance));
 
-        final Location next = current.clone().add(direction);
-        next.setY(groundLevel(next, current.getY()));
+        final Location next = advance(current, direction);
+        if (next == null) {
+            return;     // 한 발짝도 못 뗀다 — 벽이거나 디딜 곳이 없다. isStuck 이 결국 텔레포트로 꺼낸다
+        }
         next.setDirection(target.toVector().subtract(next.toVector()).setY(0));
         carrier.teleport(next);
         lastYaw = next.getYaw();    // 회전 캐시를 실제로 보낸 값에 맞춘다
@@ -224,20 +234,64 @@ public final class MovementController {
     }
 
     /**
+     * 목적지까지 {@link #SUB_STEP} 간격으로 잘게 나눠 검사하며 전진한다.
+     * {@code RideController.tryMove} 와 같은 기법이다.
+     *
+     * <p><b>벽을 뚫고 오던 문제.</b> 예전에는 목적지 한 칸만 보고 그리로 바로
+     * 텔레포트했다 — {@link #groundLevel} 이 "여기는 못 지나간다"는 뜻으로 y 를
+     * 그대로 돌려줘도, 호출부가 그걸 실패로 안 보고 x·z 는 그대로 이동시켜서 벽을
+     * 뚫고 전진했다. 여기서는 막힌 지점 <b>직전까지만</b> 인정한다.
+     *
+     * <p><b>공중에 뜨던 문제.</b> 같은 이유다 — 절벽 너머로 디딜 곳을 못 찾아도 y 가
+     * 안 바뀐 채 x·z 만 옮겨가서 허공에 뜬 채로 미끄러지는 것처럼 보였다. 이제는
+     * 디딜 곳을 못 찾은 지점도 똑같이 "막힘"으로 처리해 그 앞에서 멈춘다.
+     *
+     * @return 실제로 도달한 위치. 첫 서브스텝부터 막혀 있으면 {@code null}(제자리)
+     */
+    private Location advance(final Location current, final Vector direction) {
+        final World world = current.getWorld();
+        final int steps = Math.max(1, (int) Math.ceil(direction.length() / SUB_STEP));
+
+        double x = current.getX();
+        double y = current.getY();
+        double z = current.getZ();
+        boolean moved = false;
+
+        for (int i = 1; i <= steps; i++) {
+            final double fraction = (double) i / steps;
+            final double nx = current.getX() + direction.getX() * fraction;
+            final double nz = current.getZ() + direction.getZ() * fraction;
+            final double ny = groundLevel(world, nx, nz, y);
+
+            if (Double.isNaN(ny) || !fits(world, nx, ny, nz)) {
+                break;      // 여기부터 막혔다. 직전까지만 인정한다
+            }
+            x = nx;
+            y = ny;
+            z = nz;
+            moved = true;
+        }
+        return moved ? new Location(world, x, y, z) : null;
+    }
+
+    /**
      * 간이 지형 처리. 정식 경로탐색이 아니라 "한 칸 오르내리기"만 한다.
      *
      * <p>앞이 막혔고 그 위가 비었으면 올라가고, 발밑이 비었으면 최대 3칸 내려간다.
-     * 그보다 복잡한 지형은 텔레포트 폴백이 처리한다.
+     * 그보다 복잡한 지형(2칸 벽, 3칸보다 깊은 낙차)은 {@link Double#NaN} 을 돌려준다 —
+     * <b>디딜 곳이 없다는 뜻이라 호출부가 이 지점을 이동 후보에서 뺀다.</b> 예전에는
+     * 여기서 {@code currentY} 를 그대로 돌려줬는데, 그게 "실패"라는 신호를 아무도
+     * 못 알아듣고 그대로 이동을 진행해 벽을 뚫거나 허공에 뜨는 원인이었다.
      */
-    private double groundLevel(final Location at, final double currentY) {
+    private double groundLevel(final World world, final double x, final double z, final double currentY) {
         // 버퍼 하나를 y 만 바꿔가며 재사용한다. 예전엔 검사마다 clone() 이 하나씩 났다.
-        probe.setWorld(at.getWorld());
-        probe.setX(at.getX());
-        probe.setZ(at.getZ());
+        probe.setWorld(world);
+        probe.setX(x);
+        probe.setZ(z);
 
         if (isSolidAt(currentY)) {
             return isSolidAt(currentY + 1.0)
-                ? currentY              // 두 칸 벽. 텔레포트 폴백에 맡긴다
+                ? Double.NaN            // 두 칸 벽. 못 지나간다
                 : currentY + 1.0;
         }
         for (int drop = 1; drop <= 3; drop++) {
@@ -245,7 +299,7 @@ public final class MovementController {
                 return currentY - drop + 1.0;
             }
         }
-        return currentY;
+        return Double.NaN;              // 3칸 안에 디딜 곳이 없다. 절벽이나 구멍이다
     }
 
     /** {@link #probe} 의 x·z 를 그대로 두고 높이만 바꿔 확인한다. */
@@ -253,6 +307,25 @@ public final class MovementController {
         probe.setY(y);
         final Material material = probe.getBlock().getType();
         return material.isSolid();
+    }
+
+    /**
+     * 이 지점에 몸이 들어갈 수 있는가 — 발치와 머리 높이 둘 다 본다.
+     *
+     * <p>{@code RideController.isSafe} 와 같은 목적이지만, 캐리어가 {@code Allay}
+     * (0.35×0.6)라 몸통이 작아 중심 한 점만 봐도 충분하다 — 플레이어를 태우는
+     * {@code ArmorStand} 처럼 어깨가 넓어 네 방향을 더 볼 필요는 없다.
+     */
+    private boolean fits(final World world, final double x, final double y, final double z) {
+        probe.setWorld(world);
+        probe.setX(x);
+        probe.setZ(z);
+        probe.setY(y);
+        if (!probe.getBlock().isPassable()) {
+            return false;
+        }
+        probe.setY(y + 1.0);
+        return probe.getBlock().isPassable();
     }
 
     /**
