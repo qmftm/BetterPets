@@ -132,10 +132,17 @@ public final class MovementController {
             return;
         }
 
-        final double distance = current.distance(target);
-        state = resolveState(distance);
+        // "움직여야 하는가"는 주인과의 실제 거리로 정한다. 걸어갈 지점(target)은
+        // 주인이 바라보는 방향에 따라 등 뒤로 도는데, 그걸 기준으로 삼으면 주인이
+        // follow-distance 안에 가만히 서 있어도 고개만 돌리면 목표가 휙 튀어서
+        // 펫이 자리를 다시 잡으러 걸어간다 — "가까운데도 움직인다"는 그 증상이었다.
+        // 실제로 걸어갈 지점은 여전히 target(부채꼴 자리)이다. 안 그러면 여러 마리가
+        // 전부 주인 몸 위로 겹친다.
+        final double ownerDistance = current.distance(owner.getLocation());
+        final double targetDistance = current.distance(target);
+        state = resolveState(ownerDistance);
 
-        if (state == State.TELEPORT || isStuck(distance)) {
+        if (state == State.TELEPORT || isStuck(targetDistance)) {
             teleportTo(target);
             return;
         }
@@ -143,7 +150,7 @@ public final class MovementController {
             faceOwner(owner);
             return;
         }
-        step(current, target, distance);
+        step(current, target, targetDistance);
     }
 
     private State resolveState(final double distance) {
@@ -160,7 +167,9 @@ public final class MovementController {
     }
 
     /**
-     * 소유자 뒤쪽. 소유자가 제자리 회전할 때 펫이 따라 도는 것을 데드존이 막는다.
+     * 소유자 뒤쪽 — 실제로 걸어갈 지점. "움직여야 하는가" 판정에는 안 쓰인다({@link #tick}
+     * 참고) — 이 지점은 소유자가 바라보는 방향에 따라 계속 돌기 때문에, 상태 판정까지
+     * 여기 기준으로 하면 제자리 회전만으로도 펫이 걸어 다니는 것처럼 보인다.
      *
      * <p>여러 마리를 데리고 다니면 슬롯마다 각도를 벌려 부채꼴로 세운다.
      */
