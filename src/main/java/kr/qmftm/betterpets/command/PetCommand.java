@@ -12,6 +12,7 @@ import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -97,14 +98,24 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         final Optional<PetData> target = resolve(player, args[1]);
         if (target.isEmpty()) {
             messages.send(player, "pet.not-found");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
             return;
         }
         final PetService.SummonResult result = pets.summon(player, target.get());
         switch (result) {
-            case OK -> messages.send(player, "pet.summoned");
-            case OK_REPLACED -> messages.send(player, "pet.summoned-replaced");
-            case MODEL_MISSING -> messages.send(player, "pet.model-missing");
-            case UNKNOWN_TYPE -> messages.send(player, "pet.unknown-type");
+            case OK, OK_REPLACED -> {
+                messages.send(player, result == PetService.SummonResult.OK
+                    ? "pet.summoned" : "pet.summoned-replaced");
+                player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_GIVEN, 1.0f, 1.0f);
+            }
+            case MODEL_MISSING -> {
+                messages.send(player, "pet.model-missing");
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
+            }
+            case UNKNOWN_TYPE -> {
+                messages.send(player, "pet.unknown-type");
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
+            }
         }
     }
 
@@ -119,10 +130,14 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             final Optional<PetData> target = resolve(player, args[1]);
             if (target.isEmpty()) {
                 messages.send(player, "pet.not-found");
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
                 return;
             }
-            messages.send(player, pets.dismiss(player, target.get().petId())
-                ? "pet.dismissed" : "pet.none-active");
+            final boolean dismissed = pets.dismiss(player, target.get().petId());
+            messages.send(player, dismissed ? "pet.dismissed" : "pet.none-active");
+            if (dismissed) {
+                player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_TAKEN, 1.0f, 1.0f);
+            }
             return;
         }
         final int count = pets.dismissAll(player);
@@ -130,6 +145,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             messages.send(player, "pet.none-active");
         } else {
             messages.send(player, "pet.dismissed-count", "count", String.valueOf(count));
+            player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_TAKEN, 1.0f, 1.0f);
         }
     }
 
@@ -165,14 +181,8 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 .clickEvent(ClickEvent.runCommand("/pet summon " + id))
                 .hoverEvent(HoverEvent.showText(messages.bare("pet.list-hover",
                     "name", name,
-                    "stage", stageLabel(pet.stage()),
                     "growth", pet.growth() + "/" + pets.growth().maxOf(pet)))));
         }
-    }
-
-    /** 생애주기 이름. enum 이름을 그대로 쓰면 한국어 화면에 BABY 가 튀어나온다. */
-    private String stageLabel(final kr.qmftm.betterpets.domain.LifeStage stage) {
-        return Tags.strip(messages.raw("stage." + stage.name().toLowerCase(java.util.Locale.ROOT)));
     }
 
     /** {@code /pet help} — 무엇을 할 수 있는지. 하위 명령이 늘어난 만큼 필요해졌다. */
@@ -186,8 +196,10 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         if (rides.isRiding(player)) {
             rides.stop(player);
             messages.send(player, "ride.stopped");
+            player.playSound(player.getLocation(), Sound.ENTITY_HORSE_LAND, 0.8f, 1.0f);
         } else {
             messages.send(player, "ride.not-riding");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
         }
     }
 

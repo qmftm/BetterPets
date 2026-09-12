@@ -136,11 +136,13 @@ public final class InteractionListener implements Listener {
         final Optional<EggDefinition> definition = pets.catalog().egg(eggId.get());
         if (definition.isEmpty()) {
             messages.send(player, "egg.unknown");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
             return;
         }
         final String typeId = definition.get().roll(ThreadLocalRandom.current());
         if (typeId == null || pets.catalog().type(typeId).isEmpty()) {
             messages.send(player, "egg.broken-definition");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
             return;
         }
 
@@ -149,6 +151,7 @@ public final class InteractionListener implements Listener {
         if (granted.isEmpty()) {
             messages.send(player, "pet.box-full",
                 "max", String.valueOf(pets.limits().maxOwned()));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
             return;
         }
         held.setAmount(held.getAmount() - 1);   // 성공한 뒤에만 소비한다
@@ -208,12 +211,14 @@ public final class InteractionListener implements Listener {
         final PetData data = pet.data();
         if (data.stage() == LifeStage.ADULT || data.stage() == LifeStage.PIG) {
             messages.send(player, "feed.already-grown");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
             return;
         }
         // 설정에서 지워진 먹이를 들고 있을 수 있다. 아이템을 먹어치우지 않고 알려준다.
         final Optional<FeedDefinition> definition = pets.catalog().feed(feedId);
         if (definition.isEmpty()) {
             messages.send(player, "feed.unknown");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
             return;
         }
         final GrowthService.FeedResult result = growth.feed(data, definition.get());
@@ -234,16 +239,24 @@ public final class InteractionListener implements Listener {
                 messages.send(player, "feed.stage-up",
                     "stage", String.valueOf(data.growthStage()),
                     "max", String.valueOf(growth.maxStage()));
+                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
                 broadcasts.onStageUp(player, data, current);
             }
             case GREW_UP -> {
                 messages.send(player, "feed.grew-up");
+                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
                 broadcasts.onGrown(player, data, current);
             }
-            case BECAME_PIG -> messages.send(player, "feed.became-pig");
-            case FED -> messages.send(player, "feed.fed",
-                "growth", String.valueOf(data.growth()),
-                "max", String.valueOf(growth.maxOf(data)));
+            case BECAME_PIG -> {
+                messages.send(player, "feed.became-pig");
+                player.playSound(player.getLocation(), Sound.ENTITY_PIG_AMBIENT, 1.0f, 1.0f);
+            }
+            case FED -> {
+                messages.send(player, "feed.fed",
+                    "growth", String.valueOf(data.growth()),
+                    "max", String.valueOf(growth.maxOf(data)));
+                player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EAT, 0.8f, 1.0f);
+            }
         }
 
         // 종류가 바뀌었으면 모델을, 성체가 됐으면 능력을 지금 상태에 맞춘다.
@@ -251,6 +264,7 @@ public final class InteractionListener implements Listener {
             // 진화한 종류의 모델이 없다. 먹인 사람 눈앞에서 펫이 사라진 상태라
             // 그냥 넘어가면 "먹였더니 펫이 없어졌다"는 신고가 된다.
             messages.send(player, "pet.model-missing");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
         }
     }
 
@@ -266,6 +280,7 @@ public final class InteractionListener implements Listener {
 
         if (!type.ride().canRide()) {
             messages.send(player, "ride.not-rideable");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
             return;
         }
         // 생애주기는 탑승을 막지 않는다 — pets/*.yml 의 ride 값이 유일한 기준이다.
@@ -297,8 +312,11 @@ public final class InteractionListener implements Listener {
                 ? MovementController.Mode.RIDDEN_FLYING
                 : MovementController.Mode.RIDDEN);
             messages.send(player, flying ? "ride.started-flying" : "ride.started-ground");
+            player.playSound(player.getLocation(),
+                flying ? Sound.ENTITY_PHANTOM_FLAP : Sound.ENTITY_HORSE_SADDLE, 1.0f, 1.0f);
         } else {
             messages.send(player, "ride.failed");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
         }
     }
 
@@ -328,6 +346,7 @@ public final class InteractionListener implements Listener {
         if (event.isSneaking() && rides.isRiding(event.getPlayer())) {
             rides.stop(event.getPlayer());
             messages.send(event.getPlayer(), "ride.stopped");
+            event.getPlayer().playSound(event.getPlayer().getLocation(), Sound.ENTITY_HORSE_LAND, 0.8f, 1.0f);
         }
     }
 

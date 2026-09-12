@@ -7,6 +7,7 @@ import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.service.GrowthService.StageResult;
 import kr.qmftm.betterpets.storage.PetStore;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 /**
@@ -82,6 +83,7 @@ public final class GrowthCatchUp {
             // 진화한 종류의 모델이 없어서 눈앞의 펫이 사라졌다. "다 자랐습니다!" 만
             // 보내고 넘어가면 플레이어는 빈자리를 보며 무슨 일인지 알 수 없다.
             messages.send(owner, "pet.model-missing");
+            owner.playSound(owner.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
         }
         announce(owner, data, result);
         return result;
@@ -101,6 +103,7 @@ public final class GrowthCatchUp {
         }
         // 이름은 지금 종류 기준이다. 진화로 종류가 바뀌었으면 새 이름을 불러야 한다.
         final String name = Tags.strip(data.displayNameOr(type.displayName()));
+        owner.playSound(owner.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
         if (result == StageResult.GREW_UP) {
             messages.send(owner, "pet.grew-up", "name", name);
             broadcasts.onGrown(owner, data, type);

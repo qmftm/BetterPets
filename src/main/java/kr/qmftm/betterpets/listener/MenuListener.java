@@ -7,6 +7,7 @@ import kr.qmftm.betterpets.gui.PetMenuFactory;
 import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -113,13 +114,23 @@ public final class MenuListener implements Listener {
                 if (pet.active()) {
                     pets.dismiss(player, pet.petId());
                     messages.send(player, "pet.dismissed");
+                    player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_TAKEN, 1.0f, 1.0f);
                 } else {
                     final PetService.SummonResult result = pets.summon(player, pet);
                     switch (result) {
-                        case OK -> messages.send(player, "pet.summoned");
-                        case OK_REPLACED -> messages.send(player, "pet.summoned-replaced");
-                        case MODEL_MISSING -> messages.send(player, "pet.model-missing");
-                        case UNKNOWN_TYPE -> messages.send(player, "pet.unknown-type");
+                        case OK, OK_REPLACED -> {
+                            messages.send(player, result == PetService.SummonResult.OK
+                                ? "pet.summoned" : "pet.summoned-replaced");
+                            player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_GIVEN, 1.0f, 1.0f);
+                        }
+                        case MODEL_MISSING -> {
+                            messages.send(player, "pet.model-missing");
+                            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
+                        }
+                        case UNKNOWN_TYPE -> {
+                            messages.send(player, "pet.unknown-type");
+                            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
+                        }
                     }
                 }
                 player.closeInventory();
@@ -140,6 +151,7 @@ public final class MenuListener implements Listener {
                 }
                 pets.release(player, pet);
                 messages.send(player, "pet.released");
+                player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_TAKEN, 0.7f, 0.7f);
                 openBox(player, detail.view());
             }
             case PetMenuFactory.SLOT_BACK -> openBox(player, detail.view());

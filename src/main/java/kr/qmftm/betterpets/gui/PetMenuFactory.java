@@ -288,12 +288,16 @@ public final class PetMenuFactory {
         return stack;
     }
 
-    /** 펫 하나를 나타내는 아이콘. 등급·생애주기·성장도를 한눈에 보여준다. */
+    /**
+     * 펫 하나를 나타내는 아이콘. 등급·성장도를 한눈에 보여준다.
+     *
+     * <p><b>아기·성체 구분은 안 보여준다.</b> 능력도 탑승도 생애주기와 무관하게 처음부터
+     * 되므로, 그 구분이 더 이상 "이 펫으로 뭘 할 수 있는가"를 말해주지 않는다.
+     */
     public ItemStack icon(final PetData pet) {
         final PetType type = catalog.type(pet.typeId()).orElse(null);
-        final Material material = pet.stage() == LifeStage.BABY ? Material.BONE : Material.LEAD;
 
-        final ItemStack stack = new ItemStack(material);
+        final ItemStack stack = new ItemStack(Material.LEAD);
         final ItemMeta meta = stack.getItemMeta();
 
         final String displayName = pet.displayNameOr(type == null ? pet.typeId() : type.displayName());
@@ -303,7 +307,6 @@ public final class PetMenuFactory {
         if (type != null) {
             lore.add(line("gui.pet-rarity", "rarity", type.rarity().name()));
         }
-        lore.add(line("gui.pet-stage", "stage", stageLabel(pet.stage())));
 
         if (pet.stage() != LifeStage.ADULT && pet.stage() != LifeStage.PIG) {
             // max-stage 가 1(기본값)이면 단계 개념이 의미가 없으니 줄을 하나 아낀다.
@@ -330,11 +333,6 @@ public final class PetMenuFactory {
         meta.lore(lore);
         stack.setItemMeta(meta);
         return stack;
-    }
-
-    /** 생애주기 이름. enum 이름을 그대로 쓰면 영어가 튀어나온다. */
-    private String stageLabel(final LifeStage stage) {
-        return Tags.strip(messages.raw("stage." + stage.name().toLowerCase(java.util.Locale.ROOT)));
     }
 
     /** 성장도 막대. 20칸을 채운다. */

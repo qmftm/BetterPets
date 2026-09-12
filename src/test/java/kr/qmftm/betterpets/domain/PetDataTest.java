@@ -146,13 +146,16 @@ class PetDataTest {
     }
 
     @Test
-    @DisplayName("생애주기별 능력 발현 여부 — 탑승은 RideMode 만 따르므로 여기서 안 다룬다")
+    @DisplayName("능력은 아기 때부터 붙는다 — 돼지가 되면 잃는다")
     void lifeStageGating() {
         final PetData data = sample();
 
-        assertFalse(data.stage().abilitiesActive());
+        assertTrue(data.stage().abilitiesActive());
 
         data.stage(LifeStage.ADULT);
         assertTrue(data.stage().abilitiesActive());
+
+        data.stage(LifeStage.PIG);
+        assertFalse(data.stage().abilitiesActive());
     }
 }

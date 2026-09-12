@@ -32,7 +32,7 @@ pet:
   rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."
   list-header: "<gray>Your pets <white>%max%<gray> — click a name to summon it."
   list-entry: "<dark_gray> %mark% <gray>[<white>%id%<gray>] <white>%name% <dark_gray>%rarity%"
-  list-hover: "<green>Click to summon <white>%name%\n<gray>%stage% · growth %growth%"
+  list-hover: "<green>Click to summon <white>%name%\n<gray>growth %growth%"
   list-empty: "<gray>You have no pets. <dark_gray>Right-click an egg to get one."
 
 egg:
@@ -129,8 +129,6 @@ gui:
   filter: "<aqua>Showing <white>%value%"
   filter-all: "All"
   filter-active: "Out"
-  filter-baby: "Babies"
-  filter-adult: "Grown"
   toggle-hint: "<dark_gray>Click → %next%"
 
   summary-title: "<yellow>My pets"
@@ -142,7 +140,6 @@ gui:
   summary-filtered-empty: "<yellow>No pets match this view. <gray>Try another one."
 
   pet-rarity: "<gray>Rarity <white>%rarity%"
-  pet-stage: "<gray>Stage <white>%stage%"
   pet-growth-stage: "<gray>Growth stage <white>%stage%<dark_gray>/%max%"
   pet-growth: "<gray>Growth <white>%growth%<dark_gray>/%max%"
   pet-growth-bar: "<dark_gray>%bar%"
@@ -156,9 +153,3 @@ gui:
   release: "<red>Release"
   release-hint: "<dark_gray>Shift + click (cannot be undone)"
   back: "<gray>Back"
-
-# Life stage names. The key is the LifeStage name in lowercase.
-stage:
-  baby: "Baby"
-  adult: "Adult"
-  pig: "Pig"
