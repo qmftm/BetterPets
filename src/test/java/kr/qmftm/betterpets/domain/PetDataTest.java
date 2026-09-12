@@ -146,15 +146,13 @@ class PetDataTest {
     }
 
     @Test
-    @DisplayName("생애주기별 탑승·능력 가능 여부")
+    @DisplayName("생애주기별 능력 발현 여부 — 탑승은 RideMode 만 따르므로 여기서 안 다룬다")
     void lifeStageGating() {
         final PetData data = sample();
 
-        assertFalse(data.stage().rideable(), "아기는 탈 수 없다");
         assertFalse(data.stage().abilitiesActive());
 
         data.stage(LifeStage.ADULT);
-        assertTrue(data.stage().rideable());
         assertTrue(data.stage().abilitiesActive());
     }
 }

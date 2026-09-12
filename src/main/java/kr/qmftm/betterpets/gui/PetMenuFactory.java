@@ -415,10 +415,9 @@ public final class PetMenuFactory {
             }
         }
         if (type != null && type.ride().canRide()) {
-            // 성체가 되어야 실제로 탈 수 있고, FLY 종류라도 추첨에 실패했으면 걷는 탑승이다.
+            // 생애주기와 무관하게 탈 수 있다. FLY 종류라도 추첨에 실패했으면 걷는 탑승이다.
             final var effective = type.ride().effective(pet.canFly());
-            lore.add(line(pet.stage().rideable() ? "gui.pet-ride" : "gui.pet-ride-locked",
-                "mode", Tags.strip(effective.displayName())));
+            lore.add(line("gui.pet-ride", "mode", Tags.strip(effective.displayName())));
         }
         lore.add(line("gui.pet-id", "id", pet.petId().toString().substring(0, 8)));
         if (pet.active()) {

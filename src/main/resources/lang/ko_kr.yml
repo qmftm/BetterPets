@@ -60,7 +60,6 @@ ride:
   stopped: "<gray>내렸습니다."
   not-riding: "<red>타고 있지 않습니다."
   not-rideable: "<red>이 펫은 탈 수 없습니다."
-  too-young: "<yellow>아직 아기라 탈 수 없습니다. 다 자라야 합니다."
   failed: "<red>여기서는 탈 수 없습니다."
 
 command:
@@ -149,7 +148,6 @@ gui:
   pet-growth-bar: "<dark_gray>%bar%"
   pet-next-growth: "<dark_gray>다음 성장까지 %time%"
   pet-ride: "<gray>탑승 <white>%mode%"
-  pet-ride-locked: "<gray>탑승 <white>%mode% <dark_gray>(성체부터)"
   pet-id: "<dark_gray>id %id%"
   pet-active: "<green>소환 중"
 

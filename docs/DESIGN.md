@@ -468,10 +468,13 @@ void tick() {
 | `GROUND` | 걷는 탑승. 지형을 따라 달린다 |
 | `FLY` | 나는 탑승. 개체별 추첨에 성공해야 실제로 난다 |
 
-개체가 실제로 무엇을 할 수 있는지는 여기에 두 가지가 더 곱해진다:
+개체가 실제로 무엇을 할 수 있는지는 여기에 한 가지가 더 곱해진다:
 
-1. **생애주기** — 아기는 못 탄다. `ADULT` 여야 한다
-2. **비행 추첨** — `FLY` 종류라도 성체가 될 때 `fly-chance` 에 실패한 개체는 **걷는 탑승까지만** 된다 (`RideMode.effective`). 원작에서도 같은 종의 일부만 날탈이 되고 나머지는 지상 탈것으로 쓴다
+- **비행 추첨** — `FLY` 종류라도 성체가 될 때 `fly-chance` 에 실패한 개체는 **걷는 탑승까지만** 된다 (`RideMode.effective`). 원작에서도 같은 종의 일부만 날탈이 되고 나머지는 지상 탈것으로 쓴다
+
+**생애주기는 탑승을 막지 않는다.** 아기든 성체든 `ride` 가 `NONE` 이 아니면 탈 수 있다 —
+진화(아기 → 성체)는 이 판정과 완전히 별개다. 원래는 `ADULT` 여야만 탑승 가능하게 했었는데,
+"성장은 진화만 하고 탑승은 설정대로 항상 되게 해달라"는 요청으로 그 결합을 풀었다.
 
 `fly-chance` 는 `FLY` 일 때만 의미가 있다. `FLY` 인데 확률이 0이면 어떤 개체도 날지 못하므로, 설정 검증이 이 조합을 경고한다.
 
@@ -484,7 +487,7 @@ void tick() {
 
 ### 절차
 
-1. `ADULT` 이고 `ride` 가 `NONE` 이 아닌 펫만 탑승 가능
+1. `ride` 가 `NONE` 이 아닌 펫만 탑승 가능 (생애주기 무관)
 2. 우클릭 → 지상 마운트는 즉시, **비행은 시간 창 내 두 번째 우클릭으로 확인** (실수 이륙 방지)
 3. 보이지 않는 `ArmorStand` 스폰 후 `addPassenger(player)`
    - `setVisible(false)` · `setGravity(false)` · `setInvulnerable(true)` · `setCollidable(false)` · `setSmall(true)` · `setBasePlate(false)` · `setPersistent(false)`

@@ -268,10 +268,8 @@ public final class InteractionListener implements Listener {
             messages.send(player, "ride.not-rideable");
             return;
         }
-        if (!data.stage().rideable()) {
-            messages.send(player, "ride.too-young");
-            return;
-        }
+        // 생애주기는 탑승을 막지 않는다 — pets/*.yml 의 ride 값이 유일한 기준이다.
+        // 진화(성장)는 이 판정과 별개로 그대로 일어난다.
         if (rides.isRiding(player)) {
             return;     // 비행 중 우클릭은 무시한다. 하차는 스니크 전용
         }

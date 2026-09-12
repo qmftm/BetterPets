@@ -60,7 +60,6 @@ ride:
   stopped: "<gray>Dismounted."
   not-riding: "<red>You are not riding anything."
   not-rideable: "<red>This pet cannot be ridden."
-  too-young: "<yellow>Still a baby. It has to grow up first."
   failed: "<red>You cannot mount here."
 
 command:
@@ -149,7 +148,6 @@ gui:
   pet-growth-bar: "<dark_gray>%bar%"
   pet-next-growth: "<dark_gray>Next growth in %time%"
   pet-ride: "<gray>Riding <white>%mode%"
-  pet-ride-locked: "<gray>Riding <white>%mode% <dark_gray>(once grown)"
   pet-id: "<dark_gray>id %id%"
   pet-active: "<green>Out"
 

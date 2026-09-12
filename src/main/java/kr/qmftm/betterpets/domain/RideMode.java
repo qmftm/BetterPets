@@ -6,12 +6,10 @@ import java.util.Optional;
 /**
  * 펫 종류가 지원하는 탑승 방식. {@code pets/*.yml} 의 {@code ride:} 값이다.
  *
- * <p>개체가 실제로 무엇을 할 수 있는지는 여기에 두 가지가 더 곱해진다:
- * <ul>
- *   <li>생애주기 — 아기는 탈 수 없다 ({@link LifeStage#rideable()})
- *   <li>비행 추첨 — {@link #FLY} 종류라도 개체별 {@code fly-chance} 에 실패하면
- *       걷는 탑승까지만 된다 ({@link #effective(boolean)})
- * </ul>
+ * <p>개체가 실제로 무엇을 할 수 있는지는 여기에 한 가지가 더 곱해진다 — 비행 추첨.
+ * {@link #FLY} 종류라도 개체별 {@code fly-chance} 에 실패하면 걷는 탑승까지만 된다
+ * ({@link #effective(boolean)}). <b>생애주기는 더 이상 탑승을 막지 않는다</b> — 아기든
+ * 성체든 이 값이 {@link #NONE} 이 아니면 탈 수 있다. 진화(성장)는 이것과 별개다.
  */
 public enum RideMode {
 
