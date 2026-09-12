@@ -71,10 +71,11 @@ command:
 
 admin:
   player-not-found: "<red>Player not found."
-  usage: "<gray>/petadmin give|egg|feed|growth|reload|debug"
+  usage: "<gray>/petadmin give|egg|feed|eggmaterial|growth|reload|debug"
   usage-give: "<gray>/petadmin give <player> <pet type>"
   usage-egg: "<gray>/petadmin egg <player> <egg id> [amount]"
   usage-feed: "<gray>/petadmin feed <player> <food id> [amount]"
+  usage-eggmaterial: "<gray>/petadmin eggmaterial <egg id> <dark_gray>— sets the material to the item in your hand."
   usage-growth: "<gray>/petadmin growth <player> <first digits of petId> <amount>"
   unknown-pet-type: "<red>Unknown pet type: <white>%id%"
   unknown-egg: "<red>Unknown egg: <white>%id%"
@@ -97,6 +98,9 @@ admin:
   growth-not-positive: "<red>Growth must be 1 or more. <gray>(got <white>%amount%<gray>)"
   reloaded: "<green>Config reloaded. <gray><white>%pets%<gray> pets, <white>%eggs%<gray> eggs, <white>%feeds%<gray> foods"
   reloaded-with-problems: "<yellow>Config loaded with <white>%count%<yellow> problem(s):"
+  eggmaterial-empty-hand: "<red>You're not holding anything. Hold the item you want to use."
+  eggmaterial-write-failed: "<red>Failed to write to items.yml. Check the console."
+  eggmaterial-set: "<green>Set egg <white>%id%<green>'s material to <white>%material%<green>."
 
 broadcast:
   obtained: "<gray>[<gold>Pets<gray>] <white>%player%<gray> obtained a <white>%rarity%<gray> <white>%pet%<gray>!"

@@ -71,10 +71,11 @@ command:
 
 admin:
   player-not-found: "<red>플레이어를 찾을 수 없습니다."
-  usage: "<gray>/petadmin give|egg|feed|growth|reload|debug"
+  usage: "<gray>/petadmin give|egg|feed|eggmaterial|growth|reload|debug"
   usage-give: "<gray>/petadmin give <플레이어> <펫종류>"
   usage-egg: "<gray>/petadmin egg <플레이어> <알id> [개수]"
   usage-feed: "<gray>/petadmin feed <플레이어> <먹이id> [개수]"
+  usage-eggmaterial: "<gray>/petadmin eggmaterial <알id> <dark_gray>— 손에 든 아이템으로 재질을 지정합니다."
   usage-growth: "<gray>/petadmin growth <플레이어> <펫id앞자리> <양>"
   unknown-pet-type: "<red>알 수 없는 펫 종류: <white>%id%"
   unknown-egg: "<red>알 수 없는 알: <white>%id%"
@@ -97,6 +98,9 @@ admin:
   growth-not-positive: "<red>성장도는 1 이상이어야 합니다. <gray>(받은 값: <white>%amount%<gray>)"
   reloaded: "<green>설정을 다시 읽었습니다. <gray>펫 <white>%pets%<gray>종, 알 <white>%eggs%<gray>종, 먹이 <white>%feeds%<gray>종"
   reloaded-with-problems: "<yellow>설정을 읽었지만 <white>%count%<yellow>개의 문제가 있습니다:"
+  eggmaterial-empty-hand: "<red>손에 든 아이템이 없습니다. 재질로 쓸 아이템을 들어주세요."
+  eggmaterial-write-failed: "<red>items.yml 에 쓰지 못했습니다. 콘솔을 확인하세요."
+  eggmaterial-set: "<green>알 <white>%id%<green> 의 재질을 <white>%material%<green> (으)로 바꿨습니다."
 
 broadcast:
   obtained: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님이 <white>%rarity%<gray> 등급 <white>%pet%<gray> 을(를) 얻었습니다!"

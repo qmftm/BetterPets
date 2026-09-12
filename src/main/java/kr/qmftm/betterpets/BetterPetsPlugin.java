@@ -237,7 +237,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 // 예전 값으로 돌았다 — 기동 코드는 리로드 때마다 overfeed.count 를
                 // 다시 읽어 경고까지 내면서, 정작 쓰는 쪽에는 안 밀어 넣고 있었다.
                 growth.tuning(readGrowthTuning());
-            }));
+            }, getDataFolder()));
     }
 
     /**

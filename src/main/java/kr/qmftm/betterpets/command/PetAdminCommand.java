@@ -26,7 +26,7 @@ import java.util.Optional;
 public final class PetAdminCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-        List.of("give", "egg", "feed", "growth", "reload", "debug");
+        List.of("give", "egg", "feed", "eggmaterial", "growth", "reload", "debug");
 
     private final PetService pets;
     private final PetStore store;
@@ -36,6 +36,9 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
     private final PetRenderer renderer;
     private final Messages messages;
     private final Runnable reloadAction;
+
+    /** {@code /petadmin eggmaterial} 이 items.yml 을 찾을 자리. */
+    private final java.io.File dataFolder;
 
     /**
      * 성장 뒤처리를 여기에 또 적지 않기 위해서다.
@@ -54,7 +57,8 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
                            final PetRenderer renderer,
                            final Messages messages,
                            final GrowthCatchUp catchUp,
-                           final Runnable reloadAction) {
+                           final Runnable reloadAction,
+                           final java.io.File dataFolder) {
         this.pets = pets;
         this.store = store;
         this.catalog = catalog;
@@ -64,6 +68,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
         this.messages = messages;
         this.catchUp = catchUp;
         this.reloadAction = reloadAction;
+        this.dataFolder = dataFolder;
     }
 
     @Override
@@ -79,6 +84,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             case "give" -> give(sender, args);
             case "egg" -> egg(sender, args);
             case "feed" -> feed(sender, args);
+            case "eggmaterial" -> eggMaterial(sender, args);
             case "growth" -> growth(sender, args);
             case "reload" -> reload(sender);
             case "debug" -> debug(sender);
@@ -146,6 +152,40 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
         final int amount = args.length > 3 ? parseInt(args[3], 1) : 1;
         deliver(sender, target, items.createFeed(definition.get(), amount));
         messages.send(sender, "admin.feed-given", "player", target.getName(), "id", args[2]);
+    }
+
+    /**
+     * 손에 든 아이템으로 알의 material 을 바꾼다. items.yml 을 직접 열지 않아도 되게 하려는
+     * 명령이다 — 리소스팩 모델이 붙은 커스텀 아이템도 들고만 있으면 바로 지정된다.
+     *
+     * <p>손에 든 것을 기준으로 하므로 플레이어만 쓸 수 있다. 파일에 쓴 뒤에는
+     * {@code /petadmin reload} 와 같은 경로({@link #reload})를 타서, 메모리 상의
+     * {@link PetCatalog} 도 같이 맞추고 "이미 소환된 펫" 안내도 똑같이 나가게 한다.
+     */
+    private void eggMaterial(final CommandSender sender, final String[] args) {
+        if (args.length < 2) {
+            messages.send(sender, "admin.usage-eggmaterial");
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "command.player-only");
+            return;
+        }
+        if (catalog.egg(args[1]).isEmpty()) {
+            messages.send(sender, "admin.unknown-egg", "id", args[1]);
+            return;
+        }
+        final org.bukkit.inventory.ItemStack held = player.getInventory().getItemInMainHand();
+        if (held.getType().isAir()) {
+            messages.send(sender, "admin.eggmaterial-empty-hand");
+            return;
+        }
+        if (!catalog.writeEggMaterial(dataFolder, args[1], held.getType())) {
+            messages.send(sender, "admin.eggmaterial-write-failed");
+            return;
+        }
+        reload(sender);
+        messages.send(sender, "admin.eggmaterial-set", "id", args[1], "material", held.getType().name());
     }
 
     private void growth(final CommandSender sender, final String[] args) {
@@ -295,6 +335,10 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
                                       final String @NotNull [] args) {
         if (args.length == 1) {
             return matching(SUBCOMMANDS, args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("eggmaterial")) {
+            // 대상이 플레이어가 아니라 알이다 — 다른 서브명령과 갈래가 다르다.
+            return matching(catalog.eggs().keySet(), args[1]);
         }
         if (args.length == 2 && !args[0].equalsIgnoreCase("reload") && !args[0].equalsIgnoreCase("debug")) {
             return matching(

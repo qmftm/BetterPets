@@ -17,15 +17,18 @@
 # 지급: /petadmin egg <플레이어> <알id> [개수]
 eggs:
 
+  # 기본 알 재질은 전부 셜커 스폰 알이다. 알마다 다른 material 을 쓰고 싶으면
+  # /petadmin eggmaterial <알id> 로 손에 든 아이템을 그대로 지정할 수 있다 —
+  # items.yml 을 직접 열 필요가 없다.
   wolf_egg:
     display-name: "<white>늑대 알"
-    material: TURTLE_EGG
+    material: SHULKER_SPAWN_EGG
     gives: wolf
     # item-model: "betterpets:egg_wolf"
 
   dragon_egg:
     display-name: "<gold>드래곤 알"
-    material: TURTLE_EGG
+    material: SHULKER_SPAWN_EGG
     gives: dragon
     # item-model: "betterpets:egg_dragon"
 
@@ -33,12 +36,12 @@ eggs:
   # 이 알에서 나온 새끼가 자라면서 늑대나 드래곤이 된다 (pets/hatchling.yml 참고).
   hatchling_egg:
     display-name: "<gray>이름 모를 알"
-    material: TURTLE_EGG
+    material: SHULKER_SPAWN_EGG
     gives: hatchling
 
   random_egg:
     display-name: "<white>수상한 알"
-    material: EGG
+    material: SHULKER_SPAWN_EGG
     weights:
       wolf: 50
       dragon: 1
@@ -49,7 +52,7 @@ eggs:
   # 새 펫을 만들 때 gacha-weight 만 적어두면 이 알에 자동으로 들어간다.
   gacha_egg:
     display-name: "<light_purple>뽑기 알"
-    material: EGG
+    material: SHULKER_SPAWN_EGG
 
 # ── 먹이 ──────────────────────────────────────────────────────────
 # 소환한 펫에게 우클릭하면 먹인다. 성장도가 차면 다음 단계로 넘어간다.

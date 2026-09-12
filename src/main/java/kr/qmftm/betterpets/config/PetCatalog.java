@@ -428,6 +428,37 @@ public final class PetCatalog {
     }
 
     /**
+     * {@code items.yml} 의 알 하나에 {@code material:} 을 다시 써넣는다.
+     * {@code /petadmin eggmaterial} 이 손에 든 아이템으로 지정할 때 쓴다.
+     *
+     * <p>메모리 상의 {@link #eggs} 는 여기서 안 건드린다 — 파일과 메모리가 잠깐이라도
+     * 갈리는 순간을 만들지 않으려고다. 호출자가 이어서 {@link #load} 를 다시 태워
+     * 파일과 메모리를 한 번에 맞춘다({@code /petadmin reload} 와 같은 경로).
+     *
+     * @return 알 id 가 없거나 파일 쓰기에 실패하면 false
+     */
+    public boolean writeEggMaterial(final File dataFolder, final String eggId, final Material material) {
+        final File file = new File(dataFolder, "items.yml");
+        if (!file.isFile()) {
+            return false;
+        }
+        final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+        final ConfigurationSection eggSection = yaml.getConfigurationSection("eggs");
+        final ConfigurationSection node = eggSection == null
+            ? null : eggSection.getConfigurationSection(eggId);
+        if (node == null) {
+            return false;
+        }
+        node.set("material", material.name());
+        try {
+            yaml.save(file);
+            return true;
+        } catch (final java.io.IOException error) {
+            return false;
+        }
+    }
+
+    /**
      * {@code material:} 을 읽는다.
      *
      * <p><b>존재하는 것만으로는 모자라다. 아이템으로 들 수 있어야 한다.</b>

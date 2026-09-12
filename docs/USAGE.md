@@ -43,6 +43,7 @@ id 로 읽으니, `/pet rename 왕 드래곤` 처럼 이름으로 시작해도 �
 | `/petadmin give <플레이어> <펫종류>` | 펫 바로 지급 |
 | `/petadmin egg <플레이어> <알id> [개수]` | 알 아이템 지급 |
 | `/petadmin feed <플레이어> <먹이id> [개수]` | 먹이 아이템 지급 |
+| `/petadmin eggmaterial <알id>` | 손에 든 아이템으로 그 알의 재질을 바꿉니다 |
 | `/petadmin growth <플레이어> <펫id> <양>` | 성장도 지급 |
 | `/petadmin reload` | 설정 다시 읽기 |
 | `/petadmin debug` | 누수 진단 · 현재 한도 · 연동 상태 |
@@ -181,7 +182,7 @@ rarities:
 eggs:
   wolf_egg:
     display-name: "<white>늑대 알"
-    material: TURTLE_EGG
+    material: SHULKER_SPAWN_EGG
     gives: wolf              # 고정 알 — 이 펫이 확정으로 나옵니다
 
   random_egg:
@@ -219,6 +220,10 @@ feeds:
 
 `item-model` 로 리소스팩 모델을 지정할 수 있어요 (`betterpets:egg_wolf` 형식).
 **소문자만 됩니다** — 대문자를 쓰면 기동할 때 알려줍니다.
+
+기본 알 재질은 전부 `SHULKER_SPAWN_EGG` 예요. 알마다 다른 재질을 쓰고 싶으면
+`items.yml` 을 직접 열 필요 없이, 원하는 아이템을 손에 들고
+`/petadmin eggmaterial <알id>` 를 치면 됩니다.
 
 지급은 `/petadmin egg <플레이어> <알id> [개수]` 와 `/petadmin feed …` 로 합니다.
 
