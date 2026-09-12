@@ -482,15 +482,18 @@ void tick() {
 
 원작의 핵심 기능이다. [참고 구현](#참고-구현-분석)에서 검증된 구조를 기본안으로 삼는다.
 
-### 탑승 방식 — 펫 종류마다 3가지
+### 탑승 방식 — 불리언 둘의 조합 (`RideMode`)
 
-`pets/*.yml` 의 `ride:` 값이다 (`RideMode`).
+`pets/*.yml` 의 `ride:`/`flying:` 두 불리언에서 계산한다. 예전엔 `ride: NONE/GROUND/FLY`
+문자열 하나였는데, 탑승 여부와 비행 여부를 따로 켜고 끄는 게 더 명확하다는 요청으로
+갈랐다. 키 이름을 `fly` 로 안 쓴 건 `animations.fly`(애니메이션 이름 매핑)와 같은
+파일에서 헷갈리기 때문이다.
 
-| 값 | 뜻 |
-| --- | --- |
-| `NONE` | 탈 수 없다 |
-| `GROUND` | 걷는 탑승. 지형을 따라 달린다 |
-| `FLY` | 나는 탑승. 개체별 추첨에 성공해야 실제로 난다 |
+| `ride` | `flying` | 결과(`RideMode`) | 뜻 |
+| --- | --- | --- | --- |
+| `false` | — | `NONE` | 탈 수 없다 |
+| `true` | `false`(기본) | `GROUND` | 걷는 탑승. 지형을 따라 달린다 |
+| `true` | `true` | `FLY` | 나는 탑승. 개체별 추첨에 성공해야 실제로 난다 |
 
 개체가 실제로 무엇을 할 수 있는지는 여기에 한 가지가 더 곱해진다:
 
@@ -592,7 +595,7 @@ int steps = Math.max(1, (int) Math.ceil(dist / 0.45));
 public record PetType(
         String id, String displayName, String modelId,
         Rarity rarity, AnimationSet animations, MovementProfile movement,
-        RideMode ride, double flyChance,   // NONE / GROUND / FLY
+        RideMode ride, double flyChance,   // ride:/flying: 두 불리언에서 계산
         List<AbilityDefinition> abilities,
         int growthMax, Map<String, Integer> nextStage   // 가중치. 비어 있으면 종류 유지
 ) {}

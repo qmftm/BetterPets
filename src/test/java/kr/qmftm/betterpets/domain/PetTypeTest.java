@@ -22,7 +22,7 @@ class PetTypeTest {
                                 final Map<String, Integer> nextStage) {
         return new PetType("wolf", "<white>늑대", "pet_wolf",
             Rarity.B, Rarity.B.defaults(), growthMax, ride, flyChance, Rarity.B.defaults().rideSpeed(),
-            PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
+            "LEAD", PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), nextStage, 0);
     }
 
@@ -51,14 +51,14 @@ class PetTypeTest {
     void rideSpeedOverridesRarityDefaultAndFloors() {
         final PetType custom = new PetType("dragon", "<gold>드래곤", "pet_dragon",
             Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, 0.9,
-            PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
+            "LEAD", PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), Map.of(), 0);
         assertEquals(0.9, custom.rideSpeed(), "등급 기본값과 달라도 그대로 쓰여야 한다");
         assertNotEquals(Rarity.S.defaults().rideSpeed(), custom.rideSpeed());
 
         final PetType broken = new PetType("dragon", "<gold>드래곤", "pet_dragon",
             Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, -1.0,
-            PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
+            "LEAD", PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), Map.of(), 0);
         assertTrue(broken.rideSpeed() > 0.0, "0 이하면 탑승해도 안 움직인다");
     }

@@ -8,12 +8,13 @@ model: pet_dragon
 rarity: S
 growth-max: 100
 
-# 탑승 방식: NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승)
-ride: FLY
+# 탑승 여부와 비행 여부를 따로 켠다.
+ride: true
+flying: true
 
-# 성체가 될 때 이 확률로 비행이 확정된다. FLY 인데 추첨에 실패한 개체는
+# 성체가 될 때 이 확률로 비행이 확정된다. flying 인데 추첨에 실패한 개체는
 # 걷는 탑승까지만 된다 — 원작에서도 같은 종의 일부만 날탈이 된다.
-# ride 가 FLY 가 아니면 이 값은 쓰이지 않는다.
+# flying 이 false 면 이 값은 쓰이지 않는다.
 fly-chance: 0.35
 
 animations:

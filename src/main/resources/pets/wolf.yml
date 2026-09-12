@@ -9,8 +9,12 @@ model: pet_wolf
 rarity: C
 growth-max: 100
 
-# 탑승 방식: NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승)
-ride: GROUND
+# 보관함 아이콘 재질. 실제 3D 모델(위의 model)과는 별개다 — 안 적으면 LEAD.
+# icon: BONE
+
+# 탑승 여부와 비행 여부를 따로 켠다. GROUND 였던 펫은 ride: true 만 켜면 된다.
+ride: true
+# flying: true
 
 # 탑승 속도(블록/틱)는 등급(rarity.yml 의 ride-speed)이 기본값이다. 이 펫만 다르게
 # 하고 싶으면 여기에 적는다 — fly-chance 와 같은 자리다.

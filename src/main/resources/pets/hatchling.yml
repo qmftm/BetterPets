@@ -13,7 +13,7 @@ rarity: D
 growth-max: 100
 
 # 아직 뭐가 될지 모르는 단계라 탈 수 없다.
-ride: NONE
+ride: false
 
 animations:
   idle: idle

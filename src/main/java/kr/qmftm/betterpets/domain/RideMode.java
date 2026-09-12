@@ -1,10 +1,9 @@
 package kr.qmftm.betterpets.domain;
 
-import java.util.Locale;
-import java.util.Optional;
-
 /**
- * 펫 종류가 지원하는 탑승 방식. {@code pets/*.yml} 의 {@code ride:} 값이다.
+ * 펫 종류가 지원하는 탑승 방식. {@code pets/*.yml} 의 {@code ride:}/{@code fly:} 두 불리언에서
+ * 계산한다({@code ride: false} → {@link #NONE}, {@code ride: true, fly: false} → {@link #GROUND},
+ * {@code ride: true, fly: true} → {@link #FLY}).
  *
  * <p>개체가 실제로 무엇을 할 수 있는지는 여기에 한 가지가 더 곱해진다 — 비행 추첨.
  * {@link #FLY} 종류라도 개체별 {@code fly-chance} 에 실패하면 걷는 탑승까지만 된다
@@ -14,23 +13,13 @@ import java.util.Optional;
 public enum RideMode {
 
     /** 탈 수 없다. */
-    NONE("탑승 불가"),
+    NONE,
 
     /** 걷는 탑승만. 지형을 따라 달린다. */
-    GROUND("걷는 탑승"),
+    GROUND,
 
     /** 나는 탑승. 개체별 비행 추첨에 성공해야 실제로 난다. */
-    FLY("나는 탑승");
-
-    private final String displayName;
-
-    RideMode(final String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String displayName() {
-        return displayName;
-    }
+    FLY;
 
     public boolean canRide() {
         return this != NONE;
@@ -44,20 +33,5 @@ public enum RideMode {
      */
     public RideMode effective(final boolean canFly) {
         return this == FLY && !canFly ? GROUND : this;
-    }
-
-    /**
-     * 설정 문자열을 해석한다. 알 수 없는 값이면 비어 있는 Optional 을 준다 —
-     * 오타를 조용히 {@link #NONE} 으로 떨어뜨리면 "왜 안 타지"로 한참 헤맨다.
-     */
-    public static Optional<RideMode> parse(final String raw) {
-        if (raw == null || raw.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(valueOf(raw.trim().toUpperCase(Locale.ROOT)));
-        } catch (final IllegalArgumentException ignored) {
-            return Optional.empty();
-        }
     }
 }

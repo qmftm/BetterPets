@@ -35,29 +35,4 @@ class RideModeTest {
         assertEquals(RideMode.NONE, RideMode.NONE.effective(true));
         assertEquals(RideMode.NONE, RideMode.NONE.effective(false));
     }
-
-    @Test
-    @DisplayName("설정 문자열을 대소문자 무관하게 읽는다")
-    void parsesCaseInsensitively() {
-        assertEquals(RideMode.FLY, RideMode.parse("FLY").orElseThrow());
-        assertEquals(RideMode.FLY, RideMode.parse("fly").orElseThrow());
-        assertEquals(RideMode.GROUND, RideMode.parse("  ground  ").orElseThrow());
-    }
-
-    @Test
-    @DisplayName("오타는 조용히 NONE 으로 떨어지지 않는다")
-    void unknownValueIsEmpty() {
-        assertTrue(RideMode.parse("RIDEABLE").isEmpty(), "잘못된 설정은 드러나야 한다");
-        assertTrue(RideMode.parse("true").isEmpty());
-        assertTrue(RideMode.parse("").isEmpty());
-        assertTrue(RideMode.parse(null).isEmpty());
-    }
-
-    @Test
-    @DisplayName("모든 값에 표시 이름이 있다")
-    void everyModeHasDisplayName() {
-        for (final RideMode mode : RideMode.values()) {
-            assertFalse(mode.displayName().isBlank(), mode + " 의 표시 이름이 비었다");
-        }
-    }
 }

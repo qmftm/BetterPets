@@ -9,6 +9,7 @@ import kr.qmftm.betterpets.domain.PetFilter;
 import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetSort;
 import kr.qmftm.betterpets.domain.PetType;
+import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
@@ -298,7 +299,7 @@ public final class PetMenuFactory {
     public ItemStack icon(final PetData pet) {
         final PetType type = catalog.type(pet.typeId()).orElse(null);
 
-        final ItemStack stack = new ItemStack(Material.LEAD);
+        final ItemStack stack = new ItemStack(iconMaterialOf(type));
         final ItemMeta meta = stack.getItemMeta();
 
         final String displayName = pet.displayNameOr(type == null ? pet.typeId() : type.displayName());
@@ -322,9 +323,13 @@ public final class PetMenuFactory {
             lore.add(line("gui.pet-growth-bar", "bar", bar(growth.progressOf(pet))));
         }
         if (type != null && type.ride().canRide()) {
-            // 생애주기와 무관하게 탈 수 있다. FLY 종류라도 추첨에 실패했으면 걷는 탑승이다.
-            final var effective = type.ride().effective(pet.canFly());
-            lore.add(line("gui.pet-ride", "mode", Tags.strip(effective.displayName())));
+            // 생애주기와 무관하게 탈 수 있다. FLY 종류라도 추첨에 실패했으면 걷는 탑승으로
+            // 내려간다 — 그래도 "탑승 가능"이라는 사실 자체는 같으므로 문구를 안 가른다.
+            // 실제로 나는 개체만 별도 줄로 알려준다.
+            lore.add(line("gui.pet-ride"));
+            if (type.ride().effective(pet.canFly()) == RideMode.FLY) {
+                lore.add(line("gui.pet-ride-flying"));
+            }
         }
         if (pet.active()) {
             lore.add(line("gui.pet-active"));
@@ -334,6 +339,15 @@ public final class PetMenuFactory {
         meta.lore(lore);
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    /** 아이콘 재질. 펫 종류를 못 찾으면(설정에서 지워짐) 기본값으로 접는다. */
+    private static Material iconMaterialOf(final PetType type) {
+        if (type == null) {
+            return Material.LEAD;
+        }
+        final Material material = Material.matchMaterial(type.iconMaterial());
+        return material == null ? Material.LEAD : material;
     }
 
     /** 성장도 막대. 20칸을 채운다. */

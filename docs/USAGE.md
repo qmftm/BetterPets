@@ -88,10 +88,12 @@ display-name: "<gold>드래곤"
 model: pet_dragon          # plugins/BetterModel/models/pet_dragon.bbmodel
 rarity: S
 growth-max: 100
+# icon: NETHER_STAR          # 보관함 아이콘 재질. 안 적으면 LEAD
 
-ride: FLY                  # NONE(못 탐) / GROUND(걸어서) / FLY(날아서)
-fly-chance: 0.35           # FLY 라도 실제로 날 확률. 실패하면 걷는 탑승
-# ride-speed: 0.5           # 등급 기본값 대신 이 펫만 쓸 탑승 속도. 안 적으면 등급을 따름
+ride: true                  # 탈 수 있는지
+flying: true                 # 탈 수 있으면, 날 수도 있는지
+fly-chance: 0.35            # flying 이라도 실제로 날 확률. 실패하면 걷는 탑승
+# ride-speed: 0.5            # 등급 기본값 대신 이 펫만 쓸 탑승 속도. 안 적으면 등급을 따름
 
 animations:                # 모델의 애니메이션 이름과 연결
   idle: idle               # 키는 정해져 있어요. 오타를 내면 기동할 때 알려드립니다

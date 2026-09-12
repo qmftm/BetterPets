@@ -176,6 +176,13 @@ public final class PetCatalog {
                 continue;
             }
 
+            // 보관함 아이콘 재질. 안 적으면 기본값(LEAD)을 쓴다 — 목줄이라 "펫"이라는
+            // 뜻이 바로 읽혀서 무난한 기본값으로 골랐다.
+            final String iconMaterial = readMaterial(yaml, "icon", "LEAD", file.getName() + "/icon");
+            if (iconMaterial == null) {
+                continue;
+            }
+
             final PetType type = new PetType(
                 id,
                 yaml.getString("display-name", id),
@@ -186,6 +193,7 @@ public final class PetCatalog {
                 ride,
                 yaml.getDouble("fly-chance", rarities.stats(rarity.get()).flyChance()),
                 yaml.getDouble("ride-speed", rarities.stats(rarity.get()).rideSpeed()),
+                iconMaterial,
                 readAnimations(file.getName(), yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
                 readAbilities(file.getName(), yaml.getMapList("abilities"), abilities),
@@ -199,27 +207,32 @@ public final class PetCatalog {
     }
 
     /**
-     * {@code ride:} 를 읽는다. 값이 없으면 {@link RideMode#NONE} 이다.
+     * {@code ride:}/{@code flying:} 두 불리언을 읽어 {@link RideMode} 로 합친다.
+     * {@code ride} 를 안 적으면 {@link RideMode#NONE} 이다.
      *
-     * @return 해석한 값. 오타 등으로 해석에 실패했으면 null (호출부가 이 펫을 건너뛴다)
+     * <p>예전에는 {@code ride: NONE/GROUND/FLY} 문자열 하나였다. 탑승 여부와 비행
+     * 여부를 각각 켜고 끄는 게 더 명확하다는 요청으로 불리언 둘로 갈랐다. 키 이름을
+     * {@code fly} 로 안 쓴 이유는 {@code animations.fly}(애니메이션 이름 매핑)와
+     * 같은 파일에서 헷갈리기 때문이다 — 들여쓰기가 달라 실제로 충돌하지는 않지만,
+     * 같은 이름이 두 군데 있으면 적는 사람이 매번 다시 확인해야 한다.
+     *
+     * @return 해석한 값. 예전 문자열 스키마가 남아 있으면 null (호출부가 이 펫을 건너뛴다)
      */
     private RideMode readRideMode(final String fileName, final YamlConfiguration yaml) {
         // 예전 스키마를 그대로 둔 파일이 조용히 "탑승 불가"가 되면 원인을 찾기 어렵다.
         if (yaml.contains("rideable")) {
-            problems.add(fileName + ": 'rideable' 은 'ride' 로 바뀌었습니다."
-                + " NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승) 중 하나를 쓰세요.");
+            problems.add(fileName + ": 'rideable' 은 'ride: true/false' 로 바뀌었습니다.");
         }
-        final String raw = yaml.getString("ride");
-        if (raw == null || raw.isBlank()) {
-            return RideMode.NONE;
-        }
-        final Optional<RideMode> parsed = RideMode.parse(raw);
-        if (parsed.isEmpty()) {
-            problems.add(fileName + ": ride 가 잘못됐습니다 ('" + raw
-                + "'). NONE / GROUND / FLY 중 하나여야 합니다.");
+        if (yaml.isString("ride")) {
+            problems.add(fileName + ": ride 형식이 바뀌었습니다. 이제 true/false 고,"
+                + " 비행 여부는 따로 'flying: true/false' 에 적습니다"
+                + " (예전 GROUND 는 'ride: true', FLY 는 'ride: true' + 'flying: true').");
             return null;
         }
-        return parsed.get();
+        if (!yaml.getBoolean("ride", false)) {
+            return RideMode.NONE;
+        }
+        return yaml.getBoolean("flying", false) ? RideMode.FLY : RideMode.GROUND;
     }
 
     /**
@@ -454,14 +467,19 @@ public final class PetCatalog {
      * 찾기 어려우니 여기서 잡는다.
      */
     private String readMaterial(final ConfigurationSection node, final String fallback, final String where) {
-        final String materialName = node.getString("material", fallback);
+        return readMaterial(node, "material", fallback, where);
+    }
+
+    private String readMaterial(final ConfigurationSection node, final String key,
+                                final String fallback, final String where) {
+        final String materialName = node.getString(key, fallback);
         final Material material = Material.matchMaterial(materialName);
         if (material == null) {
-            problems.add(where + ": 알 수 없는 material '" + materialName + "'");
+            problems.add(where + ": 알 수 없는 " + key + " '" + materialName + "'");
             return null;
         }
         if (!material.isItem()) {
-            problems.add(where + ": material '" + materialName
+            problems.add(where + ": " + key + " '" + materialName
                 + "' 은 아이템으로 들 수 없습니다. 손에 쥘 수 있는 것을 지정하세요.");
             return null;
         }

@@ -143,7 +143,8 @@ gui:
   pet-growth-stage: "<gray>Growth stage <white>%stage%<dark_gray>/%max%"
   pet-growth: "<gray>Growth <white>%growth%<dark_gray>/%max%"
   pet-growth-bar: "<dark_gray>%bar%"
-  pet-ride: "<gray>Riding <white>%mode%"
+  pet-ride: "<gray>Rideable"
+  pet-ride-flying: "<gray>Can fly"
   pet-active: "<green>Out"
 
   summon: "<green>Summon"

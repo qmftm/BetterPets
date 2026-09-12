@@ -143,7 +143,8 @@ gui:
   pet-growth-stage: "<gray>성장 단계 <white>%stage%<dark_gray>/%max%"
   pet-growth: "<gray>성장도 <white>%growth%<dark_gray>/%max%"
   pet-growth-bar: "<dark_gray>%bar%"
-  pet-ride: "<gray>탑승 <white>%mode%"
+  pet-ride: "<gray>탑승 가능"
+  pet-ride-flying: "<gray>비행 가능"
   pet-active: "<green>소환 중"
 
   summon: "<green>소환하기"

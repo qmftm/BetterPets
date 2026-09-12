@@ -12,8 +12,8 @@ model: pet_pig
 rarity: D
 growth-max: 100          # PIG 상태는 더 자라지 않으므로 실제로 쓰이지 않는다
 
-# 탑승 방식: NONE(탑승 불가) / GROUND(걷는 탑승) / FLY(나는 탑승)
-ride: GROUND
+# 탑승 여부와 비행 여부를 따로 켠다.
+ride: true
 
 animations:
   idle: idle
