@@ -150,12 +150,23 @@ public final class MovementController {
         final double targetDistance = current.distance(target);
         state = resolveState(ownerDistance);
 
-        if (state == State.TELEPORT || isStuck(targetDistance)) {
+        if (state == State.TELEPORT) {
             teleportTo(target);
             return;
         }
         if (state == State.IDLE) {
+            // 갇힘 판정을 여기서 건너뛴다. isStuck 은 target(회전에 따라 흔들리는
+            // 부채꼴 자리)까지의 거리로 재는데, IDLE 은 애초에 "충분히 가깝다"는
+            // 뜻이라 그 거리가 무엇이든 갇힌 게 아니다. 건너뛰지 않으면 주인이
+            // 제자리에서 고개만 돌려도 target 이 계속 흔들려 progress 갱신을
+            // 못 받고, 3초 뒤 "갇혔다"로 오판해 등 뒤로 순간이동해버린다.
+            lastProgressAt = System.currentTimeMillis();
+            lastDistance = targetDistance;
             faceOwner(owner);
+            return;
+        }
+        if (isStuck(targetDistance)) {
+            teleportTo(target);
             return;
         }
         step(current, target, targetDistance);
