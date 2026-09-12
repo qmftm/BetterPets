@@ -112,9 +112,13 @@ public final class MenuListener implements Listener {
         switch (slot) {
             case PetMenuFactory.SLOT_SUMMON -> {
                 if (pet.active()) {
+                    // 소환 해제는 화면을 닫지 않는다 — 보관함을 관리하는 동작이지 밖을
+                    // 보러 나가는 동작이 아니다. 같은 화면에서 소환 버튼이 바로
+                    // "소환하기"로 바뀌어야 다른 펫으로 갈아탈 때 다시 열 필요가 없다.
                     pets.dismiss(player, pet.petId());
                     messages.send(player, "pet.dismissed");
                     player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_TAKEN, 1.0f, 1.0f);
+                    player.openInventory(menus.detail(pet, detail.view()));
                 } else {
                     final PetService.SummonResult result = pets.summon(player, pet);
                     switch (result) {
@@ -132,8 +136,9 @@ public final class MenuListener implements Listener {
                             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
                         }
                     }
+                    // 소환은 화면을 닫는다 — 소환된 펫이 눈앞에 나타나는 걸 봐야 한다.
+                    player.closeInventory();
                 }
-                player.closeInventory();
             }
             case PetMenuFactory.SLOT_RENAME -> {
                 player.closeInventory();

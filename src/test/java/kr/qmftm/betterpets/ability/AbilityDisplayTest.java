@@ -33,7 +33,7 @@ class AbilityDisplayTest {
 
     private static PetType type(final Rarity rarity) {
         return new PetType("wolf", "<white>늑대", "pet_wolf",
-            rarity, rarity.defaults(), 100, RideMode.GROUND, 0.0,
+            rarity, rarity.defaults(), 100, RideMode.GROUND, 0.0, rarity.defaults().rideSpeed(),
             PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), Map.of(), 0);
     }

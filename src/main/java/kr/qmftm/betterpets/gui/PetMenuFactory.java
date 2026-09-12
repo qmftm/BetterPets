@@ -37,13 +37,14 @@ public final class PetMenuFactory {
 
     public static final int DETAIL_SIZE = 27;
 
-    // 첫 줄은 정보를 가운데 기준으로 둔다. 아래 줄이 조작 버튼이다.
-    public static final int SLOT_ICON = 3;
+    // 첫 줄 가운데에 정보, 둘째 줄에 조작 버튼. 돌아가기는 마지막 줄 오른쪽 끝 —
+    // 다른 조작과 안 섞이게 구석으로 뺐다.
+    public static final int SLOT_ICON = 4;
 
     public static final int SLOT_SUMMON = 11;
     public static final int SLOT_RENAME = 13;
     public static final int SLOT_RELEASE = 15;
-    public static final int SLOT_BACK = 22;
+    public static final int SLOT_BACK = 26;
 
     private final PetCatalog catalog;
     private final GrowthService growth;

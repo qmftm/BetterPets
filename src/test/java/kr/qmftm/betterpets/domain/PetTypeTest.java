@@ -10,6 +10,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,7 +21,7 @@ class PetTypeTest {
                                 final int growthMax,
                                 final Map<String, Integer> nextStage) {
         return new PetType("wolf", "<white>늑대", "pet_wolf",
-            Rarity.B, Rarity.B.defaults(), growthMax, ride, flyChance,
+            Rarity.B, Rarity.B.defaults(), growthMax, ride, flyChance, Rarity.B.defaults().rideSpeed(),
             PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), nextStage, 0);
     }
@@ -43,6 +44,23 @@ class PetTypeTest {
     void flyChanceIsClamped() {
         assertEquals(1.0, type(RideMode.FLY, 5.0, 100, Map.of()).flyChance());
         assertEquals(0.0, type(RideMode.FLY, -1.0, 100, Map.of()).flyChance());
+    }
+
+    @Test
+    @DisplayName("탑승 속도는 등급 기본값을 펫별로 덮어쓸 수 있고, 0 이하로는 안 내려간다")
+    void rideSpeedOverridesRarityDefaultAndFloors() {
+        final PetType custom = new PetType("dragon", "<gold>드래곤", "pet_dragon",
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, 0.9,
+            PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
+            List.of(), Map.of(), 0);
+        assertEquals(0.9, custom.rideSpeed(), "등급 기본값과 달라도 그대로 쓰여야 한다");
+        assertNotEquals(Rarity.S.defaults().rideSpeed(), custom.rideSpeed());
+
+        final PetType broken = new PetType("dragon", "<gold>드래곤", "pet_dragon",
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, -1.0,
+            PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
+            List.of(), Map.of(), 0);
+        assertTrue(broken.rideSpeed() > 0.0, "0 이하면 탑승해도 안 움직인다");
     }
 
     @Test

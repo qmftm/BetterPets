@@ -20,6 +20,8 @@ import java.util.Set;
  *                  컨트롤러, 능력, GUI, 알림. 리로드하면 어차피 펫 정의를 통째로 다시
  *                  만드므로 값이 굳어 있어도 문제없다
  * @param flyChance {@code ride} 가 {@link RideMode#FLY} 일 때만 의미가 있다
+ * @param rideSpeed 등급별 기본값을 이 펫만 다르게 쓰고 싶을 때 {@code pets/*.yml} 의
+ *                  {@code ride-speed} 로 덮어쓴다. {@code fly-chance} 와 같은 자리다
  * @param nextStage 비어 있으면 다음 단계에서도 같은 종류를 유지한다
  */
 public record PetType(
@@ -31,6 +33,7 @@ public record PetType(
     int growthMax,
     RideMode ride,
     double flyChance,
+    double rideSpeed,
     AnimationSet animations,
     MovementProfile movement,
     List<AbilityDefinition> abilities,
@@ -45,6 +48,7 @@ public record PetType(
         nextStage = Collections.unmodifiableMap(new LinkedHashMap<>(nextStage));
         growthMax = Math.max(1, growthMax);
         flyChance = Math.max(0.0, Math.min(1.0, flyChance));
+        rideSpeed = Math.max(0.01, rideSpeed);
     }
 
     /**

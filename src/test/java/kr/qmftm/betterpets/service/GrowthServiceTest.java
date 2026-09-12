@@ -32,7 +32,7 @@ class GrowthServiceTest {
                                 final RideMode ride, final double flyChance,
                                 final Map<String, Integer> nextStage) {
         return new PetType(id, id, "model_" + id, Rarity.A, Rarity.A.defaults(),
-            growthMax, ride, flyChance, PetType.AnimationSet.defaults(),
+            growthMax, ride, flyChance, Rarity.A.defaults().rideSpeed(), PetType.AnimationSet.defaults(),
             PetType.MovementProfile.defaults(), List.of(), nextStage, 0);
     }
 

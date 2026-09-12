@@ -10,8 +10,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.Map;
@@ -52,9 +50,6 @@ public final class RideController {
     };
 
     private static final String RIDE_TAG = "BetterPets.Ride";
-
-    /** 하차 직후 완강 낙하를 걸어두는 시간(틱). 공중에서 내려도 떨어져 죽지 않게 한다. */
-    private static final int SAFE_LANDING_TICKS = 100;
 
     /**
      * 마운트에서 잠글 슬롯. 아머스탠드가 실제로 가진 여섯 개다.
@@ -206,7 +201,10 @@ public final class RideController {
     /**
      * 하차. 어느 경로로 불려도 안전해야 한다 — 스니크, 로그아웃, 펫 디스폰, 서버 종료.
      *
-     * <p>낙하 피해 방지가 핵심이다. 공중에서 마운트를 없애면 플레이어가 그대로 떨어진다.
+     * <p><b>완강 낙하는 걸지 않는다.</b> 공중에서 내리면 그대로 떨어진다 — 요청으로 뺐다.
+     * {@code setFallDistance(0)} 만 남긴다. 마운트를 타고 있던 동안 쌓인 낙하 거리를
+     * 하차 시점부터 다시 세게 해서, 탑승 전에 이미 떨어지던 중이었다면 그 몫까지
+     * 하차 직후 피해로 잡히는 것만 막는다.
      */
     public void stop(final Player player) {
         final Ride ride = rides.remove(player.getUniqueId());
@@ -217,15 +215,7 @@ public final class RideController {
             player.leaveVehicle();
         }
         ride.mount.remove();
-
         player.setFallDistance(0.0f);
-        // 이미 더 오래가는 완강 낙하를 걸고 있었다면 건드리지 않는다. 물약을 마시고
-        // 탄 사람의 효과를 5초로 잘라먹으면, 내려서 절벽으로 걸어간 뒤에야 알게 된다.
-        final PotionEffect existing = player.getPotionEffect(PotionEffectType.SLOW_FALLING);
-        if (existing == null || existing.getDuration() < SAFE_LANDING_TICKS) {
-            player.addPotionEffect(new PotionEffect(
-                PotionEffectType.SLOW_FALLING, SAFE_LANDING_TICKS, 0, true, false, true));
-        }
     }
 
     /**

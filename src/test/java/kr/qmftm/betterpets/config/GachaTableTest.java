@@ -24,7 +24,7 @@ class GachaTableTest {
 
     private static PetType type(final String id, final int gachaWeight) {
         return new PetType(id, id, "model_" + id, Rarity.B, Rarity.B.defaults(),
-            100, RideMode.NONE, 0.0, PetType.AnimationSet.defaults(),
+            100, RideMode.NONE, 0.0, Rarity.B.defaults().rideSpeed(), PetType.AnimationSet.defaults(),
             PetType.MovementProfile.defaults(), List.of(), Map.of(), gachaWeight);
     }
 

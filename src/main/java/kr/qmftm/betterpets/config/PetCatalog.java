@@ -185,6 +185,7 @@ public final class PetCatalog {
                 yaml.getInt("growth-max", 100),
                 ride,
                 yaml.getDouble("fly-chance", rarities.stats(rarity.get()).flyChance()),
+                yaml.getDouble("ride-speed", rarities.stats(rarity.get()).rideSpeed()),
                 readAnimations(file.getName(), yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
                 readAbilities(file.getName(), yaml.getMapList("abilities"), abilities),

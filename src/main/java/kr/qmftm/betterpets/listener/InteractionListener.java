@@ -305,7 +305,7 @@ public final class InteractionListener implements Listener {
             mountConfirms.remove(player.getUniqueId());
         }
 
-        final double speed = type.stats().rideSpeed();
+        final double speed = type.rideSpeed();
         if (rides.start(player, pet.petId(), pet.carrier().getLocation(), flying, speed)) {
             // 비행이면 fly 애니메이션이 걸리게 모드를 나눠 준다.
             pet.movement().mode(flying
