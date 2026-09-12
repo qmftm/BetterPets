@@ -12,7 +12,6 @@
 #   ride-speed     탑승 시 이동 속도 (블록/틱). 0.2 ≈ 걷기, 0.4 ≈ 달리기보다 빠름
 #   fly-chance     성체가 될 때 비행이 붙을 확률 (0.0~1.0).
 #                  pets/*.yml 에 fly-chance 를 직접 적으면 그쪽이 우선한다
-#   color          모델 틴트와 GUI 표시색. 16진수 RGB
 
 rarities:
   D:
@@ -20,32 +19,27 @@ rarities:
     move-speed: 1.00
     ride-speed: 0.20
     fly-chance: 0.00
-    color: "AAAAAA"
 
   C:
     display-name: "고급"
     move-speed: 1.10
     ride-speed: 0.24
     fly-chance: 0.00
-    color: "FFFFFF"
 
   B:
     display-name: "희귀"
     move-speed: 1.25
     ride-speed: 0.28
     fly-chance: 0.00
-    color: "55FF55"
 
   A:
     display-name: "영웅"
     move-speed: 1.45
     ride-speed: 0.34
     fly-chance: 0.10
-    color: "5555FF"
 
   S:
     display-name: "전설"
     move-speed: 1.70
     ride-speed: 0.42
     fly-chance: 0.35
-    color: "FFAA00"

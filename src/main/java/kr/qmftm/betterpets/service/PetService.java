@@ -125,7 +125,6 @@ public final class PetService {
         }
 
         final ActivePet pet = new ActivePet(owner.getUniqueId(), data, type, carrier, handle.get());
-        pet.applyRarityTint();
         registry.put(pet);
 
         data.active(true);

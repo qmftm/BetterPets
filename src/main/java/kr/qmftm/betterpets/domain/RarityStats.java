@@ -12,8 +12,7 @@ public record RarityStats(
     String displayName,
     double moveSpeedMultiplier,
     double rideSpeed,
-    double flyChance,
-    int color
+    double flyChance
 ) {
 
     public RarityStats {
@@ -21,7 +20,6 @@ public record RarityStats(
         moveSpeedMultiplier = Math.max(0.01, moveSpeedMultiplier);
         rideSpeed = Math.max(0.01, rideSpeed);
         flyChance = Math.max(0.0, Math.min(1.0, flyChance));
-        color = color & 0xFFFFFF;
     }
 
     /** 이 등급에서 비행 펫이 나올 수 있는가. */

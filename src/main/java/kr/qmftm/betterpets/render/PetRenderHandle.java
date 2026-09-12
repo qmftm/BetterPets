@@ -40,9 +40,6 @@ public interface PetRenderHandle extends AutoCloseable {
 
     boolean stop(String animation);
 
-    /** 모델 전체에 색을 입힌다. 등급 표시에 쓴다. */
-    void tint(int rgb);
-
     /** 특정 플레이어에게만 숨긴다. */
     void hide(Player viewer);
 

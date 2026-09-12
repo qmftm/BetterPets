@@ -141,14 +141,12 @@ gui:
   summary-shown: "<dark_gray><white>%count%<dark_gray> in this view"
   summary-filtered-empty: "<yellow>No pets match this view. <gray>Try another one."
 
-  pet-rarity: "<gray>Rarity <white>%rarity% <dark_gray>(%name%)"
+  pet-rarity: "<gray>Rarity <white>%rarity%"
   pet-stage: "<gray>Stage <white>%stage%"
   pet-growth-stage: "<gray>Growth stage <white>%stage%<dark_gray>/%max%"
   pet-growth: "<gray>Growth <white>%growth%<dark_gray>/%max%"
   pet-growth-bar: "<dark_gray>%bar%"
-  pet-next-growth: "<dark_gray>Next growth in %time%"
   pet-ride: "<gray>Riding <white>%mode%"
-  pet-id: "<dark_gray>id %id%"
   pet-active: "<green>Out"
 
   summon: "<green>Summon"
@@ -159,29 +157,8 @@ gui:
   release-hint: "<dark_gray>Shift + click (cannot be undone)"
   back: "<gray>Back"
 
-  abilities: "<light_purple>Abilities"
-  abilities-none: "<dark_gray>This pet has no abilities."
-  abilities-locked: "<yellow>Unlocks when fully grown."
-  abilities-locked-entry: "<dark_gray>· %ability%"
-  abilities-entry: "<gray>· <white>%ability% <dark_gray>+%value%"
-  abilities-entry-chance: "<gray>· <white>%ability% <dark_gray>%value%%"
-
-# Ability names. The key is the abilities[].id from pets/*.yml.
-# An id that is missing here shows as the raw id — add a line for your own abilities.
-ability:
-  attribute_speed: "Move Speed"
-  attribute_health: "Max Health"
-  attribute_damage: "Attack Damage"
-  on_kill_extra_drop: "Extra Drops"
-
 # Life stage names. The key is the LifeStage name in lowercase.
 stage:
   baby: "Baby"
   adult: "Adult"
   pig: "Pig"
-
-# Remaining-time wording.
-time:
-  seconds: "%s%s"
-  minutes: "%m%m %s%s"
-  hours: "%h%h %m%m"

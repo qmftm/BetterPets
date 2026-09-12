@@ -141,14 +141,12 @@ gui:
   summary-shown: "<dark_gray>이 보기에 <white>%count%<dark_gray>마리"
   summary-filtered-empty: "<yellow>이 보기에 해당하는 펫이 없습니다. <gray>보기를 바꿔보세요."
 
-  pet-rarity: "<gray>등급 <white>%rarity% <dark_gray>(%name%)"
+  pet-rarity: "<gray>등급 <white>%rarity%"
   pet-stage: "<gray>상태 <white>%stage%"
   pet-growth-stage: "<gray>성장 단계 <white>%stage%<dark_gray>/%max%"
   pet-growth: "<gray>성장도 <white>%growth%<dark_gray>/%max%"
   pet-growth-bar: "<dark_gray>%bar%"
-  pet-next-growth: "<dark_gray>다음 성장까지 %time%"
   pet-ride: "<gray>탑승 <white>%mode%"
-  pet-id: "<dark_gray>id %id%"
   pet-active: "<green>소환 중"
 
   summon: "<green>소환하기"
@@ -159,29 +157,8 @@ gui:
   release-hint: "<dark_gray>쉬프트 + 클릭 (되돌릴 수 없습니다)"
   back: "<gray>돌아가기"
 
-  abilities: "<light_purple>능력"
-  abilities-none: "<dark_gray>이 펫에게는 능력이 없습니다."
-  abilities-locked: "<yellow>성체가 되어야 발현됩니다."
-  abilities-locked-entry: "<dark_gray>· %ability%"
-  abilities-entry: "<gray>· <white>%ability% <dark_gray>+%value%"
-  abilities-entry-chance: "<gray>· <white>%ability% <dark_gray>%value%%"
-
-# 능력 이름. pets/*.yml 의 abilities[].id 가 그대로 키다.
-# 여기 없는 id 는 id 그대로 보인다 — 직접 추가한 능력이면 이 절에 한 줄 더하면 된다.
-ability:
-  attribute_speed: "이동 속도"
-  attribute_health: "최대 체력"
-  attribute_damage: "공격력"
-  on_kill_extra_drop: "추가 드랍"
-
 # 생애주기 이름. LifeStage 의 이름을 소문자로 바꾼 것이 키다.
 stage:
   baby: "아기"
   adult: "성체"
   pig: "돼지"
-
-# 남은 시간 표기.
-time:
-  seconds: "%s%초"
-  minutes: "%m%분 %s%초"
-  hours: "%h%시간 %m%분"

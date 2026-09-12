@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RarityTableTest {
 
     private static RarityStats stats(final double moveSpeed) {
-        return new RarityStats("바꾼 이름", moveSpeed, 0.5, 0.9, 0x112233);
+        return new RarityStats("바꾼 이름", moveSpeed, 0.5, 0.9);
     }
 
     @Test
@@ -47,17 +47,16 @@ class RarityTableTest {
     @Test
     @DisplayName("설정 실수로 펫이 멈추거나 뒤로 걷지 않게 막는다")
     void clampsBrokenNumbers() {
-        final RarityStats broken = new RarityStats("x", -5.0, 0.0, 3.0, 0xFFFFFFFF);
+        final RarityStats broken = new RarityStats("x", -5.0, 0.0, 3.0);
 
         assertTrue(broken.moveSpeedMultiplier() > 0.0, "0 이면 아예 못 움직인다");
         assertTrue(broken.rideSpeed() > 0.0);
         assertEquals(1.0, broken.flyChance(), "확률은 1을 넘을 수 없다");
-        assertEquals(0xFFFFFF, broken.color(), "색은 24비트로 자른다");
     }
 
     @Test
     @DisplayName("음수 확률은 0으로 접는다")
     void negativeChanceBecomesZero() {
-        assertEquals(0.0, new RarityStats("x", 1.0, 0.2, -0.5, 0).flyChance());
+        assertEquals(0.0, new RarityStats("x", 1.0, 0.2, -0.5).flyChance());
     }
 }

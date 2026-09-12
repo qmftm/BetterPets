@@ -15,20 +15,19 @@ import java.util.Optional;
  */
 public enum Rarity {
 
-    D("일반", 1.00, 0.20, 0.00, 0xAAAAAA),
-    C("고급", 1.10, 0.24, 0.00, 0xFFFFFF),
-    B("희귀", 1.25, 0.28, 0.00, 0x55FF55),
-    A("영웅", 1.45, 0.34, 0.10, 0x5555FF),
-    S("전설", 1.70, 0.42, 0.35, 0xFFAA00);
+    D("일반", 1.00, 0.20, 0.00),
+    C("고급", 1.10, 0.24, 0.00),
+    B("희귀", 1.25, 0.28, 0.00),
+    A("영웅", 1.45, 0.34, 0.10),
+    S("전설", 1.70, 0.42, 0.35);
 
     private final RarityStats defaults;
 
     Rarity(final String displayName,
            final double moveSpeedMultiplier,
            final double rideSpeed,
-           final double flyChance,
-           final int color) {
-        this.defaults = new RarityStats(displayName, moveSpeedMultiplier, rideSpeed, flyChance, color);
+           final double flyChance) {
+        this.defaults = new RarityStats(displayName, moveSpeedMultiplier, rideSpeed, flyChance);
     }
 
     /** {@code rarity.yml} 이 없거나 이 등급을 적지 않았을 때 쓸 값. */

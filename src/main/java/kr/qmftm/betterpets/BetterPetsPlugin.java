@@ -124,7 +124,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
         final PetItems items = new PetItems(this, catalog, messages, growth);
         final PetMenuFactory menus = new PetMenuFactory(
-            catalog, growth, registry, pets, abilityRegistry, messages);
+            catalog, growth, registry, pets, messages);
 
         // 시간이 흘러 일어난 성장을 확인하는 자리. 접속·보관함·목록·틱이 모두 여기를 지난다.
         final GrowthCatchUp catchUp = new GrowthCatchUp(store, pets, growth, broadcasts, messages);

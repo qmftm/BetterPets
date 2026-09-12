@@ -62,11 +62,6 @@ public final class ActivePet implements AutoCloseable {
         animation.tick(movement.mode(), movement.state());
     }
 
-    /** 등급 색을 모델에 입힌다. 소환 직후 한 번. */
-    public void applyRarityTint() {
-        handle.tint(type.stats().color());
-    }
-
     /**
      * 정리. 여러 번 불려도 안전하다 — 퇴장과 월드 언로드가 겹치는 경우가 실제로 있다.
      *

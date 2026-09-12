@@ -7,7 +7,6 @@ import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.tracker.EntityTracker;
 import kr.toxicity.model.api.tracker.EntityTrackerRegistry;
 import kr.toxicity.model.api.tracker.TrackerModifier;
-import kr.toxicity.model.api.tracker.TrackerUpdateAction;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -130,13 +129,6 @@ public final class BetterModelRenderer implements PetRenderer {
                 return false;
             }
             return tracker.stopAnimation(animation);
-        }
-
-        @Override
-        public void tint(final int rgb) {
-            if (!tracker.isClosed()) {
-                tracker.update(TrackerUpdateAction.tint(rgb));
-            }
         }
 
         @Override

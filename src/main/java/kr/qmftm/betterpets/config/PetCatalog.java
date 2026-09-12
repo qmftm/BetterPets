@@ -116,8 +116,7 @@ public final class PetCatalog {
                 node.getString("display-name", fallback.displayName()),
                 node.getDouble("move-speed", fallback.moveSpeedMultiplier()),
                 node.getDouble("ride-speed", fallback.rideSpeed()),
-                node.getDouble("fly-chance", fallback.flyChance()),
-                readColor(key, node.getString("color"), fallback.color())));
+                node.getDouble("fly-chance", fallback.flyChance())));
         }
         return RarityTable.of(overrides);
     }
@@ -144,20 +143,6 @@ public final class PetCatalog {
             return null;
         }
         return raw;
-    }
-
-    /** {@code "FFAA00"} 또는 {@code "#FFAA00"} 을 받는다. 잘못됐으면 기본색으로 두고 알린다. */
-    private int readColor(final String rarityKey, final String raw, final int fallback) {
-        if (raw == null || raw.isBlank()) {
-            return fallback;
-        }
-        try {
-            return Integer.parseInt(raw.trim().replaceFirst("^#", ""), 16) & 0xFFFFFF;
-        } catch (final NumberFormatException error) {
-            problems.add("rarity.yml/" + rarityKey + ": color '" + raw
-                + "' 를 읽지 못했습니다. RRGGBB 16진수여야 합니다.");
-            return fallback;
-        }
     }
 
     private void loadTypes(final File folder, final AbilityRegistry abilities) {

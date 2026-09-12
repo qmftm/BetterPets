@@ -1,8 +1,5 @@
 package kr.qmftm.betterpets.gui;
 
-import kr.qmftm.betterpets.ability.AbilityDefinition;
-import kr.qmftm.betterpets.ability.AbilityRegistry;
-import kr.qmftm.betterpets.ability.PetAbility;
 import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.config.Tags;
@@ -40,9 +37,8 @@ public final class PetMenuFactory {
 
     public static final int DETAIL_SIZE = 27;
 
-    // 첫 줄은 정보 둘을 가운데 기준으로 나란히 둔다. 아래 줄이 조작 버튼이다.
+    // 첫 줄은 정보를 가운데 기준으로 둔다. 아래 줄이 조작 버튼이다.
     public static final int SLOT_ICON = 3;
-    public static final int SLOT_ABILITIES = 5;
 
     public static final int SLOT_SUMMON = 11;
     public static final int SLOT_RENAME = 13;
@@ -53,14 +49,6 @@ public final class PetMenuFactory {
     private final GrowthService growth;
     private final PetRegistry registry;
     private final PetService pets;
-
-    /**
-     * 능력 구현체를 찾기 위해서다.
-     *
-     * <p>수치 공식을 여기서 직접 계산하면 안 된다 — 능력마다 읽는 설정 키가 다르다.
-     * 구현체에게 물어야 {@code chance-base} 를 쓰는 능력이 {@code +0.00} 으로 보이지 않는다.
-     */
-    private final AbilityRegistry abilities;
 
     /**
      * GUI 문구도 번역 대상이다.
@@ -75,13 +63,11 @@ public final class PetMenuFactory {
                           final GrowthService growth,
                           final PetRegistry registry,
                           final PetService pets,
-                          final AbilityRegistry abilities,
                           final Messages messages) {
         this.catalog = catalog;
         this.growth = growth;
         this.registry = registry;
         this.pets = pets;
-        this.abilities = abilities;
         this.messages = messages;
     }
 
@@ -261,45 +247,11 @@ public final class PetMenuFactory {
         holder.inventory(inventory);
 
         inventory.setItem(SLOT_ICON, icon(pet));
-        inventory.setItem(SLOT_ABILITIES, abilityBook(pet, type));
         inventory.setItem(SLOT_SUMMON, summonButton(pet));
         inventory.setItem(SLOT_RENAME, simple(Material.NAME_TAG, "gui.rename"));
         inventory.setItem(SLOT_RELEASE, releaseButton());
         inventory.setItem(SLOT_BACK, simple(Material.ARROW, "gui.back"));
         return inventory;
-    }
-
-    /**
-     * 이 펫이 가진 능력.
-     *
-     * <p>지금까지 능력은 화면 어디에도 보이지 않았다. 설정 파일을 열어보지 않으면
-     * S등급 펫이 무엇을 해 주는지 알 방법이 없었다는 뜻이다.
-     *
-     * <p>수치는 <b>지금 성장도 기준</b>으로 계산해 보여준다. 능력이 성장도에 비례해
-     * 커지는데 설정값만 보여주면 "왜 이만큼 안 오르지"가 된다.
-     */
-    private ItemStack abilityBook(final PetData pet, final PetType type) {
-        final ItemStack stack = new ItemStack(Material.ENCHANTED_BOOK);
-        final ItemMeta meta = stack.getItemMeta();
-        meta.displayName(line("gui.abilities"));
-
-        final List<Component> lore = new ArrayList<>();
-        if (type == null || type.abilities().isEmpty()) {
-            lore.add(line("gui.abilities-none"));
-        } else if (!pet.stage().abilitiesActive()) {
-            // 아기와 돼지는 능력이 없다. 왜 안 보이는지 알려줘야 한다.
-            lore.add(line("gui.abilities-locked"));
-            type.abilities().forEach(definition ->
-                lore.add(line("gui.abilities-locked-entry",
-                    "ability", abilityLabel(definition.id()))));
-        } else {
-            for (final AbilityDefinition definition : type.abilities()) {
-                lore.add(abilityLine(pet, type, definition));
-            }
-        }
-        meta.lore(lore);
-        stack.setItemMeta(meta);
-        return stack;
     }
 
     /**
@@ -315,47 +267,6 @@ public final class PetMenuFactory {
         meta.lore(List.of(line("gui.release-hint")));
         stack.setItemMeta(meta);
         return stack;
-    }
-
-    /**
-     * 능력 한 줄.
-     *
-     * <p>수치는 <b>구현체에게 묻는다.</b> 전에는 여기서 {@code base}/{@code per-growth}
-     * 를 직접 계산했는데, {@code chance-base} 를 읽는 능력은 그 키가 없어 언제나
-     * {@code +0.00} 으로 보였다 — "능력이 안 붙는다"는 오해를 살 화면이었다.
-     */
-    private Component abilityLine(final PetData pet,
-                                  final PetType type,
-                                  final AbilityDefinition definition) {
-        final PetAbility ability = abilities.find(definition.id()).orElse(null);
-        if (ability == null) {
-            // 카탈로그 검증에서 걸러지는 상황이지만, 그래도 줄을 통째로 삼키지는 않는다.
-            return line("gui.abilities-locked-entry", "ability", abilityLabel(definition.id()));
-        }
-        final double value = ability.displayValue(pet, type, definition);
-        if (ability.displayAsChance()) {
-            return line("gui.abilities-entry-chance",
-                "ability", abilityLabel(definition.id()),
-                "value", String.format(java.util.Locale.ROOT, "%.1f", value * 100.0));
-        }
-        return line("gui.abilities-entry",
-            "ability", abilityLabel(definition.id()),
-            "value", String.format(java.util.Locale.ROOT, "%.2f", value));
-    }
-
-    /**
-     * 능력 이름.
-     *
-     * <p>설정의 id({@code attribute_speed})를 그대로 보여주고 있었다. 다른 문구는 전부
-     * 번역해 놓고 능력만 영문 식별자가 튀어나오는 화면이었다.
-     *
-     * <p>번역이 없으면 <b>id 를 그대로</b> 쓴다 — 관리자가 추가한 능력에 {@code
-     * ability.무엇} 이라는 키 이름이 뜨는 것보다 낫다.
-     */
-    private String abilityLabel(final String id) {
-        final String key = "ability." + id;
-        final String label = messages.raw(key);
-        return Tags.strip(key.equals(label) ? id : label);
     }
 
     /**
@@ -390,9 +301,7 @@ public final class PetMenuFactory {
 
         final List<Component> lore = new ArrayList<>();
         if (type != null) {
-            lore.add(line("gui.pet-rarity",
-                "rarity", type.rarity().name(),
-                "name", Tags.strip(type.stats().displayName())));
+            lore.add(line("gui.pet-rarity", "rarity", type.rarity().name()));
         }
         lore.add(line("gui.pet-stage", "stage", stageLabel(pet.stage())));
 
@@ -407,19 +316,12 @@ public final class PetMenuFactory {
                 "growth", String.valueOf(pet.growth()),
                 "max", String.valueOf(growth.maxOf(pet))));
             lore.add(line("gui.pet-growth-bar", "bar", bar(growth.progressOf(pet))));
-            // 시간만 흘려도 자란다는 걸 여기서 알 수 있어야 한다.
-            // 안 그러면 먹이를 줘야만 크는 줄 알고 계속 먹이러 다닌다.
-            final long until = growth.millisUntilNextPoint(pet);
-            if (until > 0) {
-                lore.add(line("gui.pet-next-growth", "time", humanize(until)));
-            }
         }
         if (type != null && type.ride().canRide()) {
             // 생애주기와 무관하게 탈 수 있다. FLY 종류라도 추첨에 실패했으면 걷는 탑승이다.
             final var effective = type.ride().effective(pet.canFly());
             lore.add(line("gui.pet-ride", "mode", Tags.strip(effective.displayName())));
         }
-        lore.add(line("gui.pet-id", "id", pet.petId().toString().substring(0, 8)));
         if (pet.active()) {
             lore.add(line("gui.pet-active"));
             // 목록에서 한눈에 구분되게 반짝이게 한다. 로어 한 줄보다 눈에 먼저 들어온다.
@@ -433,21 +335,6 @@ public final class PetMenuFactory {
     /** 생애주기 이름. enum 이름을 그대로 쓰면 영어가 튀어나온다. */
     private String stageLabel(final LifeStage stage) {
         return Tags.strip(messages.raw("stage." + stage.name().toLowerCase(java.util.Locale.ROOT)));
-    }
-
-    /** 남은 시간을 사람이 읽는 형태로. 초 단위까지만 — 그보다 정밀할 이유가 없다. */
-    private String humanize(final long millis) {
-        final long seconds = Math.max(0, millis / 1000L);
-        if (seconds < 60) {
-            return Tags.strip(messages.raw("time.seconds", "s", String.valueOf(seconds)));
-        }
-        final long minutes = seconds / 60;
-        if (minutes < 60) {
-            return Tags.strip(messages.raw("time.minutes",
-                "m", String.valueOf(minutes), "s", String.valueOf(seconds % 60)));
-        }
-        return Tags.strip(messages.raw("time.hours",
-            "h", String.valueOf(minutes / 60), "m", String.valueOf(minutes % 60)));
     }
 
     /** 성장도 막대. 20칸을 채운다. */
