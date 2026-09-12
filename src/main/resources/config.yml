@@ -77,11 +77,12 @@ growth:
 
   # 포만도. 먹일 때마다 min-gain~max-gain 사이에서 무작위로 오르고,
   # max 이상이면 더 못 먹인다 — 한 번에 몰아 먹여 순식간에 다 키우는 걸 막는다.
-  # 시간이 지나도 저절로 안 내려간다. 끄고 싶으면 max 를 충분히 크게 둔다.
+  # decay-seconds 마다 1씩 저절로 내려간다. 0 이하로 두면 감소가 꺼진다.
   fullness:
     min-gain: 5
     max-gain: 15
     max: 100
+    decay-seconds: 30
 
 gimmick:
   # 아기 펫에게 짧은 시간 안에 먹이를 몰아주면 돼지로 변하는 이스터에그.

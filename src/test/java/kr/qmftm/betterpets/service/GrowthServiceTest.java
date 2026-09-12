@@ -58,8 +58,10 @@ class GrowthServiceTest {
             id -> Optional.ofNullable(WORLD.get(id)),
             // 포만도는 여기서 다루지 않는 테스트들이 상한에 안 걸리게 넉넉히 둔다.
             // 포만도 자체를 보는 테스트는 별도 Tuning 을 직접 만든다.
+            // 감소는 여기서 다루지 않는 테스트들이 걸리지 않게 꺼둔다(0 = 비활성).
+            // 감소 자체를 보는 테스트는 별도 Tuning 을 직접 만든다.
             new GrowthService.Tuning(10, overfeed, overfeedCount, windowMillis, "pig", maxStage,
-                0, 0, 1_000));
+                0, 0, 1_000, 0));
     }
 
     private static final FeedDefinition MILK =
@@ -84,7 +86,7 @@ class GrowthServiceTest {
         final GrowthService service = service(1);
         assertEquals(1, service.maxStage());
 
-        service.tuning(new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 3, 0, 0, 1_000));
+        service.tuning(new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 3, 0, 0, 1_000, 0));
 
         assertEquals(3, service.maxStage(), "growth.max-stage 를 고치고 리로드하면 반영돼야 한다");
         assertEquals(10, service.feedAmount());
@@ -93,13 +95,14 @@ class GrowthServiceTest {
     @Test
     @DisplayName("설정 묶음이 값을 접는다 — 접는 자리가 하나여야 새는 경로가 없다")
     void tuningClampsBadValues() {
-        final var broken = new GrowthService.Tuning(10, true, 0, 60_000L, "pig", 0, -5, -1, 0);
+        final var broken = new GrowthService.Tuning(10, true, 0, 60_000L, "pig", 0, -5, -1, 0, -100L);
 
         assertEquals(2, broken.overfeedCount(), "0 이면 첫 급여에 바로 돼지가 된다");
         assertEquals(1, broken.maxStage(), "0 이면 아무도 성체가 될 수 없다");
         assertEquals(0, broken.fullnessMinGain(), "음수 증가량은 먹일수록 깎는다는 뜻이라 안 된다");
         assertEquals(0, broken.fullnessMaxGain(), "최소보다 작은 최대는 nextInt 를 터뜨린다");
         assertEquals(1, broken.fullnessMax(), "0 이면 첫 급여부터 막힌다");
+        assertEquals(0, broken.fullnessDecayMillis(), "음수 간격은 의미가 없다 — 0(비활성)으로 접는다");
     }
 
     @Test
@@ -167,7 +170,7 @@ class GrowthServiceTest {
     void fullnessBlocksFeedingAtThreshold() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 1, 10, 10, 15));
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 1, 10, 10, 15, 0));
         final PetData pet = baby("wolf");
 
         assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
@@ -181,6 +184,38 @@ class GrowthServiceTest {
         assertEquals(GrowthService.FeedResult.TOO_FULL, growth.feed(pet, MILK));
         assertEquals(20, pet.fullness(), "거절되면 포만도도 안 바뀐다");
         assertEquals(20, pet.growth(), "거절되면 성장도도 안 바뀐다");
+    }
+
+    @Test
+    @DisplayName("시간이 지나면 포만도가 저절로 내려간다 — catchUp 이 반영해야 한다")
+    void fullnessDecaysOverTime() {
+        final long decayMillis = 30_000L;
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 1, 0, 0, 1_000, decayMillis));
+
+        final long now = System.currentTimeMillis();
+        // 다섯 간격 전에 포만도 20으로 저장돼 있던 펫 — 지금 보면 15여야 한다.
+        final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null,
+            LifeStage.BABY, 0, 1, 20, now - 5 * decayMillis, false, false, now, now);
+
+        growth.refreshFullness(pet);
+        assertEquals(15, pet.fullness());
+    }
+
+    @Test
+    @DisplayName("감소를 끄면(0) 시간이 지나도 포만도가 그대로다")
+    void fullnessDecayCanBeDisabled() {
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 1, 0, 0, 1_000, 0));
+
+        final long now = System.currentTimeMillis();
+        final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null,
+            LifeStage.BABY, 0, 1, 20, now - DAY, false, false, now, now);
+
+        growth.refreshFullness(pet);
+        assertEquals(20, pet.fullness());
     }
 
     @Test

@@ -25,6 +25,9 @@ public final class PetData {
     private int growth;
     private int growthStage;        // 1부터 시작. 성장도가 찰 때마다 오를 수 있다
     private int fullness;           // 먹일 때마다 오른다. 상한을 넘으면 더 못 먹인다
+    private long fullnessUpdatedAt; // 포만도 감소의 기준 시각. growth 의 updatedAt 과 같은 계약,
+                                     // 다만 값이다 — 급여(addFullness)로는 안 움직이고
+                                     // 감소 계산(applyFullness)으로만 전진한다
     private boolean canFly;
     private boolean active;
     private long updatedAt;
@@ -39,6 +42,7 @@ public final class PetData {
                    final int growth,
                    final int growthStage,
                    final int fullness,
+                   final long fullnessUpdatedAt,
                    final boolean canFly,
                    final boolean active,
                    final long acquiredAt,
@@ -51,6 +55,7 @@ public final class PetData {
         this.growth = growth;
         this.growthStage = Math.max(1, growthStage);
         this.fullness = Math.max(0, fullness);
+        this.fullnessUpdatedAt = fullnessUpdatedAt;
         this.canFly = canFly;
         this.active = active;
         this.acquiredAt = acquiredAt;
@@ -60,7 +65,7 @@ public final class PetData {
     /** 새로 획득한 펫. 알에서 갓 나온 아기 상태다. */
     public static PetData newBaby(final UUID ownerId, final String typeId, final long now) {
         return new PetData(UUID.randomUUID(), ownerId, typeId, null,
-            LifeStage.BABY, 0, 1, 0, false, false, now, now);
+            LifeStage.BABY, 0, 1, 0, now, false, false, now, now);
     }
 
     public UUID petId() { return petId; }
@@ -71,6 +76,7 @@ public final class PetData {
     public int growth() { return growth; }
     public int growthStage() { return growthStage; }
     public int fullness() { return fullness; }
+    public long fullnessUpdatedAt() { return fullnessUpdatedAt; }
     public boolean canFly() { return canFly; }
     public boolean active() { return active; }
     public long acquiredAt() { return acquiredAt; }
@@ -169,10 +175,28 @@ public final class PetData {
      * 포만도를 올린다. 상한은 여기서 두지 않는다 — 급여를 막을지는
      * {@code GrowthService} 가 상한과 비교해 먼저 판단하고, 여긴 그 판단이 끝난
      * 뒤에만 불린다. 음수로는 안 내려간다.
+     *
+     * <p>{@link #fullnessUpdatedAt} 은 건드리지 않는다 — 감소 시계는 급여와 무관하게
+     * 독립적으로 흐른다. 먹였다고 시계를 리셋하면, 감소분을 한 번 계산해 반영해 둔
+     * 직후 또 먹였을 때 그 사이 시간이 다시 감소 몫으로 잡히는 이중 계산이 된다.
      */
     public void addFullness(final int amount) {
         final int next = Math.max(0, fullness + amount);
         if (next != fullness) { fullness = next; dirty = true; }
+    }
+
+    /**
+     * 포만도와 그 기준 시각을 함께 갱신한다. 시간 경과로 깎일 때 쓴다.
+     *
+     * <p>{@link #applyGrowth} 와 같은 계약이다 — 값과 기준 시각을 따로 세팅하지
+     * 못하게 막는다. 따로 두면 같은 경과 시간이 다음 계산에서 다시 잡힌다.
+     */
+    public void applyFullness(final FullnessCurve.Projection projection) {
+        if (projection.fullness() != fullness || projection.updatedAt() != fullnessUpdatedAt) {
+            fullness = projection.fullness();
+            fullnessUpdatedAt = projection.updatedAt();
+            dirty = true;
+        }
     }
 
     /** 표시용 이름. 별명이 없으면 종류 이름으로 폴백해야 하므로 nullable 을 그대로 준다. */

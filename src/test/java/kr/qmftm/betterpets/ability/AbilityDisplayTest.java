@@ -28,7 +28,7 @@ class AbilityDisplayTest {
 
     private static PetData pet(final int growth) {
         return new PetData(UUID.randomUUID(), UUID.randomUUID(), "wolf", null,
-            LifeStage.ADULT, growth, 1, 0, false, false, 0L, 0L);
+            LifeStage.ADULT, growth, 1, 0, 0L, false, false, 0L, 0L);
     }
 
     private static PetType type(final Rarity rarity) {

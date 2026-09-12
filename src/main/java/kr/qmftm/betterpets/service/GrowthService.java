@@ -2,6 +2,7 @@ package kr.qmftm.betterpets.service;
 
 import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.domain.FeedDefinition;
+import kr.qmftm.betterpets.domain.FullnessCurve;
 import kr.qmftm.betterpets.domain.GrowthCurve;
 import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
@@ -59,7 +60,8 @@ public final class GrowthService {
                          int maxStage,
                          int fullnessMinGain,
                          int fullnessMaxGain,
-                         int fullnessMax) {
+                         int fullnessMax,
+                         long fullnessDecayMillis) {
         public Tuning {
             // 0 이하로 두면 registerBurst 가 첫 급여에서 바로 참이 된다 — 먹이 한 번에
             // 모든 펫이 돼지가 된다는 뜻이다. 끄고 싶으면 enabled: false 를 쓴다.
@@ -72,6 +74,9 @@ public final class GrowthService {
             fullnessMaxGain = Math.max(fullnessMinGain, fullnessMaxGain);
             // 0 이하로 두면 첫 급여부터 막힌다 — 급여 자체가 안 되는 펫이 나온다.
             fullnessMax = Math.max(1, fullnessMax);
+            // 음수는 FullnessCurve 에서 "꺼짐"과 같은 뜻으로 처리하지만, 여기서 0으로
+            // 접어두면 그 사실을 몰라도 되는 값이 하나 줄어든다.
+            fullnessDecayMillis = Math.max(0, fullnessDecayMillis);
         }
     }
 
@@ -154,7 +159,18 @@ public final class GrowthService {
      */
     public StageResult catchUp(final PetData data) {
         refresh(data);
+        refreshFullness(data);
         return promoteIfGrown(data);
+    }
+
+    /**
+     * 저장된 포만도에 경과 시간을 반영해 깎는다. {@link #refresh} 와 같은 지연 계산
+     * 패턴이다 — 틱마다 저장하는 대신 읽는 시점(급여·{@code catchUp})마다 부른다.
+     */
+    public void refreshFullness(final PetData data) {
+        final long now = System.currentTimeMillis();
+        data.applyFullness(FullnessCurve.project(
+            data.fullness(), data.fullnessUpdatedAt(), now, tuning.fullnessDecayMillis()));
     }
 
     /**
@@ -168,6 +184,9 @@ public final class GrowthService {
      * @return 이번 급여로 일어난 일
      */
     public FeedResult feed(final PetData data, final FeedDefinition feed) {
+        // 상한 판정 전에 먼저 깎는다 — 안 그러면 한참 굶겨둔 펫도 마지막으로 저장된
+        // (아직 안 깎인) 값으로 판정돼 먹일 수 있어야 할 상황에서 거절당한다.
+        refreshFullness(data);
         if (data.fullness() >= tuning.fullnessMax()) {
             return FeedResult.TOO_FULL;
         }

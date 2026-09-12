@@ -348,7 +348,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getInt("growth.max-stage", 1),
             getConfig().getInt("growth.fullness.min-gain", 5),
             getConfig().getInt("growth.fullness.max-gain", 15),
-            getConfig().getInt("growth.fullness.max", 100));
+            getConfig().getInt("growth.fullness.max", 100),
+            getConfig().getLong("growth.fullness.decay-seconds", 30) * 1000L);
     }
 
     private BroadcastService.Rules readBroadcastRules() {
