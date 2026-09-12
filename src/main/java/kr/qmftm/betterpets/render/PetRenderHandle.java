@@ -40,6 +40,9 @@ public interface PetRenderHandle extends AutoCloseable {
 
     boolean stop(String animation);
 
+    /** 모델 전체 크기 배율. 1.0 이 원래 크기다. */
+    void scale(double multiplier);
+
     /** 특정 플레이어에게만 숨긴다. */
     void hide(Player viewer);
 

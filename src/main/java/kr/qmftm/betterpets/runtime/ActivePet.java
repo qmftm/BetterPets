@@ -42,6 +42,8 @@ public final class ActivePet implements AutoCloseable {
         this.movement = new MovementController(carrier, type);
         this.animation = new AnimationStateMachine(handle, type);
         this.animation.start();
+        // 크기 배율은 소환 시점에 한 번만 정하면 된다 — 개체가 살아 있는 동안 안 바뀐다.
+        handle.scale(type.size());
     }
 
     public UUID ownerId() { return ownerId; }

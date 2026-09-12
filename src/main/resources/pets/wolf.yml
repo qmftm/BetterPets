@@ -12,6 +12,9 @@ growth-max: 100
 # 보관함 아이콘 재질. 실제 3D 모델(위의 model)과는 별개다 — 안 적으면 LEAD.
 # icon: BONE
 
+# 모델 크기 배율. 1.0 이 원래 크기 — 크게/작게 보이고 싶을 때만 적는다.
+# size: 1.2
+
 # 탑승 여부와 비행 여부를 따로 켠다. GROUND 였던 펫은 ride: true 만 켜면 된다.
 ride: true
 # flying: true

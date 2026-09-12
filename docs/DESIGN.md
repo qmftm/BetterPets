@@ -146,6 +146,11 @@ TrackerUpdateAction.billboard(PlatformBillboard)
 TrackerUpdateAction.composite(TrackerUpdateAction...)
 ```
 
+**크기는 `TrackerUpdateAction` 이 아니라 `Tracker` 자체의 메서드다.** `tracker.scaler(ModelScaler)`
+로 바꾼다 — `ModelScaler.value(float)` 로 고정 배율을 준다. `PetRenderHandle.scale(double)` 로
+감싸 노출하고, `ActivePet` 생성자에서 `PetType.size()`(기본 1.0, `pets/*.yml` 의 `size:`)를
+소환 시점에 한 번 건다. 개체가 살아 있는 동안 안 바뀌는 값이라 재적용할 자리가 따로 없다.
+
 ### 가시성과 생명주기
 
 ```java

@@ -89,6 +89,7 @@ model: pet_dragon          # plugins/BetterModel/models/pet_dragon.bbmodel
 rarity: S
 growth-max: 100
 # icon: NETHER_STAR          # 보관함 아이콘 재질. 안 적으면 LEAD
+# size: 1.2                   # 모델 크기 배율. 1.0 이 원래 크기
 
 ride: true                  # 탈 수 있는지
 flying: true                 # 탈 수 있으면, 날 수도 있는지

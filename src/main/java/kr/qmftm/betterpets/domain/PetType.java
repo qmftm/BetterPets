@@ -24,6 +24,8 @@ import java.util.Set;
  *                     {@code ride-speed} 로 덮어쓴다. {@code fly-chance} 와 같은 자리다
  * @param iconMaterial 보관함 아이콘 재질. {@code pets/*.yml} 의 {@code icon} 으로 정한다 —
  *                     안 적으면 {@code LEAD}
+ * @param size         모델 크기 배율. {@code pets/*.yml} 의 {@code size} 로 정한다.
+ *                     1.0 이 모델 원래 크기이고, 안 적으면 1.0
  * @param nextStage    비어 있으면 다음 단계에서도 같은 종류를 유지한다
  */
 public record PetType(
@@ -37,6 +39,7 @@ public record PetType(
     double flyChance,
     double rideSpeed,
     String iconMaterial,
+    double size,
     AnimationSet animations,
     MovementProfile movement,
     List<AbilityDefinition> abilities,
@@ -52,6 +55,8 @@ public record PetType(
         growthMax = Math.max(1, growthMax);
         flyChance = Math.max(0.0, Math.min(1.0, flyChance));
         rideSpeed = Math.max(0.01, rideSpeed);
+        // 0이나 음수는 모델이 안 보이거나 뒤집혀 보인다 — 설정 실수의 흔한 형태다.
+        size = Math.max(0.05, size);
     }
 
     /**
