@@ -20,6 +20,7 @@ import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInputEvent;
@@ -102,6 +103,13 @@ public final class InteractionListener implements Listener {
      * 플랫폼 스스로 믿을 수 없다고 표시해 둔 것이다. 틀린 답의 대가가 <b>알 하나가
      * 사라지는 것</b>이라, 못 미더운 판정에 기대느니 규칙을 단순하게 둔다.
      * 실패하면 "아무 일도 안 일어남"이고, 그건 되돌릴 수 있다.
+     *
+     * <p><b>블록에 양보할 때도 아이템의 바닐라 동작은 막는다.</b> 알 재질을 스폰 알로
+     * 두면서 드러난 문제다 — 그냥 {@code return} 만 하면 이벤트가 취소되지 않은 채
+     * 그대로 진행돼서, 스니크 없이 돌바닥에 우클릭하는 순간 <b>진짜 셜커가 소환된다.</b>
+     * {@code setCancelled(true)} 는 블록 쪽 상호작용(상자 열기)까지 같이 막아버려서
+     * 쓸 수 없다 — {@code setUseItemInHand(DENY)} 로 아이템 쪽만 죽이고 블록 쪽은
+     * 그대로 둔다.
      */
     @EventHandler(ignoreCancelled = true)
     public void onEggUse(final PlayerInteractEvent event) {
@@ -111,14 +119,15 @@ public final class InteractionListener implements Listener {
         if (!event.getAction().isRightClick()) {
             return;
         }
-        // 블록을 클릭했으면 블록이 먼저다. 스니크 중이면 바닐라도 블록 상호작용을
-        // 건너뛰므로 그때는 알을 쓰려는 게 맞다.
-        if (event.getClickedBlock() != null && !event.getPlayer().isSneaking()) {
-            return;
-        }
         final ItemStack held = event.getItem();
         final Optional<String> eggId = items.eggIdOf(held);
         if (eggId.isEmpty()) {
+            return;
+        }
+        // 블록을 클릭했으면 블록이 먼저다. 스니크 중이면 바닐라도 블록 상호작용을
+        // 건너뛰므로 그때는 알을 쓰려는 게 맞다.
+        if (event.getClickedBlock() != null && !event.getPlayer().isSneaking()) {
+            event.setUseItemInHand(Event.Result.DENY);
             return;
         }
         event.setCancelled(true);
