@@ -195,7 +195,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     private void dismount(final Player player) {
         if (rides.isRiding(player)) {
             rides.stop(player);
-            messages.send(player, "ride.stopped");
+            // 채팅 문구는 없다 — 내렸다는 건 화면으로 이미 보인다. 소리만 알린다.
             player.playSound(player.getLocation(), Sound.ENTITY_HORSE_LAND, 0.8f, 1.0f);
         } else {
             messages.send(player, "ride.not-riding");

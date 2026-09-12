@@ -54,10 +54,9 @@ feed:
   lore-growth: "<gray>성장도 <white>+%growth%"
 
 ride:
-  started-ground: "<green>탑승했습니다. <gray>바라보며 이동, 스니크로 하차."
-  started-flying: "<gold>비행을 시작합니다. <gray>점프로 상승, 스니크로 하강. <dark_gray>(하차는 /pet dismount)"
-  confirm: "<gold>한 번 더 우클릭하면 날아오릅니다."
-  stopped: "<gray>내렸습니다."
+  # 탑승·하차 자체는 화면과 소리로 이미 알 수 있어서 채팅에 안 남긴다.
+  # 비행 조작법은 여기(이륙 확인)에서만 한 번 알려준다 — 매번 뜨는 문구가 아니다.
+  confirm: "<gold>한 번 더 우클릭하면 날아오릅니다. <gray>점프 상승 · 스니크 하강. <dark_gray>(하차는 /pet dismount)"
   not-riding: "<red>타고 있지 않습니다."
   not-rideable: "<red>이 펫은 탈 수 없습니다."
   failed: "<red>여기서는 탈 수 없습니다."

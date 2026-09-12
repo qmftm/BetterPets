@@ -311,7 +311,7 @@ public final class InteractionListener implements Listener {
             pet.movement().mode(flying
                 ? MovementController.Mode.RIDDEN_FLYING
                 : MovementController.Mode.RIDDEN);
-            messages.send(player, flying ? "ride.started-flying" : "ride.started-ground");
+            // 채팅 문구는 없다 — 타고 있다는 건 화면으로 이미 보인다. 소리만 알린다.
             player.playSound(player.getLocation(),
                 flying ? Sound.ENTITY_PHANTOM_FLAP : Sound.ENTITY_HORSE_SADDLE, 1.0f, 1.0f);
         } else {
@@ -340,14 +340,25 @@ public final class InteractionListener implements Listener {
         mountConfirms.remove(event.getPlayer().getUniqueId());
     }
 
-    /** 스니크 하차. 입력 이벤트가 오지 않는 상황을 위한 보조 경로다. */
+    /**
+     * 스니크 하차. 입력 이벤트가 오지 않는 상황을 위한 보조 경로다.
+     *
+     * <p><b>비행 중에는 손대지 않는다.</b> 비행 중 스니크는 하강이다({@link RideController}
+     * 참고) — 여길 조건 없이 그대로 두면 이 보조 경로가 하강 대신 곧바로 하차시켜서
+     * {@code drive()} 의 하강 처리와 부딪힌다.
+     */
     @EventHandler
     public void onSneak(final PlayerToggleSneakEvent event) {
-        if (event.isSneaking() && rides.isRiding(event.getPlayer())) {
-            rides.stop(event.getPlayer());
-            messages.send(event.getPlayer(), "ride.stopped");
-            event.getPlayer().playSound(event.getPlayer().getLocation(), Sound.ENTITY_HORSE_LAND, 0.8f, 1.0f);
+        if (!event.isSneaking() || !rides.isRiding(event.getPlayer())) {
+            return;
         }
+        final RideController.Ride ride = rides.rideOf(event.getPlayer());
+        if (ride != null && ride.flying()) {
+            return;
+        }
+        rides.stop(event.getPlayer());
+        // 채팅 문구는 없다 — 내렸다는 건 화면으로 이미 보인다. 소리만 알린다.
+        event.getPlayer().playSound(event.getPlayer().getLocation(), Sound.ENTITY_HORSE_LAND, 0.8f, 1.0f);
     }
 
 }

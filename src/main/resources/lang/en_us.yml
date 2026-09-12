@@ -54,10 +54,10 @@ feed:
   lore-growth: "<gray>Growth <white>+%growth%"
 
 ride:
-  started-ground: "<green>Mounted. <gray>Look where you want to go; sneak to dismount."
-  started-flying: "<gold>Taking off. <gray>Jump to climb, sneak to descend. <dark_gray>(use /pet dismount to land)"
-  confirm: "<gold>Right-click once more to take off."
-  stopped: "<gray>Dismounted."
+  # Mounting/dismounting itself is already obvious from the screen and the sound,
+  # so it doesn't get a chat line. Flight controls are explained here (once, at
+  # takeoff confirmation) instead of on every single flight.
+  confirm: "<gold>Right-click once more to take off. <gray>Jump to climb · sneak to descend. <dark_gray>(land with /pet dismount)"
   not-riding: "<red>You are not riding anything."
   not-rideable: "<red>This pet cannot be ridden."
   failed: "<red>You cannot mount here."
