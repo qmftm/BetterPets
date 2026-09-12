@@ -77,12 +77,20 @@ public final class DiscordBridge {
         if (!enabled) {
             return false;
         }
-        if (!plugin.getServer().getPluginManager().isPluginEnabled("DiscordSRV")) {
+        final Plugin discordSrvPlugin = plugin.getServer().getPluginManager().getPlugin("DiscordSRV");
+        if (discordSrvPlugin == null || !discordSrvPlugin.isEnabled()) {
             plugin.getLogger().info("DiscordSRV 가 없어 Discord 알림은 꺼둡니다.");
             return false;
         }
         try {
-            final Class<?> type = Class.forName("github.scarsz.discordsrv.DiscordSRV");
+            // Class.forName(name) 은 호출자(BetterPets)의 클래스로더로 찾는다. Paper 는
+            // 플러그인 클래스로더를 격리하고 paper-plugin.yml 에서 DiscordSRV 를
+            // join-classpath: false 로 뒀기 때문에, DiscordSRV 가 이미 떠서 정상 작동
+            // 중이어도 이 클래스로더로는 안 보인다 — 실기에서 DiscordSRV 가 멀쩡히 뜬
+            // 뒤에도 ClassNotFoundException 이 나는 걸로 확인했다. DiscordSRV 자신의
+            // 클래스로더로 찾아야 한다.
+            final Class<?> type = discordSrvPlugin.getClass().getClassLoader()
+                .loadClass("github.scarsz.discordsrv.DiscordSRV");
             discordSrv = type.getMethod("getPlugin").invoke(null);
 
             // 채널 이름 → JDA TextChannel. DiscordSRV 가 채널 별칭을 여기서 풀어준다.
