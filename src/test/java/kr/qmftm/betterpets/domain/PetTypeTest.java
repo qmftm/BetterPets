@@ -17,47 +17,60 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PetTypeTest {
 
     private static PetType type(final RideMode ride,
-                                final double flyChance,
+                                final double rideSpeed,
                                 final int growthMax,
                                 final Map<String, Integer> nextStage) {
         return new PetType("wolf", "<white>늑대", "pet_wolf",
-            Rarity.B, Rarity.B.defaults(), growthMax, ride, flyChance, Rarity.B.defaults().rideSpeed(),
+            Rarity.B, Rarity.B.defaults(), growthMax, ride, rideSpeed, -1.0,
             "LEAD", 1.0, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), nextStage, 0);
     }
 
     private static PetType simple() {
-        return type(RideMode.GROUND, 0.0, 100, Map.of());
+        return type(RideMode.GROUND, Rarity.B.defaults().rideSpeed(), 100, Map.of());
     }
 
     @Test
-    @DisplayName("비행 추첨은 FLY 종류만 돌린다")
-    void onlyFlyTypesRollForFlight() {
-        assertTrue(type(RideMode.FLY, 0.3, 100, Map.of()).rollsFlight());
-        assertFalse(type(RideMode.GROUND, 0.3, 100, Map.of()).rollsFlight(),
-            "걷는 탑승인데 비행을 굴리면 안 된다");
-        assertFalse(type(RideMode.NONE, 0.3, 100, Map.of()).rollsFlight());
+    @DisplayName("비행 상승력을 안 적으면 '설정 안 함'(음수)으로 남는다")
+    void flightLiftDefaultsToUnset() {
+        assertTrue(simple().flightLift() < 0,
+            "안 적었으면 전역 기본값(ride.flight-lift)을 쓰라는 신호여야 한다");
     }
 
     @Test
-    @DisplayName("비행 확률은 0.0~1.0 으로 접는다")
-    void flyChanceIsClamped() {
-        assertEquals(1.0, type(RideMode.FLY, 5.0, 100, Map.of()).flyChance());
-        assertEquals(0.0, type(RideMode.FLY, -1.0, 100, Map.of()).flyChance());
+    @DisplayName("비행 상승력을 적으면 그 값을 쓰고, 0은 최솟값으로 올리되 '설정 안 함'과는 구분한다")
+    void flightLiftOverridesAndFloors() {
+        final PetType custom = new PetType("dragon", "<gold>드래곤", "pet_dragon",
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, 0.8,
+            "LEAD", 1.0, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
+            List.of(), Map.of(), 0);
+        assertEquals(0.8, custom.flightLift(), "이 펫만 다른 값을 적었으면 그대로 쓰여야 한다");
+
+        final PetType zero = new PetType("dragon", "<gold>드래곤", "pet_dragon",
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, 0.0,
+            "LEAD", 1.0, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
+            List.of(), Map.of(), 0);
+        assertTrue(zero.flightLift() > 0.0, "0은 실수로 적었을 값이다. 최솟값으로 올린다");
+
+        final PetType unset = new PetType("dragon", "<gold>드래곤", "pet_dragon",
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, -1.0,
+            "LEAD", 1.0, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
+            List.of(), Map.of(), 0);
+        assertTrue(unset.flightLift() < 0, "음수는 '설정 안 함' 신호다. 접으면 그 신호를 잃는다");
     }
 
     @Test
     @DisplayName("탑승 속도는 등급 기본값을 펫별로 덮어쓸 수 있고, 0 이하로는 안 내려간다")
     void rideSpeedOverridesRarityDefaultAndFloors() {
         final PetType custom = new PetType("dragon", "<gold>드래곤", "pet_dragon",
-            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, 0.9,
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.9, -1.0,
             "LEAD", 1.0, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), Map.of(), 0);
         assertEquals(0.9, custom.rideSpeed(), "등급 기본값과 달라도 그대로 쓰여야 한다");
         assertNotEquals(Rarity.S.defaults().rideSpeed(), custom.rideSpeed());
 
         final PetType broken = new PetType("dragon", "<gold>드래곤", "pet_dragon",
-            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, -1.0,
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, -1.0, -1.0,
             "LEAD", 1.0, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), Map.of(), 0);
         assertTrue(broken.rideSpeed() > 0.0, "0 이하면 탑승해도 안 움직인다");
@@ -67,13 +80,13 @@ class PetTypeTest {
     @DisplayName("모델 크기 배율은 그대로 쓰이고, 0 이하로는 안 내려간다")
     void sizeIsKeptAndFloorsAboveZero() {
         final PetType custom = new PetType("dragon", "<gold>드래곤", "pet_dragon",
-            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, 0.5,
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, -1.0,
             "LEAD", 1.5, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), Map.of(), 0);
         assertEquals(1.5, custom.size());
 
         final PetType broken = new PetType("dragon", "<gold>드래곤", "pet_dragon",
-            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, 0.5,
+            Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.5, -1.0,
             "LEAD", -2.0, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             List.of(), Map.of(), 0);
         assertTrue(broken.size() > 0.0, "0 이하면 모델이 안 보이거나 뒤집힌다");

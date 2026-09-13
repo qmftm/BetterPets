@@ -31,25 +31,6 @@ class RarityTest {
     }
 
     @Test
-    @DisplayName("비행은 A등급부터만 나온다 — 원작 규칙")
-    void flightOnlyFromRarityA() {
-        assertFalse(Rarity.D.defaults().canRollFlight());
-        assertFalse(Rarity.C.defaults().canRollFlight());
-        assertFalse(Rarity.B.defaults().canRollFlight());
-        assertTrue(Rarity.A.defaults().canRollFlight());
-        assertTrue(Rarity.S.defaults().canRollFlight());
-    }
-
-    @Test
-    @DisplayName("비행 확률은 0.0~1.0 범위다")
-    void flyChanceIsProbability() {
-        for (final Rarity rarity : Rarity.values()) {
-            assertTrue(rarity.defaults().flyChance() >= 0.0 && rarity.defaults().flyChance() <= 1.0,
-                rarity + " 의 비행 확률이 범위를 벗어난다");
-        }
-    }
-
-    @Test
     @DisplayName("설정 문자열을 대소문자 무관하게 읽는다")
     void parsesCaseInsensitively() {
         assertEquals(Rarity.S, Rarity.parse("S").orElseThrow());
@@ -66,10 +47,9 @@ class RarityTest {
     }
 
     @Test
-    @DisplayName("생애주기: 능력은 아기 때부터 붙는다 — 돼지만 과급식의 대가로 잃는다")
+    @DisplayName("생애주기: 능력은 소환하는 순간부터 붙는다 — 돼지만 과급식의 대가로 잃는다")
     void lifeStageCapabilities() {
-        assertTrue(LifeStage.BABY.abilitiesActive());
-        assertTrue(LifeStage.ADULT.abilitiesActive());
+        assertTrue(LifeStage.NORMAL.abilitiesActive());
         assertFalse(LifeStage.PIG.abilitiesActive(), "돼지는 기믹이라 능력이 없다");
     }
 

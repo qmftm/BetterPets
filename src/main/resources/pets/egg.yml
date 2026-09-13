@@ -1,0 +1,33 @@
+# 진화 사슬의 시작 — 혼돈의 알에서 나오는 첫 형태.
+#
+# 성장도의 유일한 역할은 다음 종류로 진화하기까지 걸리는 시간이다. 이 펫은 next-stage
+# 가 있으므로(baby_phantom 하나뿐) 실제로 자라고, 다 차면 반드시 baby_phantom 이 된다.
+#
+# 알에서 이 펫이 나오게 하려면 items.yml 의 알에 gives: egg 를 적는다.
+
+id: egg
+display-name: "<dark_purple>혼돈의 알"
+model: egg
+rarity: D
+growth-max: 100
+
+# 아직 뭐가 될지 모르는 단계라 탈 수 없다.
+ride: false
+
+animations:
+  idle: idle
+  walk: walk
+  run: run
+  eat: eat
+
+movement:
+  follow-distance: 3.0
+  walk-speed: 0.22
+  run-speed: 0.38
+  teleport-distance: 24.0
+
+next-stage:
+  baby_phantom: 100
+
+acquire:
+  gacha-weight: 0        # 랜덤 알에서는 안 나온다. 전용 알로만 준다

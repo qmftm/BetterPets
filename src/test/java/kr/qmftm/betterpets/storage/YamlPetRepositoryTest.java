@@ -56,8 +56,7 @@ class YamlPetRepositoryTest {
         final YamlPetRepository repository = repo(dir);
         final PetData saved = PetData.newBaby(OWNER, "dragon", 1_700_000_000_000L);
         saved.nickname("화룡이");
-        saved.stage(LifeStage.ADULT);
-        saved.canFly(true);
+        saved.stage(LifeStage.PIG);
         repository.save(saved);
 
         final List<PetData> loaded = repository.loadOwner(OWNER);
@@ -67,8 +66,7 @@ class YamlPetRepositoryTest {
         assertEquals(saved.petId(), pet.petId());
         assertEquals("dragon", pet.typeId());
         assertEquals("화룡이", pet.nickname());
-        assertEquals(LifeStage.ADULT, pet.stage());
-        assertTrue(pet.canFly());
+        assertEquals(LifeStage.PIG, pet.stage());
     }
 
     @Test

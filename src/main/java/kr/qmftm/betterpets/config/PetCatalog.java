@@ -109,14 +109,13 @@ public final class PetCatalog {
             if (node == null) {
                 continue;
             }
-            // 적지 않은 항목은 그 등급의 내장 기본값을 그대로 쓴다. 다섯 줄을 전부
-            // 적게 만들 이유가 없다 — S등급의 fly-chance 만 손보는 게 흔한 경우다.
+            // 적지 않은 항목은 그 등급의 내장 기본값을 그대로 쓴다. 세 줄을 전부
+            // 적게 만들 이유가 없다 — S등급의 ride-speed 만 손보는 게 흔한 경우다.
             final RarityStats fallback = rarity.get().defaults();
             overrides.put(rarity.get(), new RarityStats(
                 node.getString("display-name", fallback.displayName()),
                 node.getDouble("move-speed", fallback.moveSpeedMultiplier()),
-                node.getDouble("ride-speed", fallback.rideSpeed()),
-                node.getDouble("fly-chance", fallback.flyChance())));
+                node.getDouble("ride-speed", fallback.rideSpeed())));
         }
         return RarityTable.of(overrides);
     }
@@ -191,8 +190,9 @@ public final class PetCatalog {
                 rarities.stats(rarity.get()),
                 yaml.getInt("growth-max", 100),
                 ride,
-                yaml.getDouble("fly-chance", rarities.stats(rarity.get()).flyChance()),
                 yaml.getDouble("ride-speed", rarities.stats(rarity.get()).rideSpeed()),
+                // 음수는 "설정 안 함" — RideController 가 전역 기본값(ride.flight-lift)을 쓴다.
+                yaml.contains("flight-lift") ? yaml.getDouble("flight-lift") : -1.0,
                 iconMaterial,
                 yaml.getDouble("size", 1.0),
                 readAnimations(file.getName(), yaml.getConfigurationSection("animations")),
@@ -518,13 +518,6 @@ public final class PetCatalog {
                 if (!types.containsKey(key)) {
                     problems.add("펫 '" + type.id() + "': next-stage 의 '" + key + "' 가 없는 펫입니다.");
                 }
-            }
-            // FLY 인데 확률이 0이면 어떤 개체도 날지 못하고 전부 걷는 탑승이 된다.
-            // 의도한 것일 수도 있지만 대개는 fly-chance 를 빠뜨린 실수다.
-            if (type.rollsFlight() && type.flyChance() <= 0.0) {
-                problems.add("펫 '" + type.id() + "': ride 가 FLY 인데 fly-chance 가 0 입니다."
-                    + " 이대로면 항상 걷는 탑승이 됩니다 (등급 " + type.rarity().name()
-                    + " 의 기본 비행 확률은 " + type.stats().flyChance() + ").");
             }
         }
         for (final EggDefinition egg : eggs.values()) {

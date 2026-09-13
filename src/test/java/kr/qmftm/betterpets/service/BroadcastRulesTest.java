@@ -13,7 +13,7 @@ class BroadcastRulesTest {
     private static BroadcastService.Rules rules(final boolean enabled,
                                                 final Rarity floor,
                                                 final int minStage) {
-        return new BroadcastService.Rules(enabled, floor, minStage, true, true, true, true);
+        return new BroadcastService.Rules(enabled, floor, minStage, true, true, true);
     }
 
     @Test

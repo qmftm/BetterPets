@@ -1,0 +1,38 @@
+# 진화 사슬의 끝 — baby_phantom 에서 30% 확률로 여기 도착한다. phantom_normal 보다
+# 희귀한 변종이라는 뜻으로 가중치를 낮게 뒀다(pets/baby_phantom.yml 참고).
+
+id: phantom_ender
+display-name: "<light_purple>엔더 팬텀"
+model: phantom_ender
+rarity: A
+growth-max: 100
+
+ride: true
+flying: true
+
+size: 2
+
+animations:
+  idle: idle
+  walk: walk
+  run: run
+  fly: fly
+  ride: ride
+  eat: eat
+
+movement:
+  follow-distance: 3.0
+  walk-speed: 0.28
+  run-speed: 0.50
+  teleport-distance: 28.0
+
+abilities:
+  - id: attribute_speed
+    base: 0.05
+  - id: attribute_health
+    base: 2.0
+  - id: on_kill_extra_drop
+    chance-base: 0.05
+
+acquire:
+  gacha-weight: 0

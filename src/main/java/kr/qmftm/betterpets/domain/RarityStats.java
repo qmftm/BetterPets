@@ -11,19 +11,12 @@ package kr.qmftm.betterpets.domain;
 public record RarityStats(
     String displayName,
     double moveSpeedMultiplier,
-    double rideSpeed,
-    double flyChance
+    double rideSpeed
 ) {
 
     public RarityStats {
         // 음수 속도는 펫을 뒤로 걷게 만든다. 0은 아예 못 움직인다 — 설정 실수의 흔한 형태다.
         moveSpeedMultiplier = Math.max(0.01, moveSpeedMultiplier);
         rideSpeed = Math.max(0.01, rideSpeed);
-        flyChance = Math.max(0.0, Math.min(1.0, flyChance));
-    }
-
-    /** 이 등급에서 비행 펫이 나올 수 있는가. */
-    public boolean canRollFlight() {
-        return flyChance > 0.0;
     }
 }

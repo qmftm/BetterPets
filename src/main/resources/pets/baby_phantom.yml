@@ -1,0 +1,32 @@
+# 진화 사슬의 중간 단계 — egg 다음, 팬텀이 되기 전.
+#
+# 성체가 될지 엔더 변종이 될지는 아래 next-stage 가중치로 정해진다.
+
+id: baby_phantom
+display-name: "<white>아기 팬텀"
+model: baby_phantom
+rarity: A
+growth-max: 100
+
+# 아직 어느 팬텀이 될지 모르는 단계라 탈 수 없다.
+ride: false
+
+animations:
+  idle: idle
+  walk: walk
+  run: run
+  eat: eat
+
+movement:
+  follow-distance: 4.0
+  walk-speed: 0.28
+  run-speed: 0.48
+  teleport-distance: 32.0
+
+# 70% 확률로 평범한 팬텀, 30% 확률로 엔더 팬텀이 된다.
+next-stage:
+  phantom_normal: 70
+  phantom_ender: 30
+
+acquire:
+  gacha-weight: 0        # egg 에서 진화해서만 나온다

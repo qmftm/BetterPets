@@ -20,39 +20,19 @@ eggs:
   # 기본 알 재질은 전부 셜커 스폰 알이다. 알마다 다른 material 을 쓰고 싶으면
   # /betterpets eggmaterial <알id> 로 손에 든 아이템을 그대로 지정할 수 있다 —
   # items.yml 을 직접 열 필요가 없다.
-  wolf_egg:
-    display-name: "<white>늑대 알"
+  #
+  # 기본 진화 사슬은 egg → baby_phantom → (phantom_normal 또는 phantom_ender) 하나뿐이다
+  # (pets/egg.yml 참고). 그래서 알도 이 사슬의 시작점 하나만 기본으로 둔다.
+  chaos_egg:
+    display-name: "<dark_purple>혼돈의 알"
     material: SHULKER_SPAWN_EGG
-    gives: wolf
-    # item-model: "betterpets:egg_wolf"
+    gives: egg
+    # item-model: "betterpets:egg_chaos"
 
-  dragon_egg:
-    display-name: "<gold>드래곤 알"
-    material: SHULKER_SPAWN_EGG
-    gives: dragon
-    # item-model: "betterpets:egg_dragon"
-
-  # 성장 단계 예시용. config.yml 의 growth.max-stage 를 2 이상으로 두면
-  # 이 알에서 나온 새끼가 자라면서 늑대나 드래곤이 된다 (pets/hatchling.yml 참고).
-  hatchling_egg:
-    display-name: "<gray>이름 모를 알"
-    material: SHULKER_SPAWN_EGG
-    gives: hatchling
-
-  random_egg:
-    display-name: "<white>수상한 알"
-    material: SHULKER_SPAWN_EGG
-    weights:
-      wolf: 50
-      dragon: 1
-    # item-model: "betterpets:egg_random"
-
-  # gives 도 weights 도 적지 않은 알. 펫 파일의 acquire.gacha-weight 를 그대로 쓴다.
-  # 지금 설정 기준으로는 늑대 50 : 드래곤 1 이고, 돼지와 새끼는 0 이라 빠진다.
-  # 새 펫을 만들 때 gacha-weight 만 적어두면 이 알에 자동으로 들어간다.
-  gacha_egg:
-    display-name: "<light_purple>뽑기 알"
-    material: SHULKER_SPAWN_EGG
+  # gives 도 weights 도 적지 않은 알을 만들고 싶다면, 그때는 펫 파일에
+  # acquire.gacha-weight 를 적은 펫들이 그 표를 이룬다 — 지금은 그런 펫이
+  # 하나도 없어서(egg 는 gacha-weight: 0) 여기 예시로 두면 "아무것도 못 준다"는
+  # 경고만 낸다. 진화 사슬을 늘릴 때 새 펫에 gacha-weight 를 적고 이런 알을 추가한다.
 
 # ── 먹이 ──────────────────────────────────────────────────────────
 # 소환한 펫에게 우클릭하면 먹인다. 성장도가 차면 다음 단계로 넘어간다.

@@ -19,9 +19,12 @@ import java.util.Set;
  *                  수치를 읽는 모든 자리에 표를 들고 다녀야 하기 때문이다 — 이동
  *                  컨트롤러, 능력, GUI, 알림. 리로드하면 어차피 펫 정의를 통째로 다시
  *                  만드므로 값이 굳어 있어도 문제없다
- * @param flyChance {@code ride} 가 {@link RideMode#FLY} 일 때만 의미가 있다
  * @param rideSpeed    등급별 기본값을 이 펫만 다르게 쓰고 싶을 때 {@code pets/*.yml} 의
- *                     {@code ride-speed} 로 덮어쓴다. {@code fly-chance} 와 같은 자리다
+ *                     {@code ride-speed} 로 덮어쓴다
+ * @param flightLift   비행 상승력(점프 키를 눌렀을 때 y 로 더해지는 값). 음수면
+ *                     "설정 안 함"이라는 뜻이고, 그때는 {@code config.yml} 의
+ *                     {@code ride.flight-lift} 전역값을 그대로 쓴다.
+ *                     {@code ride} 가 {@link RideMode#FLY} 가 아니면 의미가 없다
  * @param iconMaterial 보관함 아이콘 재질. {@code pets/*.yml} 의 {@code icon} 으로 정한다 —
  *                     안 적으면 {@code LEAD}
  * @param size         모델 크기 배율. {@code pets/*.yml} 의 {@code size} 로 정한다.
@@ -36,8 +39,8 @@ public record PetType(
     RarityStats stats,
     int growthMax,
     RideMode ride,
-    double flyChance,
     double rideSpeed,
+    double flightLift,
     String iconMaterial,
     double size,
     AnimationSet animations,
@@ -53,8 +56,12 @@ public record PetType(
         // 설정 파일에 적은 순서를 그대로 지켜야 재현 가능하다. EggDefinition 과 동일한 이유.
         nextStage = Collections.unmodifiableMap(new LinkedHashMap<>(nextStage));
         growthMax = Math.max(1, growthMax);
-        flyChance = Math.max(0.0, Math.min(1.0, flyChance));
         rideSpeed = Math.max(0.01, rideSpeed);
+        // 음수는 "설정 안 함"이라는 신호로 그대로 둔다. 0은 실수로 적었을 값이라
+        // 최솟값으로 접지만, 음수는 접으면 그 신호를 잃는다.
+        if (flightLift >= 0) {
+            flightLift = Math.max(0.01, flightLift);
+        }
         // 0이나 음수는 모델이 안 보이거나 뒤집혀 보인다 — 설정 실수의 흔한 형태다.
         size = Math.max(0.05, size);
     }
@@ -66,11 +73,6 @@ public record PetType(
      */
     public boolean hasNextStage() {
         return !nextStage.isEmpty();
-    }
-
-    /** 비행 추첨을 돌려야 하는 종류인가. {@link RideMode#FLY} 가 아니면 굴릴 이유가 없다. */
-    public boolean rollsFlight() {
-        return ride == RideMode.FLY;
     }
 
     /**

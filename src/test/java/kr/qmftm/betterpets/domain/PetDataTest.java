@@ -21,14 +21,13 @@ class PetDataTest {
     }
 
     @Test
-    @DisplayName("새 펫은 아기 상태, 성장 단계 1에서 시작한다")
+    @DisplayName("새 펫은 평범한 상태, 성장 단계 1에서 시작한다")
     void newPetStartsAsBaby() {
         final PetData data = PetData.newBaby(UUID.randomUUID(), "wolf", T0);
-        assertEquals(LifeStage.BABY, data.stage());
+        assertEquals(LifeStage.NORMAL, data.stage());
         assertEquals(0, data.growth());
         assertEquals(1, data.growthStage());
         assertFalse(data.active());
-        assertFalse(data.canFly());
     }
 
     @Test
@@ -59,10 +58,10 @@ class PetDataTest {
     void dirtyOnlyOnRealChange() {
         final PetData data = sample();
 
-        data.stage(LifeStage.BABY);     // 같은 값
+        data.stage(LifeStage.NORMAL);     // 같은 값
         assertFalse(data.isDirty(), "같은 값을 넣었는데 저장을 유발하면 안 된다");
 
-        data.stage(LifeStage.ADULT);
+        data.stage(LifeStage.PIG);
         assertTrue(data.isDirty());
     }
 
@@ -142,7 +141,7 @@ class PetDataTest {
     @DisplayName("파일에서 읽어 온 별명도 같은 문을 지난다")
     void nicknameFromStorageIsSanitized() {
         final PetData loaded = new PetData(UUID.randomUUID(), UUID.randomUUID(), "wolf",
-            "<red>옛날에 저장된 이름", LifeStage.BABY, 0, 1, 0, 0L, false, false, 0L, 0L);
+            "<red>옛날에 저장된 이름", LifeStage.NORMAL, 0, 1, 0, 0L, false, 0L, 0L);
 
         assertEquals("옛날에 저장된 이름", loaded.nickname(),
             "이 방어가 생기기 전 파일이나 관리자가 손으로 고친 파일에도 태그가 있을 수 있다");
@@ -160,13 +159,10 @@ class PetDataTest {
     }
 
     @Test
-    @DisplayName("능력은 아기 때부터 붙는다 — 돼지가 되면 잃는다")
+    @DisplayName("능력은 소환하는 순간부터 붙는다 — 돼지가 되면 잃는다")
     void lifeStageGating() {
         final PetData data = sample();
 
-        assertTrue(data.stage().abilitiesActive());
-
-        data.stage(LifeStage.ADULT);
         assertTrue(data.stage().abilitiesActive());
 
         data.stage(LifeStage.PIG);

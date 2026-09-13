@@ -82,19 +82,19 @@ plugins/BetterPets/
 `pets/` 에 파일을 하나 더 넣으면 새 펫이 됩니다.
 
 ```yaml
-# pets/dragon.yml
-id: dragon
-display-name: "<gold>드래곤"
-model: pet_dragon          # plugins/BetterModel/models/pet_dragon.bbmodel
-rarity: S
+# pets/phantom_normal.yml
+id: phantom_normal
+display-name: "<gray>팬텀"
+model: phantom_normal      # plugins/BetterModel/models/phantom_normal.bbmodel
+rarity: A
 growth-max: 100
 # icon: NETHER_STAR          # 보관함 아이콘 재질. 안 적으면 LEAD
-# size: 1.2                   # 모델 크기 배율. 1.0 이 원래 크기
+size: 2                      # 모델 크기 배율. 1.0 이 원래 크기
 
 ride: true                  # 탈 수 있는지
 flying: true                 # 탈 수 있으면, 날 수도 있는지
-fly-chance: 0.35            # flying 이라도 실제로 날 확률. 실패하면 걷는 탑승
 # ride-speed: 0.5            # 등급 기본값 대신 이 펫만 쓸 탑승 속도. 안 적으면 등급을 따름
+# flight-lift: 0.6           # 이 펫만 쓸 비행 상승력. 안 적으면 config.yml 의 전역값을 따름
 
 animations:                # 모델의 애니메이션 이름과 연결
   idle: idle               # 키는 정해져 있어요. 오타를 내면 기동할 때 알려드립니다
@@ -112,10 +112,12 @@ movement:                  # 안 적으면 전부 기본값입니다
 abilities:
   - id: attribute_speed
     base: 0.05
-    per-growth: 0.0005
+
+# next-stage 를 적지 않았으므로 이 펫은 더 진화하지 않는다 — 성장도가 오르지도
+# 않는다. 아래 "성장 속도" 절 참고.
 
 acquire:
-  gacha-weight: 1          # 뽑기 알에서 뽑힐 가중치. 0 이면 뽑기 알에서 안 나와요
+  gacha-weight: 0          # 뽑기 알에서 뽑힐 가중치. 0 이면 뽑기 알에서 안 나와요
 ```
 
 설정에 오타가 있으면 **기동할 때 전부 모아서 한 번에** 알려줍니다. 고치고 재시작하기를
@@ -148,12 +150,12 @@ rarities:
     display-name: "전설"
     move-speed: 1.70     # 추종 이동 배율
     ride-speed: 0.42     # 탑승 속도
-    fly-chance: 0.35     # 성체가 될 때 비행이 붙을 확률
 ```
 
 > 기본 수치는 **전부 임시값이에요.** 원작의 실제 값은 확인하지 못했습니다. 확실한 건
-> "등급이 오를수록 빨라진다"와 "비행은 A등급부터" 둘뿐이라, 서버에 맞게 고쳐 쓰시라고
-> 파일로 뺐어요.
+> "등급이 오를수록 빨라진다" 하나뿐이라, 서버에 맞게 고쳐 쓰시라고 파일로 뺐어요.
+> 비행 여부는 등급이 아니라 각 펫의 `flying` 설정으로만 정해집니다 — 개체별 추첨은
+> 없어요. `flying: true` 인 종류는 전부 납니다.
 
 ### ✨ 능력
 
@@ -161,20 +163,20 @@ rarities:
 
 | id | 종류 | 하는 일 | 수치 키 |
 | --- | --- | --- | --- |
-| `attribute_speed` | 패시브 | 이동속도 증가 | `base` · `per-growth` |
-| `attribute_health` | 패시브 | 최대 체력 증가 | `base` · `per-growth` |
-| `attribute_damage` | 패시브 | 공격력 증가 | `base` · `per-growth` |
-| `on_kill_extra_drop` | 트리거 | 몹 처치 시 확률로 드롭 한 벌 더 | `chance-base` · `chance-per-growth` |
+| `attribute_speed` | 패시브 | 이동속도 증가 | `base` |
+| `attribute_health` | 패시브 | 최대 체력 증가 | `base` |
+| `attribute_damage` | 패시브 | 공격력 증가 | `base` |
+| `on_kill_extra_drop` | 트리거 | 몹 처치 시 확률로 드롭 한 벌 더 | `chance-base` |
 
-패시브 수치는 `(base + per-growth × 성장도) × 등급 이동속도 배율` 입니다.
-`on_kill_extra_drop` 의 확률에는 **등급 배율을 곱하지 않아요** — 확률에 배율을 곱하면
-상한(100%)에 금방 붙어서 등급 차이가 오히려 뭉개지거든요. 등급 차이는 `chance-base`
-로 내시면 됩니다.
+패시브 수치는 `base × 등급 이동속도 배율` 입니다. `on_kill_extra_drop` 의 확률에는
+**등급 배율을 곱하지 않아요** — 확률에 배율을 곱하면 상한(100%)에 금방 붙어서 등급
+차이가 오히려 뭉개지거든요. 등급 차이는 `chance-base` 로 내시면 됩니다. 성장도는
+능력 수치에 관여하지 않습니다 — 성장도의 역할은 진화 하나뿐이에요 (아래 "성장 속도"
+절 참고).
 
-**소환하자마자 붙어요.** 아기든 성체든 차이가 없습니다 — "다 자라야 쓸모 있어진다"는
-대기 시간을 없앴어요. 예외는 **돼지뿐**입니다. 과급식으로 돼지가 되면 능력을 잃습니다,
-그게 그 기믹의 대가예요. (보관함 화면에는 능력 수치를 따로 보여주지 않습니다 —
-효과는 그대로 적용되지만 표시는 생략했어요.)
+**소환하자마자 붙어요.** 진화 전이든 후든 차이가 없습니다. 예외는 **돼지뿐**입니다.
+과급식으로 돼지가 되면 능력을 잃습니다, 그게 그 기믹의 대가예요. (보관함 화면에는
+능력 수치를 따로 보여주지 않습니다 — 효과는 그대로 적용되지만 표시는 생략했어요.)
 
 ### 🥚 알과 먹이
 
@@ -182,17 +184,17 @@ rarities:
 
 ```yaml
 eggs:
-  wolf_egg:
-    display-name: "<white>늑대 알"
+  chaos_egg:
+    display-name: "<dark_purple>혼돈의 알"
     material: SHULKER_SPAWN_EGG
-    gives: wolf              # 고정 알 — 이 펫이 확정으로 나옵니다
+    gives: egg               # 고정 알 — 이 펫이 확정으로 나옵니다
 
   random_egg:
     display-name: "<white>수상한 알"
     material: EGG
     weights:                 # 랜덤 알 — 가중치 추첨
-      wolf: 50
-      dragon: 1
+      egg: 50
+      some_other_pet: 1
 
   gacha_egg:
     display-name: "<light_purple>뽑기 알"
@@ -202,7 +204,7 @@ eggs:
 `gives` 도 `weights` 도 없는 알은 각 펫이 `pets/*.yml` 에 적어둔
 `acquire.gacha-weight` 를 표로 씁니다. **새 펫을 만들 때 그 한 줄만 적어두면 뽑기 알에
 자동으로 들어가요** — `items.yml` 을 다시 열 필요가 없습니다. `0` 으로 두면 안 나오고요
-(기본 설정의 돼지와 새끼가 그렇습니다).
+(기본 설정의 모든 펫이 그렇습니다 — 뽑기가 아니라 알을 키워서 얻는 구성이에요).
 
 알은 **허공에 대고 우클릭**하면 까집니다. 블록을 바라보고 클릭하면 블록이 먼저예요 —
 알을 든 채로 상자를 열려다 알이 까지면 되돌릴 수가 없으니까요. 블록 쪽을 보면서 까고
@@ -220,7 +222,7 @@ feeds:
     growth: 10               # 안 적으면 config 의 feed-amount 를 씁니다
 ```
 
-`item-model` 로 리소스팩 모델을 지정할 수 있어요 (`betterpets:egg_wolf` 형식).
+`item-model` 로 리소스팩 모델을 지정할 수 있어요 (`betterpets:egg_chaos` 형식).
 **소문자만 됩니다** — 대문자를 쓰면 기동할 때 알려줍니다.
 
 기본 알 재질은 전부 `SHULKER_SPAWN_EGG` 예요. 알마다 다른 재질을 쓰고 싶으면
@@ -231,33 +233,32 @@ feeds:
 
 ### 🌱 성장 속도
 
+**성장도가 하는 일은 하나뿐입니다 — 다음 종류로 진화하기까지 걸리는 시간.** 아기·성체
+같은 생애주기 구분은 없어요. 능력도 탑승도 소환하는 순간부터 전부 붙습니다.
+
 ```yaml
 growth:
   feed-amount: 10      # 먹이 한 번에 오르는 성장도. 원작(우유)은 10이에요
-  max-stage: 1         # 성장 단계 개수
 ```
-
-`max-stage` 가 **1이면** 성장도가 다 차는 순간 성체가 됩니다. **2 이상이면** 성장도가
-찰 때마다 `pets/*.yml` 의 `next-stage` 가중치로 다음 형태를 뽑고 성장도를 0부터 다시
-채워요. 이걸 `max-stage - 1` 번 반복한 뒤에야 성체가 됩니다.
 
 ```yaml
-# pets/hatchling.yml — 같이 들어 있는 예시입니다
+# pets/baby_phantom.yml — 같이 들어 있는 예시입니다
 next-stage:
-  wolf: 70       # 70% 확률로 늑대
-  hatchling: 25  # 25% 확률로 그대로 — "한 단계 더 기다린다"가 됩니다
-  dragon: 5      # 5% 확률로 드래곤
+  phantom_normal: 70  # 70% 확률로 평범한 팬텀
+  phantom_ender: 30   # 30% 확률로 엔더 팬텀
 ```
 
-가중치 비율이 그대로 확률이 돼요. **자기 자신을 넣어도 됩니다** — 단계를 더 기다리는
-재미가 생깁니다. `next-stage` 를 안 적으면 종류는 그대로 두고 단계만 올라가요.
+`next-stage` 가 있는 종류만 먹이·시간 경과로 성장도가 오릅니다. 다 차면 이 가중치로
+다음 형태를 뽑고 성장도를 0부터 다시 채워요. 가중치 비율이 그대로 확률이 됩니다.
+**자기 자신을 넣어도 됩니다** — 다음에 더 자랄 기회를 한 번 더 미루는 셈입니다.
 
-> `max-stage` 를 올리면 **모든 펫이 성체가 되기까지 더 오래 걸려요.** 이미 균형을
-> 잡아둔 서버라면 신중하게 바꾸세요.
+**`next-stage` 를 안 적은 종류는 성장도가 아예 오르지 않습니다.** 더 진화할 곳이
+없으니 잴 이유가 없거든요 — 먹여도 포만도만 오르고 성장도는 그대로입니다. 기본
+제공되는 `phantom_normal`/`phantom_ender`/`pig` 가 그렇습니다.
 
-시간 경과는 **1분당 +1로 고정**이고 설정 대상이 아닙니다. 접속해 있지 않아도, 보관함에
-넣어둔 채로도 자라요 — 마지막으로 본 시각을 기준으로 계산하기 때문입니다. 접속하거나
-보관함을 열면 그동안 자란 만큼이 한 번에 반영되고, 그새 다 자랐으면 그때 알려드려요.
+시간 경과는 **꺼내둔 펫에 한해, 1분당 +1로 고정**이고 설정 대상이 아닙니다. 보관함에
+넣어둔 동안은 시간이 아무리 지나도 자라지 않아요 — 접속하거나 보관함을 열면 그동안
+꺼내둔 시간만큼 자란 만큼이 반영되고, 그새 진화했으면 그때 알려드려요.
 
 ### 🍖 포만도
 
@@ -288,7 +289,7 @@ gimmick:
     becomes: pig         # 이 종류로 바뀝니다 (pets/ 에 있는 id)
 ```
 
-- **아기 펫에게만** 일어납니다. 성체는 아무리 먹여도 안 변해요
+- **아직 돼지가 안 된 펫에게만** 일어납니다. 이미 돼지가 된 펫은 다시 걸리지 않아요
 - 상태만 바뀌는 게 아니라 **종류까지 바뀝니다.** 안 그러면 "돼지가 됐다"는 메시지와
   화면이 어긋나요. `becomes` 가 가리키는 펫이 없으면 기동할 때 경고합니다
 - `count` 를 **2 미만으로 두면 2로 올려 씁니다.** 먹이 한두 번에 바로 돼지가 되는 건
@@ -305,10 +306,15 @@ ride:
 **점프로 오르고, 스니크로 내려갑니다.** 지상 탑승과 달리 비행 중에는 스니크가
 하차가 아니에요 — 하차만 시키면 위로만 갈 수 있고 내려올 방법이 없거든요.
 비행 중 내리려면 `/pet dismount` 를 쓰세요. **완강 낙하는 안 걸어드려요** —
-공중에서 내리면 그대로 떨어집니다. 땅 가까이에서 내리세요.
+공중에서 내리면 그대로 떨어집니다. 땅 가까이에서 내리세요. 탈 때 확인 절차는
+없습니다 — 나는 종류를 우클릭하면 곧바로 이륙해요.
 
 고도 상한을 빌드 높이와 따로 두는 이유는, 원작처럼 **빌드 높이 위 빈 하늘로도**
 올라갈 수 있어야 해서예요. 터무니없는 y 값만 막는 안전장치입니다.
+
+`flight-lift` 는 전역 기본값입니다. 특정 펫만 더 빠르거나 느리게 오르내리게
+하고 싶으면 `pets/*.yml` 에 `flight-lift` 를 따로 적으세요 — `ride-speed` 와
+같은 자리입니다.
 
 ### 📢 알림
 
@@ -318,22 +324,18 @@ broadcast:
   min-rarity: A          # 이 등급 이상만. D 로 두면 채팅이 밀려요
   min-growth-stage: 1    # 이 성장 단계 이상만
   on-obtain: true        # 알에서 나왔을 때
-  on-grown: true         # 다 자랐을 때
-  on-stage-up: false     # 성장 단계가 올랐을 때
+  on-stage-up: false     # next-stage 로 진화했을 때
   sound: true
 ```
 
 등급과 성장 단계를 **둘 다** 넘겨야 알림이 나갑니다.
 
-> `min-growth-stage` 를 `growth.max-stage` 보다 크게 두면 어떤 펫도 그 단계에
-> 닿을 수 없어서 알림이 하나도 안 나가요. `enabled: false` 와 증상이 똑같아 원인을
-> 찾기 어려운 조합이라, 기동할 때 경고로 알려드립니다.
-
 `min-growth-stage` 를 2 이상으로 올리면 **획득 알림(`on-obtain`)은 나가지 않아요** —
 알에서 갓 나온 펫은 언제나 1단계니까요. 그때는 `on-stage-up` 을 켜서 "일정 단계를
-넘겼다"를 알리시는 게 맞습니다.
+넘겼다"를 알리시는 게 맞습니다. next-stage 로 여러 번 진화하는 펫이 하나도 없다면
+이 단계는 항상 1이라 의미가 없습니다.
 
-**주인에게 가는 알림은 이 문턱과 무관해요.** 자기 펫이 자랐다는 건 등급과 상관없이
+**주인에게 가는 알림은 이 문턱과 무관해요.** 자기 펫이 진화했다는 건 등급과 상관없이
 본인이 알아야 하니까요. 문턱은 서버 전체 방송에만 걸립니다.
 
 ### 🌐 언어
@@ -358,15 +360,13 @@ language: ko_kr          # lang/ko_kr.yml 을 읽습니다
 | --- | --- |
 | **DiscordSRV** | 서버 전체 알림을 디스코드 채널로도 보냅니다 |
 | **PlaceholderAPI** | `%betterpets_pet_name%` · `%betterpets_owned%` · `%betterpets_active%` 등 |
-| **Floodgate / Geyser** | Bedrock 플레이어를 알아보고 비행 이륙 확인을 건너뜁니다 (터치로는 맞히기 어려워서요) |
+| **Floodgate / Geyser** | GeyserModelEngine 이 있는지 기동 로그로 알려줍니다 |
 
 ```yaml
 integrations:
   discord:
     enabled: true
     channel: global      # DiscordSRV 의 게임 채널 이름
-  bedrock:
-    skip-mount-confirm: true
 ```
 
 ### 🪄 Bedrock 플레이어를 받는다면

@@ -205,8 +205,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         manager.registerEvents(
             new SessionListener(this, store, pets, registry, abilities, catchUp), this);
         manager.registerEvents(new InteractionListener(pets, store, items, registry, rides, growth,
-            messages, broadcasts, bedrock,
-            () -> getConfig().getBoolean("integrations.bedrock.skip-mount-confirm", true)), this);
+            messages, broadcasts), this);
         manager.registerEvents(new MenuListener(pets, store, menus, messages, catchUp), this);
         manager.registerEvents(new AbilityTriggerListener(registry, abilities), this);
     }
@@ -233,8 +232,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 discord.reload(
                     getConfig().getBoolean("integrations.discord.enabled", true),
                     getConfig().getString("integrations.discord.channel", "global"));
-                // 성장·기믹도 마찬가지였다. growth.max-stage 를 고치고 리로드해도
-                // 예전 값으로 돌았다 — 기동 코드는 리로드 때마다 overfeed.count 를
+                // 성장·기믹도 마찬가지였다. gimmick.overfeed.count 를 고치고 리로드해도
+                // 예전 값으로 돌았다 — 기동 코드는 리로드 때마다 그 값을
                 // 다시 읽어 경고까지 내면서, 정작 쓰는 쪽에는 안 밀어 넣고 있었다.
                 growth.tuning(readGrowthTuning());
             }, getDataFolder()));
@@ -351,7 +350,6 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getInt("gimmick.overfeed.count", 10),
             getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L,
             getConfig().getString("gimmick.overfeed.becomes", "pig"),
-            getConfig().getInt("growth.max-stage", 1),
             getConfig().getInt("growth.fullness.min-gain", 5),
             getConfig().getInt("growth.fullness.max-gain", 15),
             getConfig().getInt("growth.fullness.max", 100),
@@ -362,22 +360,11 @@ public final class BetterPetsPlugin extends JavaPlugin {
         final boolean enabled = getConfig().getBoolean("broadcast.enabled", true);
         final int minStage = getConfig().getInt("broadcast.min-growth-stage", 1);
 
-        // 성장 단계는 growth.max-stage 를 넘지 못한다. 문턱이 그보다 높으면 어떤 펫도
-        // 조건을 넘을 수 없어, 알림이 통째로 꺼진 것과 같아진다 — 껐다는 자각 없이.
-        // enabled: false 와 증상이 똑같아서, 로그가 없으면 원인을 찾을 길이 없다.
-        final int maxStage = Math.max(1, getConfig().getInt("growth.max-stage", 1));
-        if (enabled && minStage > maxStage) {
-            getLogger().warning("broadcast.min-growth-stage(" + minStage
-                + ") 가 growth.max-stage(" + maxStage + ") 보다 큽니다."
-                + " 성장 단계가 그 값에 닿을 수 없어 전체 알림이 하나도 나가지 않습니다.");
-        }
-
         return new BroadcastService.Rules(
             enabled,
             broadcastFloor(),
             minStage,
             getConfig().getBoolean("broadcast.on-obtain", true),
-            getConfig().getBoolean("broadcast.on-grown", true),
             getConfig().getBoolean("broadcast.on-stage-up", false),
             getConfig().getBoolean("broadcast.sound", true));
     }

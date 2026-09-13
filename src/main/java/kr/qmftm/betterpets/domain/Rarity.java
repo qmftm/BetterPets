@@ -6,28 +6,28 @@ import java.util.Optional;
 /**
  * 펫 등급. 원작(악어의 놀이터)의 D~S 5단계를 따른다.
  *
- * <p><b>이 enum 은 서열과 식별자만 갖는다.</b> 실제 수치(속도·비행 확률·색)는
+ * <p><b>이 enum 은 서열과 식별자만 갖는다.</b> 실제 수치(속도·색)는
  * {@link RarityStats} 로 빠져 {@code rarity.yml} 에서 온다 — 여기 값은 설정이 없을 때의
  * 기본값일 뿐이고, 그마저도 <b>플레이스홀더다.</b> 원작의 실제 수치는 확인하지 못했다.
  *
- * <p>원작에서 확정된 규칙은 두 가지뿐이다:
- * 등급이 오를수록 이동속도가 빨라지고, 비행은 A등급부터 확률적으로 나온다.
+ * <p>원작에서 확정된 규칙은 하나다: 등급이 오를수록 이동속도가 빨라진다.
+ * 비행 여부는 이제 펫 종류의 {@code flying:} 설정으로만 정해진다 — 등급에 따른
+ * 확률 추첨은 없다.
  */
 public enum Rarity {
 
-    D("일반", 1.00, 0.20, 0.00),
-    C("고급", 1.10, 0.24, 0.00),
-    B("희귀", 1.25, 0.28, 0.00),
-    A("영웅", 1.45, 0.34, 0.10),
-    S("전설", 1.70, 0.42, 0.35);
+    D("일반", 1.00, 0.20),
+    C("고급", 1.10, 0.24),
+    B("희귀", 1.25, 0.28),
+    A("영웅", 1.45, 0.34),
+    S("전설", 1.70, 0.42);
 
     private final RarityStats defaults;
 
     Rarity(final String displayName,
            final double moveSpeedMultiplier,
-           final double rideSpeed,
-           final double flyChance) {
-        this.defaults = new RarityStats(displayName, moveSpeedMultiplier, rideSpeed, flyChance);
+           final double rideSpeed) {
+        this.defaults = new RarityStats(displayName, moveSpeedMultiplier, rideSpeed);
     }
 
     /** {@code rarity.yml} 이 없거나 이 등급을 적지 않았을 때 쓸 값. */

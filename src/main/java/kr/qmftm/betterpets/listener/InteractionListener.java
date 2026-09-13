@@ -4,11 +4,9 @@ import kr.qmftm.betterpets.config.Messages;
 import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.FeedDefinition;
-import kr.qmftm.betterpets.domain.LifeStage;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.RideMode;
-import kr.qmftm.betterpets.integration.BedrockSupport;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.MovementController;
@@ -26,22 +24,15 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInputEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /** 알 우클릭, 펫 우클릭(먹이·탑승), 탑승 조작 입력. */
 public final class InteractionListener implements Listener {
-
-    /** 비행 이륙 확인 창. 이 안에 한 번 더 우클릭해야 뜬다. */
-    private static final long MOUNT_CONFIRM_MILLIS = 3_000L;
 
     private final PetService pets;
     private final PetStore store;
@@ -51,18 +42,6 @@ public final class InteractionListener implements Listener {
     private final GrowthService growth;
     private final Messages messages;
     private final BroadcastService broadcasts;
-    private final BedrockSupport bedrock;
-
-    /**
-     * Bedrock 플레이어에게 비행 이륙 확인을 건너뛸지. 터치로는 두 번째 우클릭이 어렵다.
-     *
-     * <p>값을 복사해 들고 있으면 {@code /betterpets reload} 때 다시 밀어 넣어야 한다.
-     * 매번 물어보면 그럴 일이 없다 — 여기는 틱 루프가 아니라 우클릭 한 번이라
-     * 설정을 읽는 비용이 문제가 되지 않는다.
-     */
-    private final java.util.function.BooleanSupplier skipMountConfirmOnBedrock;
-
-    private final Map<UUID, Long> mountConfirms = new ConcurrentHashMap<>();
 
     public InteractionListener(final PetService pets,
                                final PetStore store,
@@ -71,9 +50,7 @@ public final class InteractionListener implements Listener {
                                final RideController rides,
                                final GrowthService growth,
                                final Messages messages,
-                               final BroadcastService broadcasts,
-                               final BedrockSupport bedrock,
-                               final java.util.function.BooleanSupplier skipMountConfirmOnBedrock) {
+                               final BroadcastService broadcasts) {
         this.pets = pets;
         this.store = store;
         this.items = items;
@@ -82,8 +59,6 @@ public final class InteractionListener implements Listener {
         this.growth = growth;
         this.messages = messages;
         this.broadcasts = broadcasts;
-        this.bedrock = bedrock;
-        this.skipMountConfirmOnBedrock = skipMountConfirmOnBedrock;
     }
 
     /**
@@ -209,11 +184,10 @@ public final class InteractionListener implements Listener {
 
     private void feed(final Player player, final ActivePet pet, final ItemStack held, final String feedId) {
         final PetData data = pet.data();
-        if (data.stage() == LifeStage.ADULT || data.stage() == LifeStage.PIG) {
-            messages.send(player, "feed.already-grown");
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
-            return;
-        }
+        // 아기·성체 구분이 없어져 "이미 다 자랐다"는 판정 자체가 사라졌다 — next-stage 가
+        // 없는 종류는 growth.feed() 가 성장도를 그냥 안 올릴 뿐, 급여 자체는 막지 않는다.
+        // 막으면 과급식 기믹(짧은 시간에 몰아 먹이기)까지 같이 막힌다.
+        //
         // 설정에서 지워진 먹이를 들고 있을 수 있다. 아이템을 먹어치우지 않고 알려준다.
         final Optional<FeedDefinition> definition = pets.catalog().feed(feedId);
         if (definition.isEmpty()) {
@@ -244,15 +218,9 @@ public final class InteractionListener implements Listener {
         switch (result) {
             case STAGE_UP -> {
                 messages.send(player, "feed.stage-up",
-                    "stage", String.valueOf(data.growthStage()),
-                    "max", String.valueOf(growth.maxStage()));
+                    "stage", String.valueOf(data.growthStage()));
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
                 broadcasts.onStageUp(player, data, current);
-            }
-            case GREW_UP -> {
-                messages.send(player, "feed.grew-up");
-                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-                broadcasts.onGrown(player, data, current);
             }
             case BECAME_PIG -> {
                 messages.send(player, "feed.became-pig");
@@ -276,13 +244,14 @@ public final class InteractionListener implements Listener {
     }
 
     /**
-     * 탑승 시도.
+     * 탑승 시도. 지상이든 비행이든 우클릭 한 번이면 된다.
      *
-     * <p>지상 탑승은 즉시, <b>비행은 두 번째 우클릭을 요구한다.</b> 실수로 이륙하면
-     * 그대로 하늘로 날아가버려서 성가시다.
+     * <p>예전에는 비행 이륙에 3초 안의 두 번째 우클릭을 요구했다 — 실수로 이륙하는
+     * 걸 막으려는 확인 절차였다. 개체별 비행 추첨(fly-chance)이 없어지면서 "이 펫이
+     * 나는 종류인지"는 이제 펫 화면과 로어에서 이미 알 수 있으니, 확인 절차 없이
+     * 바로 태운다.
      */
     private void tryRide(final Player player, final ActivePet pet) {
-        final PetData data = pet.data();
         final PetType type = pet.type();
 
         if (!type.ride().canRide()) {
@@ -296,24 +265,11 @@ public final class InteractionListener implements Listener {
             return;     // 비행 중 우클릭은 무시한다. 하차는 스니크 전용
         }
 
-        // FLY 종류라도 비행 추첨에 실패한 개체는 걷는 탑승까지만 된다.
-        final boolean flying = type.ride().effective(data.canFly()) == RideMode.FLY;
-        // Bedrock 은 터치 조작이라 "3초 안에 한 번 더 우클릭"을 맞히기가 어렵다.
-        // 자바 플레이어의 실수 방지는 그대로 두고, 이쪽만 건너뛴다.
-        if (flying && !(skipMountConfirmOnBedrock.getAsBoolean() && bedrock.isBedrock(player))) {
-            final long now = System.currentTimeMillis();
-            final Long armed = mountConfirms.get(player.getUniqueId());
-            if (armed == null || now > armed) {
-                mountConfirms.put(player.getUniqueId(), now + MOUNT_CONFIRM_MILLIS);
-                messages.send(player, "ride.confirm");
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.8f, 1.2f);
-                return;
-            }
-            mountConfirms.remove(player.getUniqueId());
-        }
-
+        final boolean flying = type.ride() == RideMode.FLY;
         final double speed = type.rideSpeed();
-        if (rides.start(player, pet.petId(), pet.carrier().getLocation(), flying, speed)) {
+        // 이 펫만 다른 상승력을 쓰도록 적어뒀으면 그 값을, 아니면 전역 기본값을 쓴다.
+        final double flightLift = type.flightLift() >= 0 ? type.flightLift() : rides.flightLift();
+        if (rides.start(player, pet.petId(), pet.carrier().getLocation(), flying, speed, flightLift)) {
             // 비행이면 fly 애니메이션이 걸리게 모드를 나눠 준다.
             pet.movement().mode(flying
                 ? MovementController.Mode.RIDDEN_FLYING
@@ -333,18 +289,6 @@ public final class InteractionListener implements Listener {
         if (rides.isRiding(event.getPlayer())) {
             rides.input(event.getPlayer(), event.getInput());
         }
-    }
-
-    /**
-     * 퇴장 시 이륙 확인 창을 버린다.
-     *
-     * <p>지우는 곳이 "실제로 이륙했을 때" 하나뿐이었다. 확인만 띄우고 안 탄 사람의
-     * 항목은 서버가 살아 있는 내내 남는다는 뜻이다 — 3초면 의미가 없어지는 값인데
-     * 지도에는 상한이 없다. 과급식 카운터에서 똑같은 걸 한 번 겪었다.
-     */
-    @EventHandler
-    public void onQuit(final PlayerQuitEvent event) {
-        mountConfirms.remove(event.getPlayer().getUniqueId());
     }
 
     /**

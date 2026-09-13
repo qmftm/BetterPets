@@ -20,20 +20,18 @@ class AbilityDefinitionTest {
     }
 
     @Test
-    @DisplayName("성장도에 비례해 커지고 등급 배율이 곱해진다")
-    void scalesWithGrowthAndRarity() {
-        final AbilityDefinition ability =
-            new AbilityDefinition("speed", Map.of("base", 1.0, "per-growth", 0.01));
+    @DisplayName("base 에 등급 배율이 곱해진다 — 성장도는 더 이상 관여하지 않는다")
+    void scalesWithRarityOnly() {
+        final AbilityDefinition ability = new AbilityDefinition("speed", Map.of("base", 1.0));
 
-        assertEquals(1.0, ability.scaled(0, 1.0), 1.0e-9, "성장도 0이면 base 그대로");
-        assertEquals(2.0, ability.scaled(100, 1.0), 1.0e-9, "100 성장 시 base + 1.0");
-        assertEquals(4.0, ability.scaled(100, 2.0), 1.0e-9, "등급 배율은 합계에 곱해진다");
+        assertEquals(1.0, ability.scaled(1.0), 1.0e-9, "배율 1.0 이면 base 그대로");
+        assertEquals(2.0, ability.scaled(2.0), 1.0e-9, "등급 배율이 곱해진다");
     }
 
     @Test
     @DisplayName("수치를 하나도 적지 않으면 0이다 — 조용히 세지 않는다")
     void emptyDefinitionScalesToZero() {
-        assertEquals(0.0, new AbilityDefinition("x", Map.of()).scaled(100, 5.0));
+        assertEquals(0.0, new AbilityDefinition("x", Map.of()).scaled(5.0));
     }
 
     @Test

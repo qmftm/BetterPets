@@ -169,7 +169,6 @@ public final class PetPlaceholders extends PlaceholderExpansion {
             case "pet_growth_max" -> String.valueOf(growth.maxOf(data));
             case "pet_growth_percent" -> Math.round(growth.progressOf(data) * 100) + "%";
             case "pet_growth_stage" -> String.valueOf(data.growthStage());
-            case "pet_growth_stage_max" -> String.valueOf(growth.maxStage());
             case "pet_id" -> data.petId().toString().substring(0, 8);
             // 모르는 키에 "-" 를 주면 오타가 조용히 묻힌다. null 이어야 원문이 남아 눈에 띈다.
             default -> null;

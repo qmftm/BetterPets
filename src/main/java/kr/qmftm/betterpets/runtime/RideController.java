@@ -100,6 +100,14 @@ public final class RideController {
     }
 
     /**
+     * 비행 상승력 전역 기본값. {@code pets/*.yml} 에 {@code flight-lift} 를 따로 적지 않은
+     * 종류는 이 값을 쓴다 — {@code PetType.rideSpeed} 가 등급 기본값을 쓰는 것과 같은 자리다.
+     */
+    public double flightLift() {
+        return flightLift;
+    }
+
+    /**
      * 진행 중인 탑승 하나.
      *
      * <p>플레이어가 동시에 탈 수 있는 건 어차피 한 마리라 탑승은 소유자별로 하나다.
@@ -111,13 +119,16 @@ public final class RideController {
         private final ArmorStand mount;
         private final boolean flying;
         private final double speed;
+        private final double flightLift;
         private volatile Input input;
 
-        private Ride(final UUID petId, final ArmorStand mount, final boolean flying, final double speed) {
+        private Ride(final UUID petId, final ArmorStand mount, final boolean flying,
+                    final double speed, final double flightLift) {
             this.petId = petId;
             this.mount = mount;
             this.flying = flying;
             this.speed = speed;
+            this.flightLift = flightLift;
         }
 
         public UUID petId() { return petId; }
@@ -156,7 +167,7 @@ public final class RideController {
      * @return 성공 여부. 실패 시 마운트를 남기지 않는다
      */
     public boolean start(final Player player, final UUID petId, final Location at,
-                         final boolean flying, final double speed) {
+                         final boolean flying, final double speed, final double flightLift) {
         if (rides.containsKey(player.getUniqueId())) {
             return false;
         }
@@ -186,7 +197,7 @@ public final class RideController {
             mount.remove();
             return false;
         }
-        rides.put(player.getUniqueId(), new Ride(petId, mount, flying, speed));
+        rides.put(player.getUniqueId(), new Ride(petId, mount, flying, speed, flightLift));
         return true;
     }
 
@@ -309,10 +320,10 @@ public final class RideController {
         if (ride.flying) {
             // 점프=상승, 스니크=하강. 정확히 반대짝이라 둘 다 눌리면 상쇄된다.
             if (input.isJump()) {
-                move.setY(move.getY() + flightLift);
+                move.setY(move.getY() + ride.flightLift);
             }
             if (input.isSneak()) {
-                move.setY(move.getY() - flightLift);
+                move.setY(move.getY() - ride.flightLift);
             }
         } else {
             // 지상 탑승은 수평 이동만. 지면 높이는 아래에서 맞춘다.

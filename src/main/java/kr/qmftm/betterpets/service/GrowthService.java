@@ -14,16 +14,16 @@ import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 성장도와 생애주기 전이.
+ * 성장도와 진화.
  *
- * <p>원작 시즌 2를 따른다 — 시간 경과 1분당 +1, 먹이 +10, 상한 도달 시 성체.
- * 알 아이템은 아기를 바로 꺼내주므로 부화 단계는 없다.
+ * <p><b>성장도의 역할은 하나뿐이다 — 다음 종류로 진화하기까지 걸리는 시간.</b>
+ * 아기·성체 같은 생애주기 구분은 없다({@link LifeStage} 참고) — 능력치 스케일링도,
+ * 비행 여부 추첨도, 더는 성장도가 하지 않는다. {@code next-stage} 가 있는 종류만
+ * 먹이·시간 경과로 성장도가 오르고, 다 차면 그 가중치로 다음 형태를 추첨한다(비어
+ * 있지 않은 자기 자신을 넣으면 "한 단계 더 기다린다"가 된다). {@code next-stage} 가
+ * 없는 종류는 <b>애초에 기다릴 게 없으므로</b> 성장도가 아예 오르지 않는다.
  *
- * <p><b>성장 단계(growth stage)</b> — 성장도가 상한에 닿아도 곧바로 성체가 되지 않을 수 있다.
- * {@code max-stage} 설정값(기본 1)에 못 미쳤으면 <b>다음 단계로 넘어간다</b>: 펫 종류의
- * {@code next-stage} 가중치로 다음 형태를 추첨하고(비어 있으면 같은 종류 유지), 성장도를
- * 0부터 다시 채운다. 설정된 최대 단계에 이르러서야 성체가 되고, 그 뒤로는 더 자라지 않는다.
- * 기본값 1은 이전 동작(성장도가 차면 바로 성체)과 같다.
+ * <p>알 아이템은 펫을 곧바로 꺼내주므로 부화 단계는 없다.
  */
 public final class GrowthService {
 
@@ -40,10 +40,10 @@ public final class GrowthService {
     /**
      * 성장·기믹 설정.
      *
-     * <p>여섯 값을 생성자에서 붙박아 두고 있었다. {@code /betterpets reload} 로는 바꿀 수
-     * 없었다는 뜻이다 — {@code growth.max-stage} 도, 과급식 기믹도. 심지어 기동 코드는
-     * 리로드 때마다 {@code gimmick.overfeed.count} 를 다시 읽어 경고까지 냈으면서
-     * 정작 그 값을 쓰는 이쪽에는 밀어 넣지 않았다.
+     * <p>예전에는 이 값들을 생성자에서 붙박아 두고 있었다. {@code /betterpets reload} 로는
+     * 바꿀 수 없었다는 뜻이다 — 과급식 기믹도 그랬다. 심지어 기동 코드는 리로드 때마다
+     * {@code gimmick.overfeed.count} 를 다시 읽어 경고까지 냈으면서 정작 그 값을 쓰는
+     * 이쪽에는 밀어 넣지 않았다.
      *
      * <p>{@link kr.qmftm.betterpets.domain.PetLimits}·{@code BroadcastService.Rules} 와
      * 같은 방식으로 묶는다 — 레코드 하나를 통째로 갈아끼우면 절반만 반영된 상태가
@@ -57,7 +57,6 @@ public final class GrowthService {
                          int overfeedCount,
                          long overfeedWindowMillis,
                          String overfeedBecomes,
-                         int maxStage,
                          int fullnessMinGain,
                          int fullnessMaxGain,
                          int fullnessMax,
@@ -66,8 +65,6 @@ public final class GrowthService {
             // 0 이하로 두면 registerBurst 가 첫 급여에서 바로 참이 된다 — 먹이 한 번에
             // 모든 펫이 돼지가 된다는 뜻이다. 끄고 싶으면 enabled: false 를 쓴다.
             overfeedCount = Math.max(2, overfeedCount);
-            // 0 이하로 설정되면 아무도 성체가 될 수 없다. 최소 1로 막는다.
-            maxStage = Math.max(1, maxStage);
             // 음수 증가량은 포만도를 먹일수록 깎는다는 뜻이라 의도가 아니다.
             fullnessMinGain = Math.max(0, fullnessMinGain);
             // 최소가 최대보다 크면 ThreadLocalRandom.nextInt(min, max+1) 이 예외를 던진다.
@@ -133,9 +130,21 @@ public final class GrowthService {
      * 는 같은 값을 돌려주면서 {@code Projection} 을 하나 만들 뿐이다. <b>틱 루프가 초당
      * 5번, 소환된 펫마다 부르는 자리</b>라 그 할당이 고스란히 쓰레기가 된다. 실제로 값이
      * 바뀌는 건 1분에 한 번이다.
+     *
+     * <p><b>꺼내져 있는 펫만 시간으로 자란다.</b> 보관함에 넣어둔 동안은 시간이 얼마나
+     * 지났든 자라지 않는다 — {@link #growsOverTime} 이 그 판정이다. 자라지 않는
+     * 상태에서는 값 대신 <b>기준 시각만 지금으로 당긴다.</b> 안 그러면 나중에 조건이
+     * 바뀌었을 때(다시 꺼내거나, next-stage 가 생기거나) 그동안 쌓인 시간이 한꺼번에
+     * 성장도로 잡힌다.
      */
     public void refresh(final PetData data) {
         final long now = System.currentTimeMillis();
+        if (!growsOverTime(data)) {
+            if (data.updatedAt() != now) {
+                data.applyGrowth(new GrowthCurve.Projection(data.growth(), now));
+            }
+            return;
+        }
         final long elapsed = now - data.updatedAt();
         // elapsed 가 음수면 시계가 뒤로 간 것이다. 그 처리는 project 에 맡긴다.
         // growth 가 상한을 넘어 있으면(설정에서 growth-max 를 낮춘 경우) 깎아야 하므로
@@ -147,12 +156,25 @@ public final class GrowthService {
     }
 
     /**
-     * 경과 시간을 반영하고, 그 결과 상한에 닿았으면 다음 단계로 넘긴다.
+     * 시간이 지나 성장도가 오를 수 있는 상태인가.
+     *
+     * <p>둘 다 필요하다 — <b>꺼내져 있어야</b> 하고(보관함에 있는 동안은 자라지 않는다),
+     * <b>다음 진화가 설정된 종류</b>여야 한다(갈 곳이 없으면 성장도가 할 일이 없다).
+     */
+    private boolean growsOverTime(final PetData data) {
+        if (!data.active()) {
+            return false;
+        }
+        return types.apply(data.typeId()).map(PetType::hasNextStage).orElse(false);
+    }
+
+    /**
+     * 경과 시간을 반영하고, 그 결과 상한에 닿았으면 다음 종류로 진화시킨다.
      *
      * <p><b>둘을 짝으로 묶는 게 요점이다.</b> {@link #refresh} 만 부르면 성장도는 맞지만
-     * 성체가 되지는 않는다. 그리고 성장도가 상한에 붙은 뒤에는 {@code refresh} 가 값을
+     * 진화는 일어나지 않는다. 그리고 성장도가 상한에 붙은 뒤에는 {@code refresh} 가 값을
      * 바꾸지 않으므로, "값이 바뀌었을 때만 확인한다"는 식으로 둘을 이으면 <b>딱 그
-     * 펫들이 영원히 아기로 남는다</b> — 보관함에 오래 넣어둔 펫과 접속하지 않은 동안
+     * 펫들이 영원히 진화하지 못한다</b> — 보관함에 오래 넣어둔 펫과 접속하지 않은 동안
      * 자란 펫이 전부 그랬다.
      *
      * @return 이번 확인으로 일어난 일
@@ -190,10 +212,15 @@ public final class GrowthService {
         if (data.fullness() >= tuning.fullnessMax()) {
             return FeedResult.TOO_FULL;
         }
-        final int max = maxOf(data);
-        refresh(data);
-        data.addGrowth(feed.growthOr(tuning.feedAmount()), max);
         data.addFullness(randomFullnessGain());
+
+        // 다음 진화가 없는 종류는 성장도가 할 일이 없다 — 포만도는 오르지만
+        // 성장도는 건드리지 않는다. 과급식 판정은 성장도와 무관하므로 그대로 돈다.
+        final PetType type = types.apply(data.typeId()).orElse(null);
+        if (type != null && type.hasNextStage()) {
+            refresh(data);
+            data.addGrowth(feed.growthOr(tuning.feedAmount()), type.growthMax());
+        }
 
         if (tuning.overfeedGimmick() && registerBurst(data)) {
             becomePig(data);
@@ -202,47 +229,38 @@ public final class GrowthService {
         }
 
         final StageResult stageResult = promoteIfGrown(data);
-        if (stageResult == StageResult.GREW_UP) {
-            bursts.remove(data.petId());    // 다 자랐다. 더는 과급식 대상이 아니다
-            return FeedResult.GREW_UP;
-        }
-        if (stageResult == StageResult.STAGE_UP) {
-            return FeedResult.STAGE_UP;
-        }
-        return FeedResult.FED;
+        return stageResult == StageResult.STAGE_UP ? FeedResult.STAGE_UP : FeedResult.FED;
     }
 
     /**
-     * 성장도가 상한에 닿았을 때의 처리.
+     * 성장도가 상한에 닿아 다음 형태로 진화할 때가 됐는지 확인한다.
      *
-     * <p>이미 최대 단계면 성체가 되고 끝난다 — 이때 비행 가능 여부가 확정된다 (원작은
-     * A등급부터 확률적으로 비행 펫이 나온다). 최대 단계에 못 미쳤으면 다음 단계로 넘어간다:
-     * {@code next-stage} 가중치로 종류를 다시 정하고(비어 있으면 그대로), 성장도를 0부터
-     * 다시 채운다.
+     * <p><b>아기·성체 구분은 없다.</b> 성장도의 유일한 역할은 다음 종류로 진화하기까지
+     * 걸리는 시간이다. <b>다음 진화가 없는 종류는 이 메서드가 할 일이 없다.</b> 성장도
+     * 자체가 오르지 않으므로(={@link #growsOverTime}) {@code growth() < growthMax()}
+     * 조건에 항상 걸려 {@link StageResult#NONE} 만 돌려준다 — 계속 {@link LifeStage#NORMAL}
+     * 로 남는다. 일부러 다른 상태로 승격시키지 않는다: 그러면 {@code registerBurst} 가
+     * {@code stage() == NORMAL} 을 요구하는 과급식 기믹이 이런 종류에서 첫 급여 한 번
+     * 만에 막혀버린다. 진화 여부와 과급식 대상 여부는 서로 다른 판정이라 하나가 다른
+     * 하나를 침범하면 안 된다.
      *
-     * @return 이번 호출로 일어난 일. 상한에 닿지 않았으면 {@link StageResult#NONE}
+     * <p>다음 진화가 있는 종류만 성장도가 상한에 닿을 때까지 기다렸다가, {@code next-stage}
+     * 가중치로 종류를 다시 뽑고(자기 자신이 나오면 "한 단계 더 기다린다") 성장도를
+     * 0부터 다시 채운다. 뽑힌 종류에마저 다음 진화가 없으면, 그 뒤로는 이 메서드가
+     * 다시 위 문단의 경우로 떨어져 조용히 멈춘다.
+     *
+     * @return 이번 호출로 일어난 일. 아직 자랄 게 남았으면 {@link StageResult#NONE}
      */
     public StageResult promoteIfGrown(final PetData data) {
-        if (data.stage() != LifeStage.BABY) {
+        if (data.stage() != LifeStage.NORMAL) {
             return StageResult.NONE;
         }
         final PetType type = types.apply(data.typeId()).orElse(null);
-        if (type == null || data.growth() < type.growthMax()) {
+        if (type == null || !type.hasNextStage() || data.growth() < type.growthMax()) {
             return StageResult.NONE;
         }
 
-        if (data.growthStage() >= tuning.maxStage()) {
-            data.stage(LifeStage.ADULT);
-            // 나는 탑승 종류만 추첨한다. 실패하면 걷는 탑승으로 내려간다 (RideMode.effective).
-            if (type.rollsFlight()) {
-                data.canFly(ThreadLocalRandom.current().nextDouble() < type.flyChance());
-            }
-            return StageResult.GREW_UP;
-        }
-
-        final String nextTypeId = type.hasNextStage()
-            ? Weighted.pick(type.nextStage(), ThreadLocalRandom.current(), type.id())
-            : type.id();
+        final String nextTypeId = Weighted.pick(type.nextStage(), ThreadLocalRandom.current(), type.id());
         data.typeId(nextTypeId);
         data.growthStage(data.growthStage() + 1);
         // 성장도와 기준 시각은 항상 함께 갱신한다 — applyGrowth 가 그 계약을 지킨다.
@@ -270,9 +288,6 @@ public final class GrowthService {
             return;
         }
         data.typeId(becomes);
-        // 돼지가 날아다니면 곤란하다. 나중에 돼지 종류를 FLY 로 바꿔도
-        // 추첨 없이 비행이 딸려가지 않도록 여기서 지운다.
-        data.canFly(false);
     }
 
     /** 이번 급여로 오를 포만도. {@code min}~{@code max} 사이에서 고른다(양끝 포함). */
@@ -284,7 +299,7 @@ public final class GrowthService {
 
     /** 과급식 판정. 창 안에서 기준 횟수를 넘으면 true. */
     private boolean registerBurst(final PetData data) {
-        if (data.stage() != LifeStage.BABY) {
+        if (data.stage() != LifeStage.NORMAL) {
             return false;
         }
         final long now = System.currentTimeMillis();
@@ -311,7 +326,7 @@ public final class GrowthService {
     /**
      * 이 펫의 과급식 카운터를 버린다.
      *
-     * <p>더 자랄 수 없게 된 펫(성체·돼지)과 놓아준 펫의 항목은 남겨둘 이유가 없다.
+     * <p>돼지가 된 펫과 놓아준 펫의 항목은 남겨둘 이유가 없다.
      */
     public void forget(final PetData data) {
         bursts.remove(data.petId());
@@ -319,11 +334,6 @@ public final class GrowthService {
 
     public int maxOf(final PetData data) {
         return types.apply(data.typeId()).map(PetType::growthMax).orElse(100);
-    }
-
-    /** 설정된 최대 성장 단계. GUI 에서 "성장 단계 N/max" 표시에 쓴다. */
-    public int maxStage() {
-        return tuning.maxStage();
     }
 
     /** 포만도 상한. GUI 에서 "포만도 N/max" 표시에 쓴다. */
@@ -342,18 +352,16 @@ public final class GrowthService {
     }
 
     public enum FeedResult {
-        FED, STAGE_UP, GREW_UP, BECAME_PIG,
+        FED, STAGE_UP, BECAME_PIG,
         /** 포만도가 상한에 닿아 먹이를 거절했다. 성장도도 포만도도 안 바뀌었다. */
         TOO_FULL
     }
 
     /** {@link #promoteIfGrown} 의 결과. */
     public enum StageResult {
-        /** 아직 성장도가 상한에 닿지 않았다. */
+        /** 진화가 일어나지 않았다 — 아직 안 찼거나, 애초에 진화할 곳이 없는 종류다. */
         NONE,
-        /** 다음 단계로 넘어갔다. 아직 성체는 아니다. */
-        STAGE_UP,
-        /** 최대 단계에 도달해 성체가 됐다. */
-        GREW_UP
+        /** 다음 종류로 진화했다. */
+        STAGE_UP
     }
 }

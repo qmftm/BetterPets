@@ -20,12 +20,13 @@ public record AbilityDefinition(String id, Map<String, Double> values) {
     }
 
     /**
-     * 성장도에 비례해 커지는 수치를 계산한다.
+     * 등급 배율을 반영한 수치를 계산한다. {@code base} 에 등급 배율을 곱한다.
      *
-     * <p>{@code base + perGrowth * growth} 에 등급 배율을 곱한다.
-     * 대부분의 능력이 이 형태라 여기 모아둔다.
+     * <p>예전에는 성장도에 비례해 커지는 {@code per-growth} 항이 있었다. 성장도의
+     * 역할을 진화 하나로 좁히면서 걷어냈다 — 능력치는 이제 소환하는 순간부터
+     * {@code base} 값 그대로 붙는다.
      */
-    public double scaled(final int growth, final double rarityMultiplier) {
-        return (value("base", 0.0) + value("per-growth", 0.0) * growth) * rarityMultiplier;
+    public double scaled(final double rarityMultiplier) {
+        return value("base", 0.0) * rarityMultiplier;
     }
 }

@@ -29,8 +29,8 @@ class PetFilterTest {
     @Test
     @DisplayName("소환 중 필터는 소환 상태만 본다 — 생애주기와 무관하다")
     void activeLooksOnlyAtActiveFlag() {
-        assertTrue(PetFilter.ACTIVE.test(pet(LifeStage.BABY, true)));
-        assertFalse(PetFilter.ACTIVE.test(pet(LifeStage.ADULT, false)));
+        assertTrue(PetFilter.ACTIVE.test(pet(LifeStage.NORMAL, true)));
+        assertFalse(PetFilter.ACTIVE.test(pet(LifeStage.PIG, false)));
     }
 
     @Test

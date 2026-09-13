@@ -28,7 +28,6 @@ public final class PetData {
     private long fullnessUpdatedAt; // 포만도 감소의 기준 시각. growth 의 updatedAt 과 같은 계약,
                                      // 다만 값이다 — 급여(addFullness)로는 안 움직이고
                                      // 감소 계산(applyFullness)으로만 전진한다
-    private boolean canFly;
     private boolean active;
     private long updatedAt;
 
@@ -43,7 +42,6 @@ public final class PetData {
                    final int growthStage,
                    final int fullness,
                    final long fullnessUpdatedAt,
-                   final boolean canFly,
                    final boolean active,
                    final long acquiredAt,
                    final long updatedAt) {
@@ -56,16 +54,15 @@ public final class PetData {
         this.growthStage = Math.max(1, growthStage);
         this.fullness = Math.max(0, fullness);
         this.fullnessUpdatedAt = fullnessUpdatedAt;
-        this.canFly = canFly;
         this.active = active;
         this.acquiredAt = acquiredAt;
         this.updatedAt = updatedAt;
     }
 
-    /** 새로 획득한 펫. 알에서 갓 나온 아기 상태다. */
+    /** 새로 획득한 펫. 알에서 갓 나온 상태다. */
     public static PetData newBaby(final UUID ownerId, final String typeId, final long now) {
         return new PetData(UUID.randomUUID(), ownerId, typeId, null,
-            LifeStage.BABY, 0, 1, 0, now, false, false, now, now);
+            LifeStage.NORMAL, 0, 1, 0, now, false, now, now);
     }
 
     public UUID petId() { return petId; }
@@ -77,7 +74,6 @@ public final class PetData {
     public int growthStage() { return growthStage; }
     public int fullness() { return fullness; }
     public long fullnessUpdatedAt() { return fullnessUpdatedAt; }
-    public boolean canFly() { return canFly; }
     public boolean active() { return active; }
     public long acquiredAt() { return acquiredAt; }
     public long updatedAt() { return updatedAt; }
@@ -133,10 +129,6 @@ public final class PetData {
     public void growthStage(final int value) {
         final int normalized = Math.max(1, value);
         if (normalized != growthStage) { growthStage = normalized; dirty = true; }
-    }
-
-    public void canFly(final boolean value) {
-        if (value != canFly) { canFly = value; dirty = true; }
     }
 
     /**

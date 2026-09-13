@@ -35,7 +35,6 @@ public final class BroadcastService {
                         Rarity minRarity,
                         int minGrowthStage,
                         boolean onObtain,
-                        boolean onGrown,
                         boolean onStageUp,
                         boolean sound) {
         public Rules {
@@ -76,13 +75,6 @@ public final class BroadcastService {
     public void onObtained(final Player owner, final PetData data, final PetType type) {
         if (rules.onObtain()) {
             announce("broadcast.obtained", owner, data, type);
-        }
-    }
-
-    /** 성체가 됐을 때. 키운 결과라 획득보다 이쪽이 알릴 값어치가 크다. */
-    public void onGrown(final Player owner, final PetData data, final PetType type) {
-        if (rules.onGrown()) {
-            announce("broadcast.grown", owner, data, type);
         }
     }
 

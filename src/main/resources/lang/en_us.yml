@@ -24,9 +24,8 @@ pet:
   renamed: "<green>Renamed to '<white>%name%<green>'."
   name-too-long: "<red>Names cannot be longer than 32 characters."
   released: "<gray>You released the pet."
-  # Grown from time passing. The fed-to-grow path uses feed.grew-up / feed.stage-up.
-  grew-up: "<gold>%name% <yellow>is fully grown! <gray>You can ride it now."
-  stage-up: "<aqua>%name% <gray>grew. <dark_gray>(stage %stage%/%max%)"
+  # Evolved from time passing. The fed-to-evolve path uses feed.stage-up.
+  stage-up: "<aqua>%name% <gray>evolved. <dark_gray>(stage %stage%)"
   release-confirm: "<yellow>Release this pet for good? <gray>This cannot be undone — hold <white>Shift<gray> and click again."
   rename-hint: "<gray>Use /pet rename %id% <name> to rename it."
   rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."
@@ -46,19 +45,15 @@ egg:
 
 feed:
   fed: "<green>Fed. <gray>Growth <white>%growth%<gray>/<white>%max%"
-  stage-up: "<aqua>Growth stage up! <gray>(stage %stage%/%max%)"
-  grew-up: "<gold>Fully grown! You can ride it now."
+  stage-up: "<aqua>Evolved! <gray>(stage %stage%)"
   became-pig: "<yellow>You overfed it... it turned into a pig."
-  already-grown: "<gray>This pet is already fully grown."
   too-full: "<yellow>Too full to eat any more."
   unknown: "<red>That food is not in the config. Tell an admin."
   lore-growth: "<gray>Growth <white>+%growth%"
 
 ride:
   # Mounting/dismounting itself is already obvious from the screen and the sound,
-  # so it doesn't get a chat line. Flight controls are explained here (once, at
-  # takeoff confirmation) instead of on every single flight.
-  confirm: "<gold>Right-click once more to take off. <gray>Jump to climb · sneak to descend. <dark_gray>(land with /pet dismount)"
+  # so it doesn't get a chat line.
   not-riding: "<red>You are not riding anything."
   not-rideable: "<red>This pet cannot be ridden."
   failed: "<red>You cannot mount here."
@@ -104,7 +99,6 @@ admin:
 
 broadcast:
   obtained: "<gray>[<gold>Pets<gray>] <white>%player%<gray> obtained a <white>%rarity%<gray> <white>%pet%<gray>!"
-  grown: "<gray>[<gold>Pets<gray>] <white>%player%<gray>'s <white>%rarity%<gray> <white>%pet%<gray> is fully grown!"
   stage-up: "<gray>[<gold>Pets<gray>] <white>%player%<gray>'s <white>%pet%<gray> reached stage <white>%stage%<gray>!"
 
 help:

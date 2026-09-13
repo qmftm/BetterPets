@@ -1,8 +1,7 @@
 # 등급별 수치.
 #
 # ⚠️ 여기 값은 전부 플레이스홀더다. 원작(악어의 놀이터)의 실제 수치는 확인하지 못했다.
-#    확정된 규칙은 두 가지뿐이다 — 등급이 오를수록 빨라지고, 비행은 A등급부터 나온다.
-#    서버에 맞게 고쳐 쓰라고 파일로 뺐다.
+#    확정된 규칙은 하나뿐이다: 등급이 오를수록 빨라진다. 서버에 맞게 고쳐 쓰라고 파일로 뺐다.
 #
 # 등급을 적지 않으면 내장 기본값을 쓴다. S등급만 손보고 싶으면 S만 남겨도 된다.
 # 등급 자체(D C B A S)와 그 서열은 코드에 있어서 여기서 바꿀 수 없다.
@@ -10,36 +9,32 @@
 #   display-name   GUI 와 알림에 보이는 이름. MiniMessage 를 쓸 수 있다
 #   move-speed     추종 이동 속도 배율. pets/*.yml 의 walk-speed·run-speed 에 곱해진다
 #   ride-speed     탑승 시 이동 속도 (블록/틱). 0.2 ≈ 걷기, 0.4 ≈ 달리기보다 빠름
-#   fly-chance     성체가 될 때 비행이 붙을 확률 (0.0~1.0).
-#                  pets/*.yml 에 fly-chance 를 직접 적으면 그쪽이 우선한다
+#
+# 비행 여부는 등급이 아니라 펫 종류의 flying 설정으로만 정해진다 — 등급별 확률
+# 추첨은 없다 (pets/*.yml 의 ride/flying 참고).
 
 rarities:
   D:
     display-name: "일반"
     move-speed: 1.00
     ride-speed: 0.20
-    fly-chance: 0.00
 
   C:
     display-name: "고급"
     move-speed: 1.10
     ride-speed: 0.24
-    fly-chance: 0.00
 
   B:
     display-name: "희귀"
     move-speed: 1.25
     ride-speed: 0.28
-    fly-chance: 0.00
 
   A:
     display-name: "영웅"
     move-speed: 1.45
     ride-speed: 0.34
-    fly-chance: 0.10
 
   S:
     display-name: "전설"
     move-speed: 1.70
     ride-speed: 0.42
-    fly-chance: 0.35

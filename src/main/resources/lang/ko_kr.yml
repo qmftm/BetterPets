@@ -24,9 +24,8 @@ pet:
   renamed: "<green>이름을 '<white>%name%<green>' 으로 바꿨습니다."
   name-too-long: "<red>이름은 32자를 넘을 수 없습니다."
   released: "<gray>펫을 놓아줬습니다."
-  # 시간이 흘러 자란 경우. 먹여서 자란 쪽은 feed.grew-up / feed.stage-up 을 쓴다.
-  grew-up: "<gold>%name% <yellow>이(가) 다 자랐습니다! <gray>이제 탈 수 있습니다."
-  stage-up: "<aqua>%name% <gray>이(가) 자랐습니다. <dark_gray>(%stage%/%max% 단계)"
+  # 시간이 흘러 진화한 경우. 먹여서 진화한 쪽은 feed.stage-up 을 쓴다.
+  stage-up: "<aqua>%name% <gray>이(가) 진화했습니다. <dark_gray>(%stage%단계)"
   release-confirm: "<yellow>정말 놓아주시겠습니까? <gray>되돌릴 수 없습니다 — <white>쉬프트<gray> 를 누른 채로 다시 클릭하세요."
   rename-hint: "<gray>/pet rename %id% <이름> 으로 바꿀 수 있습니다."
   rename-pick: "<yellow>여러 마리를 소환 중입니다. <gray>/pet rename <펫id> <이름> 으로 지정하세요."
@@ -46,18 +45,14 @@ egg:
 
 feed:
   fed: "<green>먹이를 줬습니다. <gray>성장도 <white>%growth%<gray>/<white>%max%"
-  stage-up: "<aqua>성장 단계가 올랐습니다! <gray>(%stage%/%max% 단계)"
-  grew-up: "<gold>다 자랐습니다! 이제 탈 수 있습니다."
+  stage-up: "<aqua>진화했습니다! <gray>(%stage%단계)"
   became-pig: "<yellow>너무 많이 먹여서... 돼지가 됐습니다."
-  already-grown: "<gray>이미 다 자란 펫입니다."
   too-full: "<yellow>배가 불러서 더 못 먹습니다."
   unknown: "<red>설정에 없는 먹이입니다. 관리자에게 문의하세요."
   lore-growth: "<gray>성장도 <white>+%growth%"
 
 ride:
   # 탑승·하차 자체는 화면과 소리로 이미 알 수 있어서 채팅에 안 남긴다.
-  # 비행 조작법은 여기(이륙 확인)에서만 한 번 알려준다 — 매번 뜨는 문구가 아니다.
-  confirm: "<gold>한 번 더 우클릭하면 날아오릅니다. <gray>점프 상승 · 스니크 하강. <dark_gray>(하차는 /pet dismount)"
   not-riding: "<red>타고 있지 않습니다."
   not-rideable: "<red>이 펫은 탈 수 없습니다."
   failed: "<red>여기서는 탈 수 없습니다."
@@ -103,7 +98,6 @@ admin:
 
 broadcast:
   obtained: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님이 <white>%rarity%<gray> 등급 <white>%pet%<gray> 을(를) 얻었습니다!"
-  grown: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님의 <white>%rarity%<gray> 등급 <white>%pet%<gray> 이(가) 다 자랐습니다!"
   stage-up: "<gray>[<gold>펫<gray>] <white>%player%<gray> 님의 <white>%pet%<gray> 이(가) <white>%stage%<gray>단계가 됐습니다!"
 
 help:
