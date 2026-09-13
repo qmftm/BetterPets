@@ -87,10 +87,11 @@ public final class BetterPetsPlugin extends JavaPlugin {
         saveResourceIfMissing("lang/en_us.yml");
         saveResourceIfMissing("items.yml");
         saveResourceIfMissing("rarity.yml");
-        saveResourceIfMissing("pets/wolf.yml");
-        saveResourceIfMissing("pets/dragon.yml");
+        saveResourceIfMissing("pets/egg.yml");
+        saveResourceIfMissing("pets/baby_phantom.yml");
+        saveResourceIfMissing("pets/phantom_normal.yml");
+        saveResourceIfMissing("pets/phantom_ender.yml");
         saveResourceIfMissing("pets/pig.yml");
-        saveResourceIfMissing("pets/hatchling.yml");
 
         final AbilityRegistry abilityRegistry = new AbilityRegistry(this);
 
