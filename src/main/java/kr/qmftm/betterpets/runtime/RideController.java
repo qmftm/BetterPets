@@ -101,7 +101,7 @@ public final class RideController {
 
     /**
      * 비행 상승력 전역 기본값. {@code pets/*.yml} 에 {@code flight-lift} 를 따로 적지 않은
-     * 종류는 이 값을 쓴다 — {@code PetType.rideSpeed} 가 등급 기본값을 쓰는 것과 같은 자리다.
+     * 종류는 이 값을 쓴다.
      */
     public double flightLift() {
         return flightLift;

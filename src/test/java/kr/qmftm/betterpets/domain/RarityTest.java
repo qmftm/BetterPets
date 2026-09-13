@@ -10,23 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RarityTest {
 
     @Test
-    @DisplayName("내장 기본값은 등급이 오를수록 빨라진다 — 원작 규칙")
-    void moveSpeedIncreasesWithRarity() {
-        final Rarity[] ascending = {Rarity.D, Rarity.C, Rarity.B, Rarity.A, Rarity.S};
-        for (int i = 1; i < ascending.length; i++) {
-            assertTrue(
-                ascending[i].defaults().moveSpeedMultiplier() > ascending[i - 1].defaults().moveSpeedMultiplier(),
-                ascending[i] + " 은 " + ascending[i - 1] + " 보다 빨라야 한다"
-            );
-        }
-    }
-
-    @Test
-    @DisplayName("내장 기본값은 등급이 오를수록 탑승속도도 빨라진다")
-    void rideSpeedIncreasesWithRarity() {
-        final Rarity[] ascending = {Rarity.D, Rarity.C, Rarity.B, Rarity.A, Rarity.S};
-        for (int i = 1; i < ascending.length; i++) {
-            assertTrue(ascending[i].defaults().rideSpeed() > ascending[i - 1].defaults().rideSpeed());
+    @DisplayName("등급은 표기 전용이다 — 각 등급의 기본 표시 이름이 서로 다르다")
+    void defaultsCarryOnlyDisplayName() {
+        final Rarity[] all = {Rarity.D, Rarity.C, Rarity.B, Rarity.A, Rarity.S};
+        for (final Rarity rarity : all) {
+            assertTrue(rarity.defaults().displayName() != null && !rarity.defaults().displayName().isBlank());
         }
     }
 

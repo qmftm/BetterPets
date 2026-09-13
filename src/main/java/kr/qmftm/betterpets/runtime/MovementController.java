@@ -106,9 +106,9 @@ public final class MovementController {
     public MovementController(final Mob carrier, final PetType type) {
         this.carrier = carrier;
         this.profile = type.movement();
-        final double multiplier = type.stats().moveSpeedMultiplier();
-        this.walkStep = profile.walkSpeed() * multiplier;
-        this.runStep = profile.runSpeed() * multiplier;
+        // 등급은 표기 전용이라 속도에 배율을 곱하지 않는다 — movement 값을 그대로 쓴다.
+        this.walkStep = profile.walkSpeed();
+        this.runStep = profile.runSpeed();
     }
 
     public Mode mode() {

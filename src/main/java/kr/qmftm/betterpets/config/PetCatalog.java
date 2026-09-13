@@ -31,6 +31,9 @@ import java.util.Optional;
  */
 public final class PetCatalog {
 
+    /** 펫이 ride-speed 를 안 적었을 때 쓰는 고정값. 등급별 기본값이 없으므로 하나뿐이다. */
+    private static final double DEFAULT_RIDE_SPEED = 0.28;
+
     private final Map<String, PetType> types = new LinkedHashMap<>();
     private final Map<String, EggDefinition> eggs = new LinkedHashMap<>();
     private final Map<String, FeedDefinition> feeds = new LinkedHashMap<>();
@@ -107,13 +110,11 @@ public final class PetCatalog {
             if (node == null) {
                 continue;
             }
-            // 적지 않은 항목은 그 등급의 내장 기본값을 그대로 쓴다. 세 줄을 전부
-            // 적게 만들 이유가 없다 — S등급의 ride-speed 만 손보는 게 흔한 경우다.
+            // 적지 않으면 그 등급의 내장 표시 이름을 그대로 쓴다. 등급은 표기 전용이라
+            // 여기 남은 건 display-name 뿐이다.
             final RarityStats fallback = rarity.get().defaults();
             overrides.put(rarity.get(), new RarityStats(
-                node.getString("display-name", fallback.displayName()),
-                node.getDouble("move-speed", fallback.moveSpeedMultiplier()),
-                node.getDouble("ride-speed", fallback.rideSpeed())));
+                node.getString("display-name", fallback.displayName())));
         }
         return RarityTable.of(overrides);
     }
@@ -191,7 +192,9 @@ public final class PetCatalog {
                 // 1로 접는다.
                 yaml.getInt("growth-max", 100),
                 ride,
-                yaml.getDouble("ride-speed", rarities.stats(rarity.get()).rideSpeed()),
+                // 등급은 표기 전용이라 등급별 기본값이 없다 — 안 적으면 등급과 무관한
+                // 고정값(DEFAULT_RIDE_SPEED)을 쓴다. 펫마다 다르게 하려면 이 키를 적는다.
+                yaml.getDouble("ride-speed", DEFAULT_RIDE_SPEED),
                 // 둘 다 음수 = "설정 안 함". flight-speed 는 ride-speed 를, flight-lift 는
                 // config.yml 의 전역값을 대신 쓴다.
                 yaml.contains("flight-speed") ? yaml.getDouble("flight-speed") : -1.0,

@@ -26,7 +26,7 @@ class PetTypeTest {
     }
 
     private static PetType simple() {
-        return type(RideMode.GROUND, Rarity.B.defaults().rideSpeed(), 100, Map.of());
+        return type(RideMode.GROUND, 0.28, 100, Map.of());
     }
 
     @Test
@@ -83,14 +83,13 @@ class PetTypeTest {
     }
 
     @Test
-    @DisplayName("탑승 속도는 등급 기본값을 펫별로 덮어쓸 수 있고, 0 이하로는 안 내려간다")
-    void rideSpeedOverridesRarityDefaultAndFloors() {
+    @DisplayName("탑승 속도는 펫마다 자유롭게 적을 수 있고, 0 이하로는 안 내려간다 — 등급과는 무관하다")
+    void rideSpeedIsFreeAndFloors() {
         final PetType custom = new PetType("dragon", "<gold>드래곤", "pet_dragon",
             Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, 0.9, -1.0, -1.0,
             "LEAD", 1.0, PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             Map.of(), 0);
-        assertEquals(0.9, custom.rideSpeed(), "등급 기본값과 달라도 그대로 쓰여야 한다");
-        assertNotEquals(Rarity.S.defaults().rideSpeed(), custom.rideSpeed());
+        assertEquals(0.9, custom.rideSpeed(), "적은 값 그대로 쓰여야 한다");
 
         final PetType broken = new PetType("dragon", "<gold>드래곤", "pet_dragon",
             Rarity.S, Rarity.S.defaults(), 100, RideMode.FLY, -1.0, -1.0, -1.0,

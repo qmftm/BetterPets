@@ -11,17 +11,18 @@ import java.util.Set;
  * <p>개체({@link PetData})와 구분한다 — 같은 종류의 펫을 여러 마리 가질 수 있고,
  * 개체마다 레벨과 이름이 다르다.
  *
- * @param stats        이 펫의 등급 수치. {@code rarity.yml} 에서 온 값을 로드 시점에
+ * @param stats        이 등급의 표시 이름. {@code rarity.yml} 에서 온 값을 로드 시점에
  *                     박아 넣는다. {@code rarity()} 로 표를 다시 찾지 않는 이유는, 그러면
- *                     수치를 읽는 모든 자리에 표를 들고 다녀야 하기 때문이다 — 이동
- *                     컨트롤러, GUI, 알림. 리로드하면 어차피 펫 정의를 통째로 다시
- *                     만드므로 값이 굳어 있어도 문제없다
+ *                     이름을 읽는 모든 자리(GUI, 알림)가 표를 들고 다녀야 하기 때문이다.
+ *                     리로드하면 어차피 펫 정의를 통째로 다시 만드므로 값이 굳어 있어도
+ *                     문제없다
  * @param growthMax    성장 상한. 음수(-1)면 "이 종류는 성장도가 없다"는 뜻이고,
  *                     {@code next-stage} 가 있어도 절대 자라지 않는다({@link #hasGrowth}).
  *                     0 이하 다른 값은 실수로 보고 1로 접는다
- * @param rideSpeed    등급별 기본값을 이 펫만 다르게 쓰고 싶을 때 {@code pets/*.yml} 의
- *                     {@code ride-speed} 로 덮어쓴다. 걷는 탑승과, 비행 탑승인데
- *                     {@code flight-speed} 를 안 적었을 때 둘 다 쓰인다
+ * @param rideSpeed    걷는 탑승 속도. {@code pets/*.yml} 의 {@code ride-speed} 로 정한다 —
+ *                     등급은 표기 전용이라 등급별 기본값은 없고, 안 적으면 등급과 무관한
+ *                     고정값을 쓴다. 비행 탑승인데 {@code flight-speed} 를 안 적었을 때도
+ *                     이 값을 그대로 쓴다
  * @param flightSpeed  비행 중 수평 이동 속도. 음수면 "설정 안 함"이고, 그때는
  *                     {@code rideSpeed} 를 그대로 쓴다. {@code ride} 가
  *                     {@link RideMode#FLY} 가 아니면 의미가 없다
@@ -144,7 +145,7 @@ public record PetType(
         }
     }
 
-    /** 추종 이동 파라미터. 등급 배율은 여기에 곱해진다. */
+    /** 추종 이동 파라미터. 등급은 표기 전용이라 여기 값이 곧 실제 속도다. */
     public record MovementProfile(
         double followDistance,
         double walkSpeed,
