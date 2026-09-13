@@ -22,7 +22,7 @@ import org.bukkit.util.Vector;
  *       {@code clone()} 이 하나씩 났다. 버퍼({@link #probe})를 y 만 바꿔가며 돌려 쓴다
  * </ul>
  *
- * <p><b>할당을 전부 없애지는 않았다.</b> {@link #followTarget} 과 {@link #step} 은
+ * <p><b>할당을 전부 없애지는 않았다.</b> {@link #tick} 과 {@link #step} 은
  * 여전히 틱마다 {@code Location}·{@code Vector} 를 몇 개 만든다. 없애려면 목표 지점
  * 계산을 yaw 삼각함수와 버퍼로 직접 다시 쓰고 부채꼴 각도까지 손으로 돌려야 하는데,
  * <b>서버 없이는 추종이 여전히 자연스러운지 확인할 방법이 없다.</b> 5명 규모에서
@@ -132,44 +132,38 @@ public final class MovementController {
         if (mode.ridden()) {
             return;     // 타고 있는 동안은 RideController 가 위치를 정한다
         }
-        final Location target = followTarget(owner);
         final Location current = carrier.getLocation(here);
+        final Location ownerAt = owner.getLocation();
 
-        if (!current.getWorld().equals(target.getWorld())) {
-            teleportTo(target);
+        if (!current.getWorld().equals(ownerAt.getWorld())) {
+            teleportNear(owner, current);
             return;
         }
 
-        // "움직여야 하는가"는 주인과의 실제 거리로 정한다. 걸어갈 지점(target)은
-        // 주인이 바라보는 방향에 따라 등 뒤로 도는데, 그걸 기준으로 삼으면 주인이
-        // follow-distance 안에 가만히 서 있어도 고개만 돌리면 목표가 휙 튀어서
-        // 펫이 자리를 다시 잡으러 걸어간다 — "가까운데도 움직인다"는 그 증상이었다.
-        // 실제로 걸어갈 지점은 여전히 target(부채꼴 자리)이다. 안 그러면 여러 마리가
-        // 전부 주인 몸 위로 겹친다.
-        final double ownerDistance = current.distance(owner.getLocation());
-        final double targetDistance = current.distance(target);
-        state = resolveState(ownerDistance);
+        // 목표는 주인의 실제 위치, 그 자체다. 예전에는 주인이 바라보는 방향의 등 뒤
+        // 지점을 목표로 삼았는데, 그러면 주인이 제자리에서 고개만 돌려도 목표가 휙
+        // 튀어서 펫이 자리를 다시 잡으러 걸어갔다 — "가까운데도 자꾸 뒤로 온다"는
+        // 그 증상이었다. 목표를 주인 위치로 두면 걷다가도 follow-distance 안에
+        // 들어오는 순간 아래 IDLE 분기에서 멈추므로, 몸 위로 겹치지 않으면서도
+        // 회전에 흔들리지 않는다.
+        final double distance = current.distance(ownerAt);
+        state = resolveState(distance);
 
         if (state == State.TELEPORT) {
-            teleportTo(target);
+            teleportNear(owner, current);
             return;
         }
         if (state == State.IDLE) {
-            // 갇힘 판정을 여기서 건너뛴다. isStuck 은 target(회전에 따라 흔들리는
-            // 부채꼴 자리)까지의 거리로 재는데, IDLE 은 애초에 "충분히 가깝다"는
-            // 뜻이라 그 거리가 무엇이든 갇힌 게 아니다. 건너뛰지 않으면 주인이
-            // 제자리에서 고개만 돌려도 target 이 계속 흔들려 progress 갱신을
-            // 못 받고, 3초 뒤 "갇혔다"로 오판해 등 뒤로 순간이동해버린다.
             lastProgressAt = System.currentTimeMillis();
-            lastDistance = targetDistance;
+            lastDistance = distance;
             faceOwner(owner);
             return;
         }
-        if (isStuck(targetDistance)) {
-            teleportTo(target);
+        if (isStuck(distance)) {
+            teleportNear(owner, current);
             return;
         }
-        step(current, target, targetDistance);
+        step(current, ownerAt, distance);
     }
 
     private State resolveState(final double distance) {
@@ -186,21 +180,29 @@ public final class MovementController {
     }
 
     /**
-     * 소유자 뒤쪽 — 실제로 걸어갈 지점. "움직여야 하는가" 판정에는 안 쓰인다({@link #tick}
-     * 참고) — 이 지점은 소유자가 바라보는 방향에 따라 계속 돌기 때문에, 상태 판정까지
-     * 여기 기준으로 하면 제자리 회전만으로도 펫이 걸어 다니는 것처럼 보인다.
+     * 순간이동(막힘·원거리 복귀·월드 이동) 전용 도착 지점.
      *
-     * <p>여러 마리를 데리고 다니면 슬롯마다 각도를 벌려 부채꼴로 세운다.
+     * <p>주인 위치 그대로 순간이동시키면 몸 안에 겹쳐 들어간다. 그래서 현재 위치에서
+     * 주인 쪽으로 다가온 방향의 반대쪽, 즉 <b>지금 서 있던 쪽</b>에 내려준다 — 걸어서
+     * 접근할 때(={@link #tick} 의 기본 경로)는 이 오프셋이 필요 없다. 목표를 주인 위치
+     * 그 자체로 두면 걷다가 follow-distance 안에 들어오는 순간 저절로 멈추기 때문이다.
+     *
+     * <p>여러 마리를 데리고 다니면 슬롯마다 각도를 벌려, 같은 방향에서 동시에
+     * 순간이동해도 서로 겹치지 않게 한다.
      */
-    private Location followTarget(final Player owner) {
+    private Location standoffNear(final Player owner, final Location current) {
         final Location base = owner.getLocation();
-        final Vector behind = base.getDirection().setY(0);
-        if (behind.lengthSquared() < 1.0e-4) {
-            behind.setX(0).setZ(1);
+        final Vector away = current.toVector().subtract(base.toVector()).setY(0);
+        if (away.lengthSquared() < 1.0e-4) {
+            away.setX(0).setZ(1);      // 주인과 완전히 같은 자리다. 방향이 없으니 아무 쪽이나 고른다
         }
-        behind.normalize().multiply(-profile.followDistance());
-        Vectors.rotateAroundY(behind, slotAngleRadians());
-        return base.clone().add(behind);
+        away.normalize().multiply(profile.followDistance());
+        Vectors.rotateAroundY(away, slotAngleRadians());
+        return base.clone().add(away);
+    }
+
+    private void teleportNear(final Player owner, final Location current) {
+        teleportTo(standoffNear(owner, current));
     }
 
     /**
