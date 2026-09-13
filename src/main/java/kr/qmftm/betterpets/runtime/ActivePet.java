@@ -3,6 +3,8 @@ package kr.qmftm.betterpets.runtime;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.render.PetRenderHandle;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 
@@ -44,6 +46,14 @@ public final class ActivePet implements AutoCloseable {
         this.animation.start();
         // 크기 배율은 소환 시점에 한 번만 정하면 된다 — 개체가 살아 있는 동안 안 바뀐다.
         handle.scale(type.size());
+        // ★ 모델(BetterModel)뿐 아니라 엔티티의 실제 히트박스도 키운다. 캐리어는 항상
+        // 알레이 크기(0.35×0.6)라, 모델만 크게 그리면 눈에 보이는 덩치와 실제로 우클릭이
+        // 먹는 자리가 어긋난다 — size 를 키운 펫일수록 클릭이 안 먹는 것처럼 보였다.
+        // Attribute.SCALE 은 모델 렌더링과 별개로 엔티티 자체의 판정 크기를 바꾼다.
+        final AttributeInstance scale = carrier.getAttribute(Attribute.SCALE);
+        if (scale != null) {
+            scale.setBaseValue(type.size());
+        }
     }
 
     public UUID ownerId() { return ownerId; }
