@@ -26,7 +26,7 @@ pet:
   released: "<gray>펫을 놓아줬습니다."
   # 시간이 흘러 진화한 경우. 먹여서 진화한 쪽은 feed.stage-up 을 쓴다.
   stage-up: "<aqua>%name% <gray>이(가) 진화했습니다. <dark_gray>(%stage%단계)"
-  release-confirm: "<yellow>정말 놓아주시겠습니까? <gray>되돌릴 수 없습니다 — <white>쉬프트<gray> 를 누른 채로 다시 클릭하세요."
+  release-hint: "<yellow>/pet release %id% <gray>로 놓아줄 수 있습니다. <red>되돌릴 수 없습니다."
   rename-hint: "<gray>/pet rename %id% <이름> 으로 바꿀 수 있습니다."
   rename-pick: "<yellow>여러 마리를 소환 중입니다. <gray>/pet rename <펫id> <이름> 으로 지정하세요."
   list-header: "<gray>보유한 펫 <white>%max%<gray> — 이름을 클릭하면 소환합니다."
@@ -63,6 +63,7 @@ command:
   unknown: "<red>알 수 없는 명령입니다. <gray>/pet"
   summon-usage: "<gray>/pet summon <펫id앞자리>"
   rename-usage: "<gray>/pet rename <이름>"
+  release-usage: "<gray>/pet release <펫id앞자리>"
   player-only: "<red>플레이어만 쓸 수 있는 명령입니다."
 
 admin:
@@ -107,6 +108,7 @@ help:
   dismiss: "<gray>/pet dismiss [펫id] <dark_gray>— id 를 주면 그 한 마리만, 없으면 전부 돌려보냄"
   dismount: "<gray>/pet dismount <dark_gray>— 하차"
   rename: "<gray>/pet rename [펫id] <이름> <dark_gray>— 이름 변경"
+  release: "<gray>/pet release <펫id> <dark_gray>— 놓아주기 (되돌릴 수 없음)"
   list: "<gray>/pet list <dark_gray>— 채팅으로 목록 보기 (클릭해서 소환)"
 
 # ── GUI ───────────────────────────────────────────────────────────
@@ -144,5 +146,5 @@ gui:
   dismiss: "<red>소환 해제"
   rename: "<yellow>이름 변경"
   release: "<red>놓아주기"
-  release-hint: "<dark_gray>쉬프트 + 클릭 (되돌릴 수 없습니다)"
+  release-hint: "<dark_gray>클릭하면 명령어를 안내합니다 (되돌릴 수 없습니다)"
   back: "<gray>돌아가기"

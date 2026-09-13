@@ -7,6 +7,9 @@ display-name: "<gray>팬텀"
 model: phantom_normal
 rarity: A
 growth-max: -1          # 음수 = 성장도 없음. next-stage 가 없는 종류의 권장 값
+# icon: NETHER_STAR      # 보관함 아이콘 재질. 안 적으면 LEAD
+# icon-glow: true        # 보관함 아이콘에 인챈트 반짝임을 항상 켜둔다. 안 적으면 꺼져 있다
+                          # (소환 중일 때는 icon-glow 와 무관하게 항상 반짝인다)
 
 # 나는 탑승. 개체별 추첨은 없다 — flying 인 종류는 전부 난다.
 ride: true

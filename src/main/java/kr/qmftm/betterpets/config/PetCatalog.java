@@ -6,6 +6,7 @@ import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.Rarity;
 import kr.qmftm.betterpets.domain.RarityStats;
 import kr.qmftm.betterpets.domain.RarityTable;
+import kr.qmftm.betterpets.domain.ReleaseReward;
 import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.render.PetRenderer;
 import org.bukkit.Material;
@@ -42,6 +43,9 @@ public final class PetCatalog {
     /** 등급 수치. {@code load} 가 채우기 전에도 읽힐 수 있어서 기본값으로 시작한다. */
     private RarityTable rarities = RarityTable.defaults();
 
+    /** 펫을 놓아줬을 때 줄 보상. {@code items.yml} 에 섹션이 없으면 비어 있다 — 그러면 아무것도 안 준다. */
+    private ReleaseReward releaseReward;
+
     public Optional<PetType> type(final String id) {
         return Optional.ofNullable(types.get(id));
     }
@@ -66,6 +70,11 @@ public final class PetCatalog {
         return Map.copyOf(feeds);
     }
 
+    /** 놓아주기 보상. 섹션을 안 적었으면 비어 있다. */
+    public Optional<ReleaseReward> releaseReward() {
+        return Optional.ofNullable(releaseReward);
+    }
+
     /** 로드 중 발견한 문제. 비어 있으면 정상이다. */
     public List<String> problems() {
         return List.copyOf(problems);
@@ -76,6 +85,7 @@ public final class PetCatalog {
         eggs.clear();
         feeds.clear();
         problems.clear();
+        releaseReward = null;
 
         // 등급 수치를 먼저 읽는다. 펫 정의가 이 값을 박아 넣기 때문이다.
         rarities = loadRarities(new File(dataFolder, "rarity.yml"));
@@ -203,6 +213,7 @@ public final class PetCatalog {
                 // NaN 을 대신 쓰고, 안 적으면 config.yml 의 ride.seat-offset 전역값을 쓴다.
                 yaml.contains("seat-offset") ? yaml.getDouble("seat-offset") : Double.NaN,
                 iconMaterial,
+                yaml.getBoolean("icon-glow", false),
                 yaml.getDouble("size", 1.0),
                 readAnimations(file.getName(), yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
@@ -321,6 +332,12 @@ public final class PetCatalog {
         } else {
             feedSection.getKeys(false).forEach(id -> readFeed(feedSection, id));
         }
+
+        // 없어도 문제로 치지 않는다 — 안 적은 서버는 그냥 보상 없이 놓아주면 된다.
+        final ConfigurationSection rewardSection = yaml.getConfigurationSection("release-reward");
+        if (rewardSection != null) {
+            readReleaseReward(rewardSection);
+        }
     }
 
     private void readEgg(final ConfigurationSection parent, final String id) {
@@ -356,7 +373,8 @@ public final class PetCatalog {
             materialName,
             readItemModel(node, "items.yml/eggs/" + id),
             gives,
-            weights
+            weights,
+            node.getBoolean("glow", false)
         ));
     }
 
@@ -406,8 +424,36 @@ public final class PetCatalog {
             node.getString("display-name", id),
             materialName,
             readItemModel(node, "items.yml/feeds/" + id),
-            growth
+            growth,
+            node.getBoolean("glow", false)
         ));
+    }
+
+    /**
+     * {@code items.yml} 의 {@code release-reward:} 를 읽는다.
+     *
+     * <p>알·먹이와 달리 여러 개를 등록하는 구조가 아니라 단일 섹션이다 — 놓아줬을 때
+     * 주는 보상은 서버당 보통 하나로 정해져 있어서, 맵으로 관리할 이유가 없다.
+     */
+    private void readReleaseReward(final ConfigurationSection node) {
+        final String materialName = readMaterial(node, "PAPER", "items.yml/release-reward");
+        if (materialName == null) {
+            return;
+        }
+        final int min = node.getInt("min-amount", 1);
+        final int max = node.getInt("max-amount", min);
+        if (max < min) {
+            problems.add("items.yml/release-reward: max-amount(" + max
+                + ") 가 min-amount(" + min + ") 보다 작습니다. min-amount 로 맞춥니다.");
+        }
+        releaseReward = new ReleaseReward(
+            materialName,
+            node.getString("display-name", "놓아주기 보상"),
+            node.getStringList("lore"),
+            min,
+            max,
+            node.getBoolean("glow", false)
+        );
     }
 
     /**

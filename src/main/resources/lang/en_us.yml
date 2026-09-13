@@ -26,7 +26,7 @@ pet:
   released: "<gray>You released the pet."
   # Evolved from time passing. The fed-to-evolve path uses feed.stage-up.
   stage-up: "<aqua>%name% <gray>evolved. <dark_gray>(stage %stage%)"
-  release-confirm: "<yellow>Release this pet for good? <gray>This cannot be undone — hold <white>Shift<gray> and click again."
+  release-hint: "<yellow>Use /pet release %id% <gray>to let it go. <red>This cannot be undone."
   rename-hint: "<gray>Use /pet rename %id% <name> to rename it."
   rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."
   list-header: "<gray>Your pets <white>%max%<gray> — click a name to summon it."
@@ -64,6 +64,7 @@ command:
   unknown: "<red>Unknown command. <gray>/pet"
   summon-usage: "<gray>/pet summon <first digits of petId>"
   rename-usage: "<gray>/pet rename <name>"
+  release-usage: "<gray>/pet release <first digits of petId>"
   player-only: "<red>This command can only be used by a player."
 
 admin:
@@ -108,6 +109,7 @@ help:
   dismiss: "<gray>/pet dismiss [petId] <dark_gray>— one pet if given an id, otherwise all of them"
   dismount: "<gray>/pet dismount <dark_gray>— dismount"
   rename: "<gray>/pet rename [petId] <name> <dark_gray>— rename"
+  release: "<gray>/pet release <petId> <dark_gray>— release it (cannot be undone)"
   list: "<gray>/pet list <dark_gray>— list in chat (click to summon)"
 
 # ── GUI ───────────────────────────────────────────────────────────
@@ -145,5 +147,5 @@ gui:
   dismiss: "<red>Send back"
   rename: "<yellow>Rename"
   release: "<red>Release"
-  release-hint: "<dark_gray>Shift + click (cannot be undone)"
+  release-hint: "<dark_gray>Click for the command (cannot be undone)"
   back: "<gray>Back"

@@ -29,10 +29,10 @@ import java.util.UUID;
 public final class PetCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-        List.of("summon", "dismiss", "dismount", "rename", "list", "help");
+        List.of("summon", "dismiss", "dismount", "rename", "release", "list", "help");
 
     /** 두 번째 인자로 펫 id 를 받는 하위 명령들. */
-    private static final Set<String> PET_ID_ARG = Set.of("summon", "dismiss", "rename");
+    private static final Set<String> PET_ID_ARG = Set.of("summon", "dismiss", "rename", "release");
 
     private final PetService pets;
     private final PetStore store;
@@ -75,6 +75,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             case "dismiss" -> dismiss(player, args);
             case "dismount" -> dismount(player);
             case "rename" -> rename(player, args);
+            case "release" -> release(player, args);
             case "list" -> list(player);
             case "help" -> help(player);
             default -> messages.send(player, "command.unknown");
@@ -193,7 +194,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
 
     /** {@code /pet help} — 무엇을 할 수 있는지. 하위 명령이 늘어난 만큼 필요해졌다. */
     private void help(final Player player) {
-        for (final String key : List.of("summon", "dismiss", "dismount", "rename", "list")) {
+        for (final String key : List.of("summon", "dismiss", "dismount", "rename", "release", "list")) {
             messages.send(player, "help." + key);
         }
     }
@@ -257,6 +258,30 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         target.get().nickname(name);
         store.saveAsync(target.get());
         messages.send(player, "pet.renamed", "name", name);
+    }
+
+    /**
+     * {@code /pet release <펫id>} — 되돌릴 수 없는 유일한 조작이다.
+     *
+     * <p>예전에는 보관함에서 쉬프트+클릭으로 확인받았는데, 스쳐 지나가는 클릭만으로도
+     * 걸릴 수 있었다. 명령을 <b>직접 쳐야만</b> 실행되게 하면 그 자체가 확인 절차를
+     * 대신한다 — id 를 안 넣으면 아예 안 되므로, 보관함의 "놓아주기" 버튼은 id 가
+     * 박힌 명령을 안내만 하고 화면에서 끝내지 않는다.
+     */
+    private void release(final Player player, final String[] args) {
+        if (args.length < 2) {
+            messages.send(player, "command.release-usage");
+            return;
+        }
+        final Optional<PetData> target = resolve(player, args[1]);
+        if (target.isEmpty()) {
+            messages.send(player, "pet.not-found");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
+            return;
+        }
+        pets.release(player, target.get());
+        messages.send(player, "pet.released");
+        player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_TAKEN, 0.7f, 0.7f);
     }
 
     /**

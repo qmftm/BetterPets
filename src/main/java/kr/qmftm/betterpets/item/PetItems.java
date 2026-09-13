@@ -5,6 +5,7 @@ import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.config.Tags;
 import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.FeedDefinition;
+import kr.qmftm.betterpets.domain.ReleaseReward;
 import kr.qmftm.betterpets.service.GrowthService;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -63,6 +64,7 @@ public final class PetItems {
         meta.displayName(Messages.plain(definition.displayName()));
         meta.lore(contentsLore(definition));
         applyItemModel(meta, definition.itemModel());
+        applyGlow(meta, definition.glow());
         meta.getPersistentDataContainer()
             .set(eggKey, PersistentDataType.STRING, definition.id());
         stack.setItemMeta(meta);
@@ -80,9 +82,28 @@ public final class PetItems {
         meta.lore(List.of(messages.item("feed.lore-growth",
             "growth", String.valueOf(definition.growthOr(growth.feedAmount())))));
         applyItemModel(meta, definition.itemModel());
+        applyGlow(meta, definition.glow());
         // 먹이마다 성장도가 다르므로 어떤 먹이인지 id 로 남긴다.
         meta.getPersistentDataContainer()
             .set(feedKey, PersistentDataType.STRING, definition.id());
+        stack.setItemMeta(meta);
+        return stack;
+    }
+
+    /**
+     * 펫을 놓아줬을 때 주는 보상 아이템.
+     *
+     * <p>알·먹이와 달리 <b>PDC 로 식별하지 않는다.</b> 나중에 우클릭 등으로 이 아이템을
+     * 다시 알아봐야 할 일이 없다 — 그냥 들고 있다가 쓰거나 팔거나 하는 결과물이다.
+     */
+    public ItemStack createReleaseReward(final ReleaseReward definition, final int amount) {
+        final Material material = Material.matchMaterial(definition.material());
+        final ItemStack stack = new ItemStack(
+            material == null || !material.isItem() ? Material.PAPER : material, clamp(amount));
+        final ItemMeta meta = stack.getItemMeta();
+        meta.displayName(Messages.plain(definition.displayName()));
+        meta.lore(definition.lore().stream().map(Messages::plain).toList());
+        applyGlow(meta, definition.glow());
         stack.setItemMeta(meta);
         return stack;
     }
@@ -170,6 +191,17 @@ public final class PetItems {
         if (key != null) {
             meta.setItemModel(key);
         }
+    }
+
+    /**
+     * 인챈트 없이도 반짝이게 한다.
+     *
+     * <p>가짜 인챈트를 걸고 {@code ItemFlag.HIDE_ENCHANTS} 로 숨기는 옛날 방식 대신,
+     * 반짝임 자체를 켜고 끄는 API({@code setEnchantmentGlintOverride})를 쓴다 — 가짜
+     * 인챈트는 {@code /enchant} 조회나 다른 플러그인의 "인챈트됨" 판정에 그대로 걸린다.
+     */
+    private static void applyGlow(final ItemMeta meta, final boolean glow) {
+        meta.setEnchantmentGlintOverride(glow ? Boolean.TRUE : null);
     }
 
     /** 이 아이템이 알이면 그 알 id. */

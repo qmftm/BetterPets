@@ -4,6 +4,7 @@ import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
+import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.render.PetRenderHandle;
 import kr.qmftm.betterpets.render.PetRenderer;
 import kr.qmftm.betterpets.runtime.ActivePet;
@@ -15,11 +16,13 @@ import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.Location;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 펫 소환·해제·획득·해방. 플러그인의 중심 서비스다.
@@ -36,6 +39,8 @@ public final class PetService {
     private final PetRegistry registry;
     private final RideController rides;
     private final GrowthService growth;
+    /** 놓아주기 보상 아이템을 만든다. */
+    private final PetItems items;
     /**
      * 보유·동시 소환 한도.
      *
@@ -52,7 +57,8 @@ public final class PetService {
                       final PetRegistry registry,
                       final RideController rides,
                       final GrowthService growth,
-                      final PetLimits limits) {
+                      final PetLimits limits,
+                      final PetItems items) {
         this.catalog = catalog;
         this.store = store;
         this.renderer = renderer;
@@ -61,6 +67,7 @@ public final class PetService {
         this.rides = rides;
         this.growth = growth;
         this.limits = limits;
+        this.items = items;
     }
 
     /** 설정된 보유·동시 소환 한도. GUI 표시와 지급 판정이 같은 값을 본다. */
@@ -192,11 +199,34 @@ public final class PetService {
         return Optional.of(data);
     }
 
-    /** 펫을 놓아준다. 소환 중이면 먼저 해제한다. */
+    /** 펫을 놓아준다. 소환 중이면 먼저 해제하고, 설정된 보상이 있으면 지급한다. */
     public void release(final Player owner, final PetData data) {
         dismiss(owner, data.petId());
         growth.forget(data);    // 과급식 카운터를 들고 있을 이유가 없다
         store.remove(data);
+        grantReleaseReward(owner);
+    }
+
+    /**
+     * {@code items.yml} 의 {@code release-reward:} 에 적힌 만큼 준다.
+     *
+     * <p>섹션이 없으면 {@link PetCatalog#releaseReward()} 가 빈 값을 주므로 아무 일도
+     * 안 한다 — 보상은 선택 기능이다.
+     *
+     * <p><b>{@code addItem} 의 반환값을 버리지 않는다.</b> 인벤토리가 꽉 찼을 때 들어가지
+     * 못한 몫을 무시하면 보상이 조용히 사라진다 — 펫을 잃은 대가로 아무것도 못 받는
+     * 셈이라, 발밑에 떨어뜨려서라도 반드시 건넨다.
+     */
+    private void grantReleaseReward(final Player owner) {
+        catalog.releaseReward().ifPresent(reward -> {
+            final int amount = reward.roll(ThreadLocalRandom.current());
+            if (amount <= 0) {
+                return;
+            }
+            final ItemStack stack = items.createReleaseReward(reward, amount);
+            final var leftover = owner.getInventory().addItem(stack);
+            leftover.values().forEach(rest -> owner.getWorld().dropItemNaturally(owner.getLocation(), rest));
+        });
     }
 
     /**

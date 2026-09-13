@@ -114,10 +114,12 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
         broadcasts = new BroadcastService(getServer(), messages, discord, readBroadcastRules());
 
-        pets = new PetService(
-            catalog, store, renderer, carriers, registry, rides, growth, readLimits());
-
+        // PetService 가 놓아주기 보상 아이템을 만드는 데 쓴다 — pets 보다 먼저 있어야 한다.
         final PetItems items = new PetItems(this, catalog, messages, growth);
+
+        pets = new PetService(
+            catalog, store, renderer, carriers, registry, rides, growth, readLimits(), items);
+
         final PetMenuFactory menus = new PetMenuFactory(
             catalog, growth, registry, pets, messages);
 

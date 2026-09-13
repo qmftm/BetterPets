@@ -37,6 +37,8 @@ import java.util.Set;
  *                     "설정 안 함" 신호로 쓸 수 없다 — NaN 을 대신 쓴다
  * @param iconMaterial 보관함 아이콘 재질. {@code pets/*.yml} 의 {@code icon} 으로 정한다 —
  *                     안 적으면 {@code LEAD}
+ * @param iconGlow     보관함 아이콘에 인챈트 반짝임을 강제로 켤지. {@code pets/*.yml} 의
+ *                     {@code icon-glow} 로 정한다 — 안 적으면 꺼져 있다
  * @param size         모델 크기 배율. {@code pets/*.yml} 의 {@code size} 로 정한다.
  *                     1.0 이 모델 원래 크기이고, 안 적으면 1.0
  * @param nextStage    비어 있으면 다음 단계에서도 같은 종류를 유지한다
@@ -54,6 +56,7 @@ public record PetType(
     double flightLift,
     double seatOffset,
     String iconMaterial,
+    boolean iconGlow,
     double size,
     AnimationSet animations,
     MovementProfile movement,

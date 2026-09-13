@@ -11,7 +11,8 @@ public record FeedDefinition(
     String displayName,
     String material,
     String itemModel,       // nullable — 리소스팩 모델 키
-    Integer growth          // nullable — 설정하지 않으면 전역 기본값
+    Integer growth,         // nullable — 설정하지 않으면 전역 기본값
+    boolean glow            // 인챈트 반짝임을 강제로 켤지
 ) {
 
     /** 이 먹이가 올려줄 성장도. 지정하지 않았으면 전역 기본값을 쓴다. */

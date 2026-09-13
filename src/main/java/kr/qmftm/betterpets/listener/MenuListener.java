@@ -63,7 +63,7 @@ public final class MenuListener implements Listener {
         if (holder instanceof Menus.Box box) {
             handleBox(player, box, event.getSlot());
         } else if (holder instanceof Menus.Detail detail) {
-            handleDetail(player, detail, event.getSlot(), event.isShiftClick());
+            handleDetail(player, detail, event.getSlot());
         }
     }
 
@@ -106,8 +106,7 @@ public final class MenuListener implements Listener {
 
     private void handleDetail(final Player player,
                               final Menus.Detail detail,
-                              final int slot,
-                              final boolean shift) {
+                              final int slot) {
         final PetData pet = detail.target();
         switch (slot) {
             case PetMenuFactory.SLOT_SUMMON -> {
@@ -149,15 +148,13 @@ public final class MenuListener implements Listener {
             }
             case PetMenuFactory.SLOT_RELEASE -> {
                 // 되돌릴 수 없는 유일한 조작이다. 소환 버튼 네 칸 옆에 있어서
-                // 한 번 잘못 누르면 키우던 펫이 그대로 사라졌다.
-                if (!shift) {
-                    messages.send(player, "pet.release-confirm");
-                    return;
-                }
-                pets.release(player, pet);
-                messages.send(player, "pet.released");
-                player.playSound(player.getLocation(), Sound.ENTITY_ALLAY_ITEM_TAKEN, 0.7f, 0.7f);
-                openBox(player, detail.view());
+                // 한 번 잘못 누르면 키우던 펫이 그대로 사라졌다 — 쉬프트+클릭 확인으로도
+                // 스쳐 지나가는 클릭을 완전히 막지 못했다. 화면 클릭으로는 아예 끝나지
+                // 않게 하고, id 가 박힌 명령을 직접 치게 한다({@code /pet rename} 과 같은
+                // 방식) — 채팅에 명령을 치는 행위 자체가 확인 절차를 대신한다.
+                player.closeInventory();
+                messages.send(player, "pet.release-hint",
+                    "id", pet.petId().toString().substring(0, 8));
             }
             case PetMenuFactory.SLOT_BACK -> openBox(player, detail.view());
             default -> { /* 빈 칸 */ }

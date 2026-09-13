@@ -35,7 +35,7 @@ class GrowthServiceTest {
     private static PetType type(final String id, final int growthMax,
                                 final RideMode ride, final Map<String, Integer> nextStage) {
         return new PetType(id, id, "model_" + id, Rarity.A, Rarity.A.defaults(),
-            growthMax, ride, 0.28, -1.0, -1.0, Double.NaN, "LEAD", 1.0,
+            growthMax, ride, 0.28, -1.0, -1.0, Double.NaN, "LEAD", false, 1.0,
             PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             nextStage, 0);
     }
@@ -66,11 +66,11 @@ class GrowthServiceTest {
     }
 
     private static final FeedDefinition MILK =
-        new FeedDefinition("milk", "우유", "MILK_BUCKET", null, null);
+        new FeedDefinition("milk", "우유", "MILK_BUCKET", null, null, false);
 
     /** 성장도를 한 번에 채우는 먹이. 100번 먹이는 테스트를 쓰지 않으려고. */
     private static final FeedDefinition FEAST =
-        new FeedDefinition("feast", "잔치", "CAKE", null, 100);
+        new FeedDefinition("feast", "잔치", "CAKE", null, 100, false);
 
     private static PetData baby(final String typeId) {
         return PetData.newBaby(OWNER, typeId, System.currentTimeMillis());
@@ -267,7 +267,7 @@ class GrowthServiceTest {
         assertEquals(10, pet.growth(), "전역 기본값");
 
         final PetData other = baby("hatchling");
-        growth.feed(other, new FeedDefinition("cake", "케이크", "CAKE", null, 35));
+        growth.feed(other, new FeedDefinition("cake", "케이크", "CAKE", null, 35, false));
         assertEquals(35, other.growth(), "먹이가 적은 값");
     }
 

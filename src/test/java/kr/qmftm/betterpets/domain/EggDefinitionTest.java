@@ -16,11 +16,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EggDefinitionTest {
 
     private static EggDefinition fixed(final String gives) {
-        return new EggDefinition("egg", "알", "EGG", null, gives, Map.of());
+        return new EggDefinition("egg", "알", "EGG", null, gives, Map.of(), false);
     }
 
     private static EggDefinition random(final Map<String, Integer> weights) {
-        return new EggDefinition("egg", "알", "EGG", null, null, weights);
+        return new EggDefinition("egg", "알", "EGG", null, null, weights, false);
     }
 
     /** 항상 같은 값을 주는 난수. 추첨 경계를 정확히 겨냥한다. */

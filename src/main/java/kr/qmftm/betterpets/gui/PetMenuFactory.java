@@ -259,8 +259,10 @@ public final class PetMenuFactory {
      * 놓아주기 버튼.
      *
      * <p><b>되돌릴 수 없는 유일한 버튼이다.</b> 그런데 소환 버튼 바로 옆에 있고, 한 번
-     * 누르면 키우던 펫이 그대로 사라졌다. 그래서 쉬프트를 요구하고, 그 사실을 로어에
-     * 적는다 — 눌러보고 알게 되는 규칙은 규칙이 아니다.
+     * 누르면 키우던 펫이 그대로 사라졌다. 예전에는 쉬프트+클릭으로 확인받았는데,
+     * 스쳐 지나가는 클릭만으로도 걸릴 수 있었다 — 그래서 화면 클릭으로는 아예 끝나지
+     * 않게 하고, id 가 박힌 {@code /pet release} 명령을 안내만 한다
+     * ({@link kr.qmftm.betterpets.listener.MenuListener} 참고).
      */
     private ItemStack releaseButton() {
         final ItemStack stack = simple(Material.BARRIER, "gui.release");
@@ -325,8 +327,10 @@ public final class PetMenuFactory {
                 "fullness", String.valueOf(Math.min(pet.fullness(), growth.fullnessMax())),
                 "max", String.valueOf(growth.fullnessMax())));
         }
-        if (pet.active()) {
-            // 목록에서 한눈에 구분되게 반짝이게 한다. 로어 한 줄보다 눈에 먼저 들어온다.
+        // 소환 중이면 한눈에 구분되게 반짝인다 — 로어 한 줄보다 눈에 먼저 들어온다.
+        // icon-glow 로 펫 종류 자체를 항상 반짝이게 해뒀을 수도 있다. 둘 중 하나만
+        // 참이어도 반짝여야 하므로 OR 로 묶는다.
+        if (pet.active() || (type != null && type.iconGlow())) {
             meta.setEnchantmentGlintOverride(true);
         }
         meta.lore(lore);

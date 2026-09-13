@@ -19,7 +19,6 @@ import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -67,24 +66,13 @@ public final class InteractionListener implements Listener {
      * <p><b>{@code EquipmentSlot.HAND} 만 처리한다.</b> 안 그러면 오프핸드로도 이벤트가 와서
      * 한 번의 우클릭에 알이 두 개 소비된다.
      *
-     * <p><b>블록을 클릭했을 때는 블록에 양보한다.</b> 그러지 않으면 알을 들고 상자를
-     * 열려다 알이 까진다 — 아이템을 잃은 것이고 되돌릴 수도 없다. 그래서 알은 허공에
-     * 대고 쓰거나, 블록 쪽이면 스니크를 요구한다(바닐라도 스니크면 블록 상호작용을
-     * 건너뛰므로 따로 배울 게 없다).
+     * <p><b>블록을 바라보고 있어도 항상 깐다.</b> 예전에는 블록에 양보하고 스니크를
+     * 요구했지만(상자를 열려다 알이 까지는 사고를 막으려는 의도), 알을 들고 있는
+     * 동안은 우클릭 한 번으로 바로 까지는 쪽이 더 명확하다는 요청으로 바꿨다 —
+     * 블록과 상호작용하고 싶으면 알을 잠깐 다른 슬롯으로 옮기면 된다.
      *
-     * <p><b>"열리는 블록만" 가려내려 하지 않는다.</b> {@code isInteractable()} 이
-     * 그 질문에 답해 주는 것처럼 보이지만, {@code Material} 과 {@code BlockType} 양쪽
-     * 모두 deprecated 다 — 답이 들고 있는 아이템과 블록 상태에 따라 달라져서
-     * 플랫폼 스스로 믿을 수 없다고 표시해 둔 것이다. 틀린 답의 대가가 <b>알 하나가
-     * 사라지는 것</b>이라, 못 미더운 판정에 기대느니 규칙을 단순하게 둔다.
-     * 실패하면 "아무 일도 안 일어남"이고, 그건 되돌릴 수 있다.
-     *
-     * <p><b>블록에 양보할 때도 아이템의 바닐라 동작은 막는다.</b> 알 재질을 스폰 알로
-     * 두면서 드러난 문제다 — 그냥 {@code return} 만 하면 이벤트가 취소되지 않은 채
-     * 그대로 진행돼서, 스니크 없이 돌바닥에 우클릭하는 순간 <b>진짜 셜커가 소환된다.</b>
-     * {@code setCancelled(true)} 는 블록 쪽 상호작용(상자 열기)까지 같이 막아버려서
-     * 쓸 수 없다 — {@code setUseItemInHand(DENY)} 로 아이템 쪽만 죽이고 블록 쪽은
-     * 그대로 둔다.
+     * <p>알 재질을 스폰 알로 둘 수 있어서, 이벤트를 취소하지 않으면 돌바닥에 우클릭하는
+     * 순간 <b>진짜 셜커가 소환된다.</b> 알로 인식한 이상 블록 상호작용까지 통째로 막는다.
      */
     @EventHandler(ignoreCancelled = true)
     public void onEggUse(final PlayerInteractEvent event) {
@@ -97,12 +85,6 @@ public final class InteractionListener implements Listener {
         final ItemStack held = event.getItem();
         final Optional<String> eggId = items.eggIdOf(held);
         if (eggId.isEmpty()) {
-            return;
-        }
-        // 블록을 클릭했으면 블록이 먼저다. 스니크 중이면 바닐라도 블록 상호작용을
-        // 건너뛰므로 그때는 알을 쓰려는 게 맞다.
-        if (event.getClickedBlock() != null && !event.getPlayer().isSneaking()) {
-            event.setUseItemInHand(Event.Result.DENY);
             return;
         }
         event.setCancelled(true);

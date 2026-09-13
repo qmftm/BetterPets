@@ -20,7 +20,8 @@ public record EggDefinition(
     String material,
     String itemModel,                // nullable — 리소스팩 모델 키 (예: betterpets:egg_wolf)
     String gives,                    // nullable — 고정 알
-    Map<String, Integer> weights     // 비어 있으면 고정 알
+    Map<String, Integer> weights,    // 비어 있으면 고정 알
+    boolean glow                     // 인챈트 반짝임을 강제로 켤지
 ) {
 
     public EggDefinition {

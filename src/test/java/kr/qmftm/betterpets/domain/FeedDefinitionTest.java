@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class FeedDefinitionTest {
 
     private static FeedDefinition feed(final Integer growth) {
-        return new FeedDefinition("milk", "우유", "MILK_BUCKET", null, growth);
+        return new FeedDefinition("milk", "우유", "MILK_BUCKET", null, growth, false);
     }
 
     @Test
