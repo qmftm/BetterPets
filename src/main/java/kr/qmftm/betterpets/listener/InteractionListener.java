@@ -318,9 +318,7 @@ public final class InteractionListener implements Listener {
             pet.movement().mode(flying
                 ? MovementController.Mode.RIDDEN_FLYING
                 : MovementController.Mode.RIDDEN);
-            // 채팅 문구는 없다 — 타고 있다는 건 화면으로 이미 보인다. 소리만 알린다.
-            player.playSound(player.getLocation(),
-                flying ? Sound.ENTITY_PHANTOM_FLAP : Sound.ENTITY_HORSE_SADDLE, 1.0f, 1.0f);
+            // 알림이 없다 — 타고 있다는 건 화면으로 이미 보인다.
         } else {
             messages.send(player, "ride.failed");
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
@@ -364,8 +362,7 @@ public final class InteractionListener implements Listener {
             return;
         }
         rides.stop(event.getPlayer());
-        // 채팅 문구는 없다 — 내렸다는 건 화면으로 이미 보인다. 소리만 알린다.
-        event.getPlayer().playSound(event.getPlayer().getLocation(), Sound.ENTITY_HORSE_LAND, 0.8f, 1.0f);
+        // 알림이 없다 — 내렸다는 건 화면으로 이미 보인다.
     }
 
 }
