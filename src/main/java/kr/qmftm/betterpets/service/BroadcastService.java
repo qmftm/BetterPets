@@ -28,7 +28,7 @@ public final class BroadcastService {
     private final DiscordBridge discord;
 
     /**
-     * 방송 조건. {@code /petadmin reload} 로 통째로 갈아끼운다 —
+     * 방송 조건. {@code /betterpets reload} 로 통째로 갈아끼운다 —
      * 설정을 다시 읽었는데 방송 문턱만 예전 값이면 "리로드했다"가 거짓말이 된다.
      */
     public record Rules(boolean enabled,
@@ -67,7 +67,7 @@ public final class BroadcastService {
         this.rules = rules;
     }
 
-    /** {@code /petadmin reload} 가 부른다. */
+    /** {@code /betterpets reload} 가 부른다. */
     public void rules(final Rules value) {
         rules = value;
     }

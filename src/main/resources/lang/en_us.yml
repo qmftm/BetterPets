@@ -71,12 +71,12 @@ command:
 
 admin:
   player-not-found: "<red>Player not found."
-  usage: "<gray>/petadmin give|egg|feed|eggmaterial|growth|reload|debug"
-  usage-give: "<gray>/petadmin give <player> <pet type>"
-  usage-egg: "<gray>/petadmin egg <player> <egg id> [amount]"
-  usage-feed: "<gray>/petadmin feed <player> <food id> [amount]"
-  usage-eggmaterial: "<gray>/petadmin eggmaterial <egg id> <dark_gray>— sets the material to the item in your hand."
-  usage-growth: "<gray>/petadmin growth <player> <first digits of petId> <amount>"
+  usage: "<gray>/betterpets(/bp) give|egg|feed|eggmaterial|growth|reload|debug"
+  usage-give: "<gray>/betterpets give <player> <pet type>"
+  usage-egg: "<gray>/betterpets egg <player> <egg id> [amount]"
+  usage-feed: "<gray>/betterpets feed <player> <food id> [amount]"
+  usage-eggmaterial: "<gray>/betterpets eggmaterial <egg id> <dark_gray>— sets the material to the item in your hand."
+  usage-growth: "<gray>/betterpets growth <player> <first digits of petId> <amount>"
   unknown-pet-type: "<red>Unknown pet type: <white>%id%"
   unknown-egg: "<red>Unknown egg: <white>%id%"
   unknown-feed: "<red>Unknown food: <white>%id%"
@@ -87,7 +87,7 @@ admin:
   growth-given: "<green>Gave <white>%amount%<green> growth."
   reloaded-active-note: "<yellow><white>%count%<yellow> pet(s) already out keep their old definition. <gray>Re-summon them to pick up the new config."
   inventory-full: "<yellow>%player%'s inventory was full, so it was dropped at their feet."
-  # Diagnostic lines for /petadmin debug.
+  # Diagnostic lines for /betterpets debug.
   debug-pets: "<gray>Active pets <white>%active%<gray> (%owners% owners · max active %max-active% · max owned %max-owned% per player)"
   debug-carriers: "<gray>Live carriers <white>%count%"
   debug-trackers: "<gray>BetterModel trackers <white>%count%"

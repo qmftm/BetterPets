@@ -93,7 +93,7 @@ public final class RideController {
         reloadTuning();
     }
 
-    /** {@code /petadmin reload} 가 부른다. 설정을 다시 읽어 캐시를 갈아끼운다. */
+    /** {@code /betterpets reload} 가 부른다. 설정을 다시 읽어 캐시를 갈아끼운다. */
     public void reloadTuning() {
         flightLift = plugin.getConfig().getDouble("ride.flight-lift", 0.5);
         flightMaxHeight = plugin.getConfig().getDouble("ride.flight-max-height", 1024.0);

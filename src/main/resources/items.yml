@@ -14,11 +14,11 @@
 #   (둘 다 없으면) 각 펫이 pets/*.yml 에 적어둔 acquire.gacha-weight 를 표로 쓴다.
 #           펫을 추가하면 이 파일을 안 고쳐도 뽑기 알에 들어간다
 #
-# 지급: /petadmin egg <플레이어> <알id> [개수]
+# 지급: /betterpets egg <플레이어> <알id> [개수]
 eggs:
 
   # 기본 알 재질은 전부 셜커 스폰 알이다. 알마다 다른 material 을 쓰고 싶으면
-  # /petadmin eggmaterial <알id> 로 손에 든 아이템을 그대로 지정할 수 있다 —
+  # /betterpets eggmaterial <알id> 로 손에 든 아이템을 그대로 지정할 수 있다 —
   # items.yml 을 직접 열 필요가 없다.
   wolf_egg:
     display-name: "<white>늑대 알"
@@ -60,7 +60,7 @@ eggs:
 #   growth  이 먹이가 올려줄 성장도.
 #           적지 않으면 config.yml 의 growth.feed-amount 를 쓴다.
 #
-# 지급: /petadmin feed <플레이어> <먹이id> [개수]
+# 지급: /betterpets feed <플레이어> <먹이id> [개수]
 feeds:
 
   milk:

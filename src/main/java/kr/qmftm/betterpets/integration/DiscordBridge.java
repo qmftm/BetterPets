@@ -23,7 +23,7 @@ public final class DiscordBridge {
     private final Plugin plugin;
 
     /**
-     * 설정에서 온 값들. {@code final} 이 아닌 이유는 {@code /petadmin reload} 다.
+     * 설정에서 온 값들. {@code final} 이 아닌 이유는 {@code /betterpets reload} 다.
      *
      * <p>생성자에서 붙박아 두고 있었다. 그래서 채널을 바꾸고 리로드해도 예전 채널로
      * 계속 나갔고, {@code enabled: false} 로 꺼도 계속 나갔다 — "설정을 다시 읽었습니다"가
@@ -60,7 +60,7 @@ public final class DiscordBridge {
     }
 
     /**
-     * {@code /petadmin reload} 가 부른다. 설정을 다시 받아 처음부터 연결한다.
+     * {@code /betterpets reload} 가 부른다. 설정을 다시 받아 처음부터 연결한다.
      *
      * @return 연동이 살아 있으면 true
      */

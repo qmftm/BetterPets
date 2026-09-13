@@ -25,10 +25,10 @@ Paper 서버에 옮긴 플러그인이에요.
 
 1. BetterModel 과 `BetterPets-*.jar` 를 `plugins/` 에 넣고 서버 재시작
 2. `.bbmodel` 모델을 `plugins/BetterModel/models/` 에 넣기 → [모델 규격](docs/MODELING.md)
-3. `/petadmin egg <닉네임> wolf_egg` 로 알을 받아 우클릭
+3. `/betterpets egg <닉네임> wolf_egg` 로 알을 받아 우클릭
 
 처음 켜면 `plugins/BetterPets/` 에 설정이 전부 생기고, 예시 펫 4종(늑대 · 드래곤 · 돼지 ·
-이름 모를 새끼)도 같이 들어 있어요. 파일을 열어 고치고 `/petadmin reload` 하면 바로 적용됩니다.
+이름 모를 새끼)도 같이 들어 있어요. 파일을 열어 고치고 `/betterpets reload` 하면 바로 적용됩니다.
 
 **→ 명령어 · 권한 · 설정은 [사용 안내](docs/USAGE.md)에 있어요.**
 

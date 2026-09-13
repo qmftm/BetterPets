@@ -85,7 +85,7 @@ public final class PetMenuFactory {
 
     /**
      * 현재 한도. 값을 들고 있지 않고 매번 서비스에 묻는다 —
-     * {@code /petadmin reload} 로 바뀐 값이 GUI 에도 바로 보여야 한다.
+     * {@code /betterpets reload} 로 바뀐 값이 GUI 에도 바로 보여야 한다.
      */
     private PetLimits limits() {
         return pets.limits();

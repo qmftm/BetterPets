@@ -180,7 +180,7 @@ id: wolf
 model: pet_wolf      # ← plugins/BetterModel/models/pet_wolf.bbmodel
 ```
 
-4. `/petadmin reload` 또는 서버 재시작
+4. `/betterpets reload` 또는 서버 재시작
 
 설정에서 존재하지 않는 모델을 참조하면 로드 시 경고한다. 오타는 이때 잡힌다.
 

@@ -40,7 +40,7 @@ public final class PetItems {
     /**
      * {@code growth} 를 적지 않은 먹이가 쓸 값을 물어볼 곳.
      *
-     * <p>숫자를 복사해 들고 있었다. {@code /petadmin reload} 로 {@code growth.feed-amount}
+     * <p>숫자를 복사해 들고 있었다. {@code /betterpets reload} 로 {@code growth.feed-amount}
      * 를 바꿔도 아이템 로어에는 예전 값이 계속 적혔다는 뜻이다 — 그리고 실제 효과와
      * 표시가 갈렸다. <b>들고 있으면 다시 밀어 넣어야 한다.</b> 물어보면 그럴 일이 없다.
      */
@@ -147,7 +147,7 @@ public final class PetItems {
     /**
      * 개수를 1..64 로 접는다.
      *
-     * <p>{@code /petadmin egg <플레이어> <알> -5} 처럼 음수가 오면 {@link ItemStack}
+     * <p>{@code /betterpets egg <플레이어> <알> -5} 처럼 음수가 오면 {@link ItemStack}
      * 생성 자체가 예외를 던져 명령이 스택트레이스로 끝난다. 관리자 오타를
      * 크래시로 돌려주지 않는다.
      */

@@ -429,11 +429,11 @@ public final class PetCatalog {
 
     /**
      * {@code items.yml} 의 알 하나에 {@code material:} 을 다시 써넣는다.
-     * {@code /petadmin eggmaterial} 이 손에 든 아이템으로 지정할 때 쓴다.
+     * {@code /betterpets eggmaterial} 이 손에 든 아이템으로 지정할 때 쓴다.
      *
      * <p>메모리 상의 {@link #eggs} 는 여기서 안 건드린다 — 파일과 메모리가 잠깐이라도
      * 갈리는 순간을 만들지 않으려고다. 호출자가 이어서 {@link #load} 를 다시 태워
-     * 파일과 메모리를 한 번에 맞춘다({@code /petadmin reload} 와 같은 경로).
+     * 파일과 메모리를 한 번에 맞춘다({@code /betterpets reload} 와 같은 경로).
      *
      * @return 알 id 가 없거나 파일 쓰기에 실패하면 false
      */

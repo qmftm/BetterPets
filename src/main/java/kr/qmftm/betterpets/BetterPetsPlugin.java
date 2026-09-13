@@ -217,7 +217,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
                                   final GrowthCatchUp catchUp,
                                   final GrowthService growth) {
         bind("pet", "betterpets.use", new PetCommand(pets, store, menus, rides, messages, catchUp));
-        bind("petadmin", "betterpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
+        bind("betterpets", List.of("bp"), "betterpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
             messages, catchUp, () -> {
                 reloadConfig();
                 reloadDefinitions(abilityRegistry);
@@ -247,9 +247,15 @@ public final class BetterPetsPlugin extends JavaPlugin {
      * 를 새로 고치는 대신 {@link BasicCommand} 로 감싸 {@link #registerCommand} 로 붙인다.
      */
     private void bind(final String name, final String permission, final Object handler) {
+        bind(name, List.of(), permission, handler);
+    }
+
+    /** 별칭이 있는 명령을 붙인다. {@code /betterpets} 를 {@code /bp} 로 줄여 쓰는 경우가 여기 해당한다. */
+    private void bind(final String name, final Collection<String> aliases,
+                      final String permission, final Object handler) {
         final CommandExecutor executor = (CommandExecutor) handler;
         final TabCompleter completer = handler instanceof TabCompleter tc ? tc : null;
-        registerCommand(name, new LegacyCommandAdapter(name, permission, executor, completer));
+        registerCommand(name, aliases, new LegacyCommandAdapter(name, permission, executor, completer));
     }
 
     /** {@link CommandSourceStack} ↔ {@link CommandSender} 를 잇는 어댑터. Command 객체는 두 커맨드 모두 안 쓴다. */

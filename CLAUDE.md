@@ -74,9 +74,9 @@ sqlite-jdbc 를 넣으면 jar 이 16KB → 14MB 가 된다. 저장은 YAML 로 �
   성장은 **재소환 없이** 일어나는데, 모델과 능력은 소환 시점에 붙는다. 빠뜨리면 둘이 어긋난다:
   `ActivePet` 이 소환 시점의 `PetType` 을 붙들고 있어 진화해도 예전 모델이 남고,
   `equip` 이 `summon` 에서만 불려서 **아기로 꺼내둔 펫이 성체가 돼도 능력이 안 붙는다.**
-  급여·시간 경과·`/petadmin growth` 세 경로 모두 이 마무리가 필요하다.
+  급여·시간 경과·`/betterpets growth` 세 경로 모두 이 마무리가 필요하다.
   같은 이유로 **알림에도 `pet.type()` 을 쓰면 안 된다** — 진화 전 이름을 부르게 된다.
-- **설정을 읽어 들고 있는 쪽은 `/petadmin reload` 때 다시 밀어 넣어야 한다.**
+- **설정을 읽어 들고 있는 쪽은 `/betterpets reload` 때 다시 밀어 넣어야 한다.**
   지금은 다섯이다: `RideController.reloadTuning`, `PetService.limits`,
   `BroadcastService.rules`, `DiscordBridge.reload`, `GrowthService.tuning`.
   **더 나은 답은 아예 들고 있지 않는 것이다** — `PetItems` 와 `InteractionListener` 는
@@ -94,7 +94,7 @@ sqlite-jdbc 를 넣으면 jar 이 16KB → 14MB 가 된다. 저장은 YAML 로 �
 - **사용자에게 보이는 문자열을 코드에 적지 않는다.** 채팅뿐 아니라 **GUI 아이템 이름·로어·
   인벤토리 제목·명령어 사용법**도 전부 `lang/*.yml` 로 간다. 한동안 GUI 만 한국어가 박혀
   있어서, `language: en_us` 로 바꾸면 채팅은 영어인데 보관함은 한국어였다 — 반쯤 번역된
-  화면이 아예 번역이 없는 것보다 나쁘다. `/petadmin debug` 의 진단 줄도 같은 이유로
+  화면이 아예 번역이 없는 것보다 나쁘다. `/betterpets debug` 의 진단 줄도 같은 이유로
   뒤늦게 옮겼다.
 
   **선은 "보통 플레이어가 볼 수 있는가"로 긋는다.** `PetCatalog.problems` 의 설정 오류

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-/** {@code /petadmin} — 관리자 명령. */
+/** {@code /betterpets} — 관리자 명령. */
 public final class PetAdminCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
@@ -37,7 +37,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
     private final Messages messages;
     private final Runnable reloadAction;
 
-    /** {@code /petadmin eggmaterial} 이 items.yml 을 찾을 자리. */
+    /** {@code /betterpets eggmaterial} 이 items.yml 을 찾을 자리. */
     private final java.io.File dataFolder;
 
     /**
@@ -159,7 +159,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
      * 명령이다 — 리소스팩 모델이 붙은 커스텀 아이템도 들고만 있으면 바로 지정된다.
      *
      * <p>손에 든 것을 기준으로 하므로 플레이어만 쓸 수 있다. 파일에 쓴 뒤에는
-     * {@code /petadmin reload} 와 같은 경로({@link #reload})를 타서, 메모리 상의
+     * {@code /betterpets reload} 와 같은 경로({@link #reload})를 타서, 메모리 상의
      * {@link PetCatalog} 도 같이 맞추고 "이미 소환된 펫" 안내도 똑같이 나가게 한다.
      */
     private void eggMaterial(final CommandSender sender, final String[] args) {

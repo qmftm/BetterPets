@@ -40,7 +40,7 @@ public final class GrowthService {
     /**
      * 성장·기믹 설정.
      *
-     * <p>여섯 값을 생성자에서 붙박아 두고 있었다. {@code /petadmin reload} 로는 바꿀 수
+     * <p>여섯 값을 생성자에서 붙박아 두고 있었다. {@code /betterpets reload} 로는 바꿀 수
      * 없었다는 뜻이다 — {@code growth.max-stage} 도, 과급식 기믹도. 심지어 기동 코드는
      * 리로드 때마다 {@code gimmick.overfeed.count} 를 다시 읽어 경고까지 냈으면서
      * 정작 그 값을 쓰는 이쪽에는 밀어 넣지 않았다.
@@ -112,7 +112,7 @@ public final class GrowthService {
         this.tuning = tuning;
     }
 
-    /** {@code /petadmin reload} 가 부른다. 통째로 갈아끼운다. */
+    /** {@code /betterpets reload} 가 부른다. 통째로 갈아끼운다. */
     public void tuning(final Tuning value) {
         tuning = value;
     }

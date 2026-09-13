@@ -40,7 +40,7 @@ public final class PetService {
     /**
      * 보유·동시 소환 한도.
      *
-     * <p>{@code final} 이 아닌 이유는 {@code /petadmin reload} 때문이다. 설정을 다시
+     * <p>{@code final} 이 아닌 이유는 {@code /betterpets reload} 때문이다. 설정을 다시
      * 읽었는데 한도만 예전 값으로 남으면, "리로드했다"는 메시지가 거짓말이 된다.
      * 그런 침묵은 관리자의 오후를 통째로 잡아먹는다.
      */
@@ -71,7 +71,7 @@ public final class PetService {
         return limits;
     }
 
-    /** {@code /petadmin reload} 가 부른다. */
+    /** {@code /betterpets reload} 가 부른다. */
     public void limits(final PetLimits value) {
         limits = value;
     }

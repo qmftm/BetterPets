@@ -3,7 +3,7 @@
 설치와 소개는 [README](../README.md)에 있어요. 이 문서는 **명령어 · 권한 · 설정 · 문제 해결**을
 다룹니다.
 
-설정을 고친 뒤에는 `/petadmin reload` 로 바로 적용할 수 있어요. 오타가 있으면 무엇이
+설정을 고친 뒤에는 `/betterpets reload` 로 바로 적용할 수 있어요. 오타가 있으면 무엇이
 잘못됐는지 하나씩 알려줍니다.
 
 ---
@@ -36,17 +36,17 @@
 여러 마리를 데리고 다니는 중이면 id 를 앞에 적어 주세요. **네 자리 이상 16진수**만
 id 로 읽으니, `/pet rename 왕 드래곤` 처럼 이름으로 시작해도 이름으로 처리됩니다.
 
-**관리자**
+**관리자** — `/betterpets` 는 `/bp` 로 줄여 써도 됩니다.
 
 | 명령어 | 설명 |
 | --- | --- |
-| `/petadmin give <플레이어> <펫종류>` | 펫 바로 지급 |
-| `/petadmin egg <플레이어> <알id> [개수]` | 알 아이템 지급 |
-| `/petadmin feed <플레이어> <먹이id> [개수]` | 먹이 아이템 지급 |
-| `/petadmin eggmaterial <알id>` | 손에 든 아이템으로 그 알의 재질을 바꿉니다 |
-| `/petadmin growth <플레이어> <펫id> <양>` | 성장도 지급 |
-| `/petadmin reload` | 설정 다시 읽기 |
-| `/petadmin debug` | 누수 진단 · 현재 한도 · 연동 상태 |
+| `/betterpets give <플레이어> <펫종류>` | 펫 바로 지급 |
+| `/betterpets egg <플레이어> <알id> [개수]` | 알 아이템 지급 |
+| `/betterpets feed <플레이어> <먹이id> [개수]` | 먹이 아이템 지급 |
+| `/betterpets eggmaterial <알id>` | 손에 든 아이템으로 그 알의 재질을 바꿉니다 |
+| `/betterpets growth <플레이어> <펫id> <양>` | 성장도 지급 |
+| `/betterpets reload` | 설정 다시 읽기 |
+| `/betterpets debug` | 누수 진단 · 현재 한도 · 연동 상태 |
 
 > 펫 id 는 **앞 8자리만** 쳐도 되고, 탭 완성도 됩니다.
 
@@ -225,9 +225,9 @@ feeds:
 
 기본 알 재질은 전부 `SHULKER_SPAWN_EGG` 예요. 알마다 다른 재질을 쓰고 싶으면
 `items.yml` 을 직접 열 필요 없이, 원하는 아이템을 손에 들고
-`/petadmin eggmaterial <알id>` 를 치면 됩니다.
+`/betterpets eggmaterial <알id>` 를 치면 됩니다.
 
-지급은 `/petadmin egg <플레이어> <알id> [개수]` 와 `/petadmin feed …` 로 합니다.
+지급은 `/betterpets egg <플레이어> <알id> [개수]` 와 `/betterpets feed …` 로 합니다.
 
 ### 🌱 성장 속도
 
@@ -352,7 +352,7 @@ language: ko_kr          # lang/ko_kr.yml 을 읽습니다
 
 ## 🧩 선택 연동
 
-없어도 전부 정상 동작해요. 연동 상태는 `/petadmin debug` 로 확인할 수 있습니다.
+없어도 전부 정상 동작해요. 연동 상태는 `/betterpets debug` 로 확인할 수 있습니다.
 
 | 플러그인 | 하는 일 |
 | --- | --- |
@@ -390,7 +390,7 @@ Bedrock 클라이언트는 BetterModel 의 커스텀 모델을 그냥은 못 봅
 <summary><b>펫이 안 보여요</b></summary>
 
 `.bbmodel` 파일이 `plugins/BetterModel/models/` 에 있는지, `pets/*.yml` 의 `model:` 값이
-파일 이름과 같은지 확인해 주세요. `/petadmin debug` 로 트래커가 잡혔는지도 볼 수 있어요.
+파일 이름과 같은지 확인해 주세요. `/betterpets debug` 로 트래커가 잡혔는지도 볼 수 있어요.
 Bedrock 플레이어에게만 안 보인다면 GeyserModelEngine 이 필요합니다.
 </details>
 
@@ -404,7 +404,7 @@ Bedrock 플레이어에게만 안 보인다면 GeyserModelEngine 이 필요합�
 <details>
 <summary><b>설정을 고쳤는데 그대로예요</b></summary>
 
-`/petadmin reload` 를 쳐 주세요. 문제가 있으면 뭐가 잘못됐는지 하나씩 알려줍니다.
+`/betterpets reload` 를 쳐 주세요. 문제가 있으면 뭐가 잘못됐는지 하나씩 알려줍니다.
 (설정 오류 문구는 파일 경로와 키를 그대로 담고 있어서 언어 설정과 무관하게
 한국어로 나옵니다 — 번역해도 그 안의 경로는 그대로라 오히려 읽기 어려워져요.)
 `config.yml` · `rarity.yml` · `items.yml` · `pets/*.yml` · `lang/*.yml` 이 전부 다시
@@ -426,7 +426,7 @@ Bedrock 플레이어에게만 안 보인다면 GeyserModelEngine 이 필요합�
 <details>
 <summary><b>디스코드로 알림이 안 가요</b></summary>
 
-`/petadmin debug` 의 연동 줄에서 DiscordSRV 가 `(O)` 인지 보세요. `(X)` 면 플러그인이
+`/betterpets debug` 의 연동 줄에서 DiscordSRV 가 `(O)` 인지 보세요. `(X)` 면 플러그인이
 없는 거고, `(O)` 인데도 안 가면 `integrations.discord.channel` 이름이 DiscordSRV 쪽
 채널 이름과 같은지 확인해 주세요.
 </details>

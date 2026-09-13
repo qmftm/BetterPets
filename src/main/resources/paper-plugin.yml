@@ -43,9 +43,10 @@ commands:
     description: 펫 보관함을 열고 소환/해제한다
     usage: /pet [summon|dismiss|dismount|rename|list|help]
     permission: betterpets.use
-  petadmin:
+  betterpets:
     description: 펫 관리자 명령
-    usage: /petadmin [give|egg|feed|growth|reload|debug]
+    usage: /betterpets [give|egg|feed|growth|reload|debug]
+    aliases: [bp]
     permission: betterpets.admin
 
 permissions:

@@ -35,7 +35,7 @@ public interface PetRenderer {
      * 엔진이 실제로 들고 있는 트래커 수.
      *
      * <p>우리가 세는 활성 펫 수와 이 값이 어긋나면 그게 곧 누수다.
-     * {@code /petadmin debug} 가 두 숫자를 나란히 보여준다.
+     * {@code /betterpets debug} 가 두 숫자를 나란히 보여준다.
      */
     int activeTrackerCount();
 }

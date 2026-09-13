@@ -56,7 +56,7 @@ public final class InteractionListener implements Listener {
     /**
      * Bedrock 플레이어에게 비행 이륙 확인을 건너뛸지. 터치로는 두 번째 우클릭이 어렵다.
      *
-     * <p>값을 복사해 들고 있으면 {@code /petadmin reload} 때 다시 밀어 넣어야 한다.
+     * <p>값을 복사해 들고 있으면 {@code /betterpets reload} 때 다시 밀어 넣어야 한다.
      * 매번 물어보면 그럴 일이 없다 — 여기는 틱 루프가 아니라 우클릭 한 번이라
      * 설정을 읽는 비용이 문제가 되지 않는다.
      */
