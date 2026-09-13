@@ -296,6 +296,23 @@ ride:
 다르게 두고 싶으면 `pets/*.yml` 에 `flight-speed` 를 따로 적으세요 — 안 적으면
 `ride-speed` 를 그대로 따릅니다.
 
+### 🪑 좌석 높이
+
+```yaml
+# config.yml
+ride:
+  seat-offset: 0.0   # 탑승 시 앉는 높이. 0이 기본 자리, 양수면 위로, 음수면 아래로
+```
+
+몸집이 큰 펫(예: `size: 2`)은 플레이어가 몸통에 파묻혀 보일 수 있어요. 이럴 때
+`pets/*.yml` 에 `seat-offset` 을 펫별로 적으면 그 펫만 다른 높이에 앉힐 수 있습니다 —
+안 적으면 `config.yml` 의 전역값을 그대로 씁니다.
+
+```yaml
+# pets/phantom_normal.yml
+seat-offset: 0.3   # 기본 자리보다 0.3블록 위에 앉힙니다
+```
+
 ### 📢 알림
 
 ```yaml

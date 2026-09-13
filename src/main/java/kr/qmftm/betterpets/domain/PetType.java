@@ -30,6 +30,11 @@ import java.util.Set;
  *                     "설정 안 함"이라는 뜻이고, 그때는 {@code config.yml} 의
  *                     {@code ride.flight-lift} 전역값을 그대로 쓴다.
  *                     {@code ride} 가 {@link RideMode#FLY} 가 아니면 의미가 없다
+ * @param seatOffset   탑승 시 플레이어가 앉는 높이를 기본 자리에서 위(+)·아래(-)로
+ *                     밀어내는 오프셋. {@link Double#NaN} 이면 "설정 안 함"이고, 그때는
+ *                     {@code config.yml} 의 {@code ride.seat-offset} 전역값을 그대로
+ *                     쓴다. 음수도 그대로 유효한 값이라 {@code flightLift} 처럼 음수를
+ *                     "설정 안 함" 신호로 쓸 수 없다 — NaN 을 대신 쓴다
  * @param iconMaterial 보관함 아이콘 재질. {@code pets/*.yml} 의 {@code icon} 으로 정한다 —
  *                     안 적으면 {@code LEAD}
  * @param size         모델 크기 배율. {@code pets/*.yml} 의 {@code size} 로 정한다.
@@ -47,6 +52,7 @@ public record PetType(
     double rideSpeed,
     double flightSpeed,
     double flightLift,
+    double seatOffset,
     String iconMaterial,
     double size,
     AnimationSet animations,
@@ -72,6 +78,8 @@ public record PetType(
         if (flightLift >= 0) {
             flightLift = Math.max(0.01, flightLift);
         }
+        // seatOffset 은 접지 않는다 — 음수도 "아래로 내림"이라는 유효한 값이라
+        // floor 를 두면 그 값 자체를 못 쓰게 된다. NaN(설정 안 함)만 그대로 통과시킨다.
         // 0이나 음수는 모델이 안 보이거나 뒤집혀 보인다 — 설정 실수의 흔한 형태다.
         size = Math.max(0.05, size);
     }

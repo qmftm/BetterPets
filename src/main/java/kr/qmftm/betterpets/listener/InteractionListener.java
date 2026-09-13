@@ -16,6 +16,7 @@ import kr.qmftm.betterpets.service.BroadcastService;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -275,7 +276,11 @@ public final class InteractionListener implements Listener {
         final double speed = flying && type.flightSpeed() >= 0 ? type.flightSpeed() : type.rideSpeed();
         // 이 펫만 다른 상승력을 쓰도록 적어뒀으면 그 값을, 아니면 전역 기본값을 쓴다.
         final double flightLift = type.flightLift() >= 0 ? type.flightLift() : rides.flightLift();
-        if (rides.start(player, pet.petId(), pet.carrier().getLocation(), flying, speed, flightLift)) {
+        // 좌석 높이도 같은 자리 방식이다 — 다만 음수도 유효한 값이라 NaN 으로 "설정 안
+        // 함"을 가린다. 마운트를 그 높이만큼 올리거나 내려서 스폰한다.
+        final double seatOffset = Double.isNaN(type.seatOffset()) ? rides.seatOffset() : type.seatOffset();
+        final Location mountAt = pet.carrier().getLocation().add(0, seatOffset, 0);
+        if (rides.start(player, pet.petId(), mountAt, flying, speed, flightLift)) {
             // 비행이면 fly 애니메이션이 걸리게 모드를 나눠 준다.
             pet.movement().mode(flying
                 ? MovementController.Mode.RIDDEN_FLYING

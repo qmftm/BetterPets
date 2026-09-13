@@ -35,7 +35,7 @@ class GrowthServiceTest {
     private static PetType type(final String id, final int growthMax,
                                 final RideMode ride, final Map<String, Integer> nextStage) {
         return new PetType(id, id, "model_" + id, Rarity.A, Rarity.A.defaults(),
-            growthMax, ride, 0.28, -1.0, -1.0, "LEAD", 1.0,
+            growthMax, ride, 0.28, -1.0, -1.0, Double.NaN, "LEAD", 1.0,
             PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
             nextStage, 0);
     }

@@ -77,6 +77,7 @@ public final class RideController {
      */
     private volatile double flightLift;
     private volatile double flightMaxHeight;
+    private volatile double seatOffset;
 
     /**
      * 지형 검사용 위치 버퍼.
@@ -97,6 +98,7 @@ public final class RideController {
     public void reloadTuning() {
         flightLift = plugin.getConfig().getDouble("ride.flight-lift", 0.5);
         flightMaxHeight = plugin.getConfig().getDouble("ride.flight-max-height", 1024.0);
+        seatOffset = plugin.getConfig().getDouble("ride.seat-offset", 0.0);
     }
 
     /**
@@ -105,6 +107,14 @@ public final class RideController {
      */
     public double flightLift() {
         return flightLift;
+    }
+
+    /**
+     * 탑승 좌석 높이 오프셋 전역 기본값. {@code pets/*.yml} 에 {@code seat-offset} 을
+     * 따로 적지 않은 종류는 이 값을 쓴다. 기본값 0 은 "지금까지 그대로"라는 뜻이다.
+     */
+    public double seatOffset() {
+        return seatOffset;
     }
 
     /**
