@@ -1,6 +1,6 @@
 # 🐾 BetterPets
 
-_알에서 키워 타고 다니는 펫 — Paper 26.2 · [BetterModel](https://github.com/toxicity188/BetterModel) 기반_
+_알에서 키워 타고 다니는 펫: Paper 26.2와 [BetterModel](https://github.com/toxicity188/BetterModel) 기반_
 
 ![Minecraft](https://img.shields.io/badge/Minecraft%20%2F%20Paper-26.2-brightgreen)
 ![Java](https://img.shields.io/badge/Java-25-orange)
@@ -20,8 +20,8 @@ Paper 서버에 옮긴 플러그인이에요.
 | | 버전 |
 | --- | --- |
 | Paper | **26.2+** (Spigot 미지원) |
-| Java | **25** — BetterModel 이 Java 25로 빌드돼 있어서 그 아래로는 로드되지 않아요 |
-| [BetterModel](https://hangar.papermc.io/toxicity188/BetterModel) | **3.4.1+** — 없으면 플러그인이 스스로 꺼집니다 |
+| Java | **25**: BetterModel 이 Java 25로 빌드돼 있어서 그 아래로는 로드되지 않아요 |
+| [BetterModel](https://hangar.papermc.io/toxicity188/BetterModel) | **3.4.1+**: 없으면 플러그인이 스스로 꺼집니다 |
 
 1. BetterModel 과 `BetterPets-*.jar` 를 `plugins/` 에 넣고 서버 재시작
 2. `.bbmodel` 모델을 `plugins/BetterModel/models/` 에 넣기 → [모델 규격](docs/MODELING.md)
@@ -52,14 +52,14 @@ mvn clean package                    # target/BetterPets-*.jar
 
 ## 참고
 
-- [BetterModel](https://github.com/toxicity188/BetterModel) — 렌더링 엔진 (MIT)
-- [betterpets-paper](https://github.com/yourShika/betterpets-paper) — 탑승 · 비행 구현을 참고했습니다 (MIT)
-- [악어의 놀이터 2](https://namu.wiki/w/%EC%95%85%EC%96%B4(%EC%9D%B8%ED%84%B0%EB%84%B7%20%EB%B0%A9%EC%86%A1%EC%9D%B8)/%EB%8C%80%EA%B7%9C%EB%AA%A8%20%EC%BD%98%ED%85%90%EC%B8%A0/%EC%95%85%EC%96%B4%EC%9D%98%20%EB%86%80%EC%9D%B4%ED%84%B0%202) — 원작 시스템
+- [BetterModel](https://github.com/toxicity188/BetterModel): 렌더링 엔진 (MIT)
+- [betterpets-paper](https://github.com/yourShika/betterpets-paper): 탑승과 비행 구현을 참고했습니다 (MIT)
+- [악어의 놀이터 2](https://namu.wiki/w/%EC%95%85%EC%96%B4(%EC%9D%B8%ED%84%B0%EB%84%B7%20%EB%B0%A9%EC%86%A1%EC%9D%B8)/%EB%8C%80%EA%B7%9C%EB%AA%A8%20%EC%BD%98%ED%85%90%EC%B8%A0/%EC%95%85%EC%96%B4%EC%9D%98%20%EB%86%80%EC%9D%B4%ED%84%B0%202): 원작 시스템
 
-> 원작의 실제 모델 · 텍스처를 추출해 쓰는 건 저작권 침해입니다. 시스템 구조를 참고하는
-> 것과 에셋을 복제하는 건 다른 얘기예요.
+> 원작의 실제 모델과 텍스처를 추출해 쓰는 건 저작권 침해입니다. 시스템 구조를 참고하는
+> 것과 에셋을 복제하는 것은 다른 문제예요.
 
 ## 라이선스
 
-아직 정하지 않았습니다. `LICENSE` 파일이 없으면 기본이 "모든 권리 보유"라 다른 사람이
-쓰거나 고칠 수 없어요. 공개하실 거면 하나 추가해 주세요.
+아직 정하지 않았습니다. `LICENSE` 파일이 없으면 기본값이 "모든 권리 보유"이기 때문에
+다른 사람이 쓰거나 고칠 수 없어요. 공개하실 거면 하나 추가해 주세요.
