@@ -24,7 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 직접 구동하고 있어서, 검증된 쪽을 택했다.
  *
  * <p>조향은 Paper 의 {@code Input} API 로 실제 키 입력을 읽는다. 시선 방향에 속도를 주는
- * 옛 방식보다 정확하다.
+ * 옛 방식보다 정확하다. {@code PlayerInputEvent} 로 받아 캐시해두는 대신
+ * {@code player.getCurrentInput()} 을 매 틱 직접 묻는다 — 캐시가 이벤트 타이밍에
+ * 어긋나 갱신되지 않는 경로(예: 탑승 직후처럼 키 상태가 안 바뀌어 이벤트가 안 오는
+ * 경우)를 원천적으로 없앤다.
  *
  * <p><b>{@code allowFlight} 는 쓰지 않는다.</b> 그걸 부여하면 하차·로그아웃·종료·사망 모든
  * 경로에서 회수해야 하고, 하나라도 빠지면 플레이어가 영구 비행을 얻는다. 아머스탠드를
@@ -130,7 +133,6 @@ public final class RideController {
         private final boolean flying;
         private final double speed;
         private final double flightLift;
-        private volatile Input input;
 
         private Ride(final UUID petId, final ArmorStand mount, final boolean flying,
                     final double speed, final double flightLift) {
@@ -144,7 +146,6 @@ public final class RideController {
         public UUID petId() { return petId; }
         public ArmorStand mount() { return mount; }
         public boolean flying() { return flying; }
-        void input(final Input value) { input = value; }
     }
 
     /** 이 플레이어가 그 펫에 타고 있는가. */
@@ -209,14 +210,6 @@ public final class RideController {
         }
         rides.put(player.getUniqueId(), new Ride(petId, mount, flying, speed, flightLift));
         return true;
-    }
-
-    /** 탑승자의 키 입력을 받아둔다. 실제 이동은 틱 루프가 한다. */
-    public void input(final Player player, final Input input) {
-        final Ride ride = rides.get(player.getUniqueId());
-        if (ride != null) {
-            ride.input(input);
-        }
     }
 
     /**
@@ -288,7 +281,12 @@ public final class RideController {
     }
 
     private void drive(final Player player, final Ride ride) {
-        final Input input = ride.input != null ? ride.input : player.getCurrentInput();
+        // PlayerInputEvent 로 받아 캐시해뒀던 값 대신 매 틱 직접 물어본다. Paper 문서는
+        // getCurrentInput() 을 "마지막으로 받은 입력"이라고만 설명할 뿐 이벤트 구독이
+        // 전제 조건이라고는 적지 않는다 — 캐시가 이벤트 타이밍에 따라 갱신되지 않는
+        // 경우(예: 탑승 직후 입력이 바뀌지 않아 이벤트가 안 오는 경우)를 없애려고
+        // 중개 없이 직접 읽는다.
+        final Input input = player.getCurrentInput();
         if (input == null) {
             return;
         }

@@ -22,7 +22,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInputEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -291,14 +290,6 @@ public final class InteractionListener implements Listener {
         } else {
             messages.send(player, "ride.failed");
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
-        }
-    }
-
-    /** 탑승 조작 입력을 컨트롤러에 넘긴다. 실제 이동은 틱 루프가 한다. */
-    @EventHandler
-    public void onInput(final PlayerInputEvent event) {
-        if (rides.isRiding(event.getPlayer())) {
-            rides.input(event.getPlayer(), event.getInput());
         }
     }
 
