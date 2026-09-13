@@ -35,9 +35,9 @@ class GrowthServiceTest {
     private static PetType type(final String id, final int growthMax,
                                 final RideMode ride, final Map<String, Integer> nextStage) {
         return new PetType(id, id, "model_" + id, Rarity.A, Rarity.A.defaults(),
-            growthMax, ride, Rarity.A.defaults().rideSpeed(), -1.0, "LEAD", 1.0,
+            growthMax, ride, Rarity.A.defaults().rideSpeed(), -1.0, -1.0, "LEAD", 1.0,
             PetType.AnimationSet.defaults(), PetType.MovementProfile.defaults(),
-            List.of(), nextStage, 0);
+            nextStage, 0);
     }
 
     private static final Map<String, PetType> WORLD = new LinkedHashMap<>();

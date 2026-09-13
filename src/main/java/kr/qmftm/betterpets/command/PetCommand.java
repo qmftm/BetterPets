@@ -172,6 +172,12 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 ? pet.typeId() : pet.displayNameOr(type.displayName()));
             final String rarity = type == null ? "?" : type.rarity().name();
 
+            // next-stage 가 없거나 growth-max 로 껐으면 성장도가 의미 없다 — "0/-1" 같은
+            // 값을 보여주지 않는다.
+            final String growthLabel = type != null && type.growsToNextStage()
+                ? pet.growth() + "/" + pets.growth().maxOf(pet)
+                : "-";
+
             // 줄은 짧게, 자세한 건 호버로. 20마리를 훑을 때 한 줄이 길면 눈이 못 따라간다.
             player.sendMessage(messages.bare("pet.list-entry",
                     "mark", pet.active() ? "●" : "○",
@@ -181,7 +187,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 .clickEvent(ClickEvent.runCommand("/pet summon " + id))
                 .hoverEvent(HoverEvent.showText(messages.bare("pet.list-hover",
                     "name", name,
-                    "growth", pet.growth() + "/" + pets.growth().maxOf(pet)))));
+                    "growth", growthLabel))));
         }
     }
 

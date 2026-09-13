@@ -227,9 +227,13 @@ public final class InteractionListener implements Listener {
                 player.playSound(player.getLocation(), Sound.ENTITY_PIG_AMBIENT, 1.0f, 1.0f);
             }
             case FED -> {
-                messages.send(player, "feed.fed",
-                    "growth", String.valueOf(data.growth()),
-                    "max", String.valueOf(growth.maxOf(data)));
+                if (current.growsToNextStage()) {
+                    messages.send(player, "feed.fed",
+                        "growth", String.valueOf(data.growth()),
+                        "max", String.valueOf(growth.maxOf(data)));
+                } else {
+                    messages.send(player, "feed.fed-no-growth");
+                }
                 player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EAT, 0.8f, 1.0f);
             }
         }
@@ -266,7 +270,9 @@ public final class InteractionListener implements Listener {
         }
 
         final boolean flying = type.ride() == RideMode.FLY;
-        final double speed = type.rideSpeed();
+        // 비행 중 수평 속도는 걷는 탑승 속도(ride-speed)와 다를 수 있다 — flight-speed
+        // 를 따로 적어뒀으면 그 값을, 안 적었으면 ride-speed 를 그대로 쓴다.
+        final double speed = flying && type.flightSpeed() >= 0 ? type.flightSpeed() : type.rideSpeed();
         // 이 펫만 다른 상승력을 쓰도록 적어뒀으면 그 값을, 아니면 전역 기본값을 쓴다.
         final double flightLift = type.flightLift() >= 0 ? type.flightLift() : rides.flightLift();
         if (rides.start(player, pet.petId(), pet.carrier().getLocation(), flying, speed, flightLift)) {

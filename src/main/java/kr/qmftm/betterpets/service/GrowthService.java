@@ -31,7 +31,7 @@ public final class GrowthService {
      * 종류 id → 정의.
      *
      * <p>{@link PetCatalog} 를 통째로 받지 않고 조회 함수만 받는다. 카탈로그는 파일과
-     * {@code AbilityRegistry}(그리고 그 뒤의 {@code Plugin})에 묶여 있어서, 그대로 두면
+     * {@code Plugin}(리소스 로딩)에 묶여 있어서, 그대로 두면
      * <b>플러그인의 핵심 로직인 성장·진화·과급식이 서버 없이는 한 줄도 검증되지 않는다.</b>
      * 필요한 건 조회 하나뿐이라 값이 맞지 않는다.
      */
@@ -159,13 +159,14 @@ public final class GrowthService {
      * 시간이 지나 성장도가 오를 수 있는 상태인가.
      *
      * <p>둘 다 필요하다 — <b>꺼내져 있어야</b> 하고(보관함에 있는 동안은 자라지 않는다),
-     * <b>다음 진화가 설정된 종류</b>여야 한다(갈 곳이 없으면 성장도가 할 일이 없다).
+     * {@link PetType#growsToNextStage} 여야 한다(next-stage 가 없거나 {@code growth-max}
+     * 로 껐으면 성장도가 할 일이 없다).
      */
     private boolean growsOverTime(final PetData data) {
         if (!data.active()) {
             return false;
         }
-        return types.apply(data.typeId()).map(PetType::hasNextStage).orElse(false);
+        return types.apply(data.typeId()).map(PetType::growsToNextStage).orElse(false);
     }
 
     /**
@@ -214,10 +215,10 @@ public final class GrowthService {
         }
         data.addFullness(randomFullnessGain());
 
-        // 다음 진화가 없는 종류는 성장도가 할 일이 없다 — 포만도는 오르지만
-        // 성장도는 건드리지 않는다. 과급식 판정은 성장도와 무관하므로 그대로 돈다.
+        // 진화할 곳이 없거나 growth-max 로 꺼둔 종류는 성장도가 할 일이 없다 — 포만도는
+        // 오르지만 성장도는 건드리지 않는다. 과급식 판정은 성장도와 무관하므로 그대로 돈다.
         final PetType type = types.apply(data.typeId()).orElse(null);
-        if (type != null && type.hasNextStage()) {
+        if (type != null && type.growsToNextStage()) {
             refresh(data);
             data.addGrowth(feed.growthOr(tuning.feedAmount()), type.growthMax());
         }
@@ -236,18 +237,18 @@ public final class GrowthService {
      * 성장도가 상한에 닿아 다음 형태로 진화할 때가 됐는지 확인한다.
      *
      * <p><b>아기·성체 구분은 없다.</b> 성장도의 유일한 역할은 다음 종류로 진화하기까지
-     * 걸리는 시간이다. <b>다음 진화가 없는 종류는 이 메서드가 할 일이 없다.</b> 성장도
-     * 자체가 오르지 않으므로(={@link #growsOverTime}) {@code growth() < growthMax()}
-     * 조건에 항상 걸려 {@link StageResult#NONE} 만 돌려준다 — 계속 {@link LifeStage#NORMAL}
-     * 로 남는다. 일부러 다른 상태로 승격시키지 않는다: 그러면 {@code registerBurst} 가
-     * {@code stage() == NORMAL} 을 요구하는 과급식 기믹이 이런 종류에서 첫 급여 한 번
-     * 만에 막혀버린다. 진화 여부와 과급식 대상 여부는 서로 다른 판정이라 하나가 다른
-     * 하나를 침범하면 안 된다.
+     * 걸리는 시간이다. <b>{@link PetType#growsToNextStage} 가 아닌 종류는 이 메서드가
+     * 할 일이 없다.</b> 성장도 자체가 오르지 않으므로(={@link #growsOverTime})
+     * {@code growth() < growthMax()} 조건에 항상 걸려 {@link StageResult#NONE} 만
+     * 돌려준다 — 계속 {@link LifeStage#NORMAL} 로 남는다. 일부러 다른 상태로
+     * 승격시키지 않는다: 그러면 {@code registerBurst} 가 {@code stage() == NORMAL} 을
+     * 요구하는 과급식 기믹이 이런 종류에서 첫 급여 한 번 만에 막혀버린다. 진화 여부와
+     * 과급식 대상 여부는 서로 다른 판정이라 하나가 다른 하나를 침범하면 안 된다.
      *
-     * <p>다음 진화가 있는 종류만 성장도가 상한에 닿을 때까지 기다렸다가, {@code next-stage}
-     * 가중치로 종류를 다시 뽑고(자기 자신이 나오면 "한 단계 더 기다린다") 성장도를
-     * 0부터 다시 채운다. 뽑힌 종류에마저 다음 진화가 없으면, 그 뒤로는 이 메서드가
-     * 다시 위 문단의 경우로 떨어져 조용히 멈춘다.
+     * <p>{@code growsToNextStage} 인 종류만 성장도가 상한에 닿을 때까지 기다렸다가,
+     * {@code next-stage} 가중치로 종류를 다시 뽑고(자기 자신이 나오면 "한 단계 더
+     * 기다린다") 성장도를 0부터 다시 채운다. 뽑힌 종류에마저 진화할 곳이 없으면,
+     * 그 뒤로는 이 메서드가 다시 위 문단의 경우로 떨어져 조용히 멈춘다.
      *
      * @return 이번 호출로 일어난 일. 아직 자랄 게 남았으면 {@link StageResult#NONE}
      */
@@ -256,7 +257,7 @@ public final class GrowthService {
             return StageResult.NONE;
         }
         final PetType type = types.apply(data.typeId()).orElse(null);
-        if (type == null || !type.hasNextStage() || data.growth() < type.growthMax()) {
+        if (type == null || !type.growsToNextStage() || data.growth() < type.growthMax()) {
             return StageResult.NONE;
         }
 

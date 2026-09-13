@@ -166,8 +166,13 @@ public final class PetPlaceholders extends PlaceholderExpansion {
             case "pet_rarity_name" -> type == null ? NONE : strip(type.stats().displayName());
             case "pet_stage" -> data.stage().name();
             case "pet_growth" -> String.valueOf(data.growth());
-            case "pet_growth_max" -> String.valueOf(growth.maxOf(data));
-            case "pet_growth_percent" -> Math.round(growth.progressOf(data) * 100) + "%";
+            // next-stage 가 없거나 growth-max 로 껐으면 성장도가 의미 없다 — "-1" 같은
+            // 값을 내보내는 대신 NONE 으로 비운다.
+            case "pet_growth_max" ->
+                type != null && type.growsToNextStage() ? String.valueOf(growth.maxOf(data)) : NONE;
+            case "pet_growth_percent" ->
+                type != null && type.growsToNextStage()
+                    ? Math.round(growth.progressOf(data) * 100) + "%" : NONE;
             case "pet_growth_stage" -> String.valueOf(data.growthStage());
             case "pet_id" -> data.petId().toString().substring(0, 8);
             // 모르는 키에 "-" 를 주면 오타가 조용히 묻힌다. null 이어야 원문이 남아 눈에 띈다.

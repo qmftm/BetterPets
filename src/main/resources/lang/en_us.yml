@@ -45,6 +45,8 @@ egg:
 
 feed:
   fed: "<green>Fed. <gray>Growth <white>%growth%<gray>/<white>%max%"
+  # No next-stage, or growth turned off with growth-max. Nothing to show.
+  fed-no-growth: "<green>Fed."
   stage-up: "<aqua>Evolved! <gray>(stage %stage%)"
   became-pig: "<yellow>You overfed it... it turned into a pig."
   too-full: "<yellow>Too full to eat any more."

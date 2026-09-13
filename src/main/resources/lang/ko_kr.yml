@@ -45,6 +45,8 @@ egg:
 
 feed:
   fed: "<green>먹이를 줬습니다. <gray>성장도 <white>%growth%<gray>/<white>%max%"
+  # next-stage 가 없거나 growth-max 로 꺼둔 종류. 성장도를 보여줄 게 없다.
+  fed-no-growth: "<green>먹이를 줬습니다."
   stage-up: "<aqua>진화했습니다! <gray>(%stage%단계)"
   became-pig: "<yellow>너무 많이 먹여서... 돼지가 됐습니다."
   too-full: "<yellow>배가 불러서 더 못 먹습니다."

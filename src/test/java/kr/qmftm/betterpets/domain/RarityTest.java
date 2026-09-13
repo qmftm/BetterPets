@@ -47,13 +47,6 @@ class RarityTest {
     }
 
     @Test
-    @DisplayName("생애주기: 능력은 소환하는 순간부터 붙는다 — 돼지만 과급식의 대가로 잃는다")
-    void lifeStageCapabilities() {
-        assertTrue(LifeStage.NORMAL.abilitiesActive());
-        assertFalse(LifeStage.PIG.abilitiesActive(), "돼지는 기믹이라 능력이 없다");
-    }
-
-    @Test
     @DisplayName("등급 비교는 선언 순서를 따른다 — 방송 문턱이 이걸로 정해진다")
     void atLeastFollowsDeclarationOrder() {
         assertTrue(Rarity.S.atLeast(Rarity.A));

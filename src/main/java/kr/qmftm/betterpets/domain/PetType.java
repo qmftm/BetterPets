@@ -1,10 +1,7 @@
 package kr.qmftm.betterpets.domain;
 
-import kr.qmftm.betterpets.ability.AbilityDefinition;
-
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,13 +11,20 @@ import java.util.Set;
  * <p>개체({@link PetData})와 구분한다 — 같은 종류의 펫을 여러 마리 가질 수 있고,
  * 개체마다 레벨과 이름이 다르다.
  *
- * @param stats     이 펫의 등급 수치. {@code rarity.yml} 에서 온 값을 로드 시점에
- *                  박아 넣는다. {@code rarity()} 로 표를 다시 찾지 않는 이유는, 그러면
- *                  수치를 읽는 모든 자리에 표를 들고 다녀야 하기 때문이다 — 이동
- *                  컨트롤러, 능력, GUI, 알림. 리로드하면 어차피 펫 정의를 통째로 다시
- *                  만드므로 값이 굳어 있어도 문제없다
+ * @param stats        이 펫의 등급 수치. {@code rarity.yml} 에서 온 값을 로드 시점에
+ *                     박아 넣는다. {@code rarity()} 로 표를 다시 찾지 않는 이유는, 그러면
+ *                     수치를 읽는 모든 자리에 표를 들고 다녀야 하기 때문이다 — 이동
+ *                     컨트롤러, GUI, 알림. 리로드하면 어차피 펫 정의를 통째로 다시
+ *                     만드므로 값이 굳어 있어도 문제없다
+ * @param growthMax    성장 상한. 음수(-1)면 "이 종류는 성장도가 없다"는 뜻이고,
+ *                     {@code next-stage} 가 있어도 절대 자라지 않는다({@link #hasGrowth}).
+ *                     0 이하 다른 값은 실수로 보고 1로 접는다
  * @param rideSpeed    등급별 기본값을 이 펫만 다르게 쓰고 싶을 때 {@code pets/*.yml} 의
- *                     {@code ride-speed} 로 덮어쓴다
+ *                     {@code ride-speed} 로 덮어쓴다. 걷는 탑승과, 비행 탑승인데
+ *                     {@code flight-speed} 를 안 적었을 때 둘 다 쓰인다
+ * @param flightSpeed  비행 중 수평 이동 속도. 음수면 "설정 안 함"이고, 그때는
+ *                     {@code rideSpeed} 를 그대로 쓴다. {@code ride} 가
+ *                     {@link RideMode#FLY} 가 아니면 의미가 없다
  * @param flightLift   비행 상승력(점프 키를 눌렀을 때 y 로 더해지는 값). 음수면
  *                     "설정 안 함"이라는 뜻이고, 그때는 {@code config.yml} 의
  *                     {@code ride.flight-lift} 전역값을 그대로 쓴다.
@@ -40,25 +44,30 @@ public record PetType(
     int growthMax,
     RideMode ride,
     double rideSpeed,
+    double flightSpeed,
     double flightLift,
     String iconMaterial,
     double size,
     AnimationSet animations,
     MovementProfile movement,
-    List<AbilityDefinition> abilities,
     Map<String, Integer> nextStage,
     int gachaWeight
 ) {
 
     public PetType {
-        abilities = List.copyOf(abilities);
         // Map.copyOf 는 아니다 — Weighted.pick 이 순서에 따라 구간을 나누므로,
         // 설정 파일에 적은 순서를 그대로 지켜야 재현 가능하다. EggDefinition 과 동일한 이유.
         nextStage = Collections.unmodifiableMap(new LinkedHashMap<>(nextStage));
-        growthMax = Math.max(1, growthMax);
+        // 음수는 "성장도 없음" 신호로 그대로 둔다. 0 이하 다른 값(오타로 적은 0 등)은
+        // 접어서 최소 1로 두지만, 음수를 똑같이 접으면 "의도적으로 안 자라게 함"과
+        // "실수로 이상한 값을 적음"을 구분할 수 없다.
+        growthMax = growthMax < 0 ? -1 : Math.max(1, growthMax);
         rideSpeed = Math.max(0.01, rideSpeed);
-        // 음수는 "설정 안 함"이라는 신호로 그대로 둔다. 0은 실수로 적었을 값이라
-        // 최솟값으로 접지만, 음수는 접으면 그 신호를 잃는다.
+        // flightSpeed·flightLift 둘 다 같은 규칙이다 — 음수는 "설정 안 함"이라는 신호로
+        // 그대로 두고, 0 이상만 최솟값으로 접는다. 음수까지 접으면 그 신호를 잃는다.
+        if (flightSpeed >= 0) {
+            flightSpeed = Math.max(0.01, flightSpeed);
+        }
         if (flightLift >= 0) {
             flightLift = Math.max(0.01, flightLift);
         }
@@ -70,9 +79,27 @@ public record PetType(
      * 다음 성장 단계에서 종류가 바뀔 수 있는가.
      *
      * <p>{@code false} 면 성장 단계가 올라도 같은 종류를 유지한 채 성장도만 다시 채운다.
+     * {@link #hasGrowth} 와는 별개다 — 이건 "갈 곳이 있는가"만 본다.
      */
     public boolean hasNextStage() {
         return !nextStage.isEmpty();
+    }
+
+    /** {@code growth-max} 로 성장도 자체를 꺼두지 않았는가. */
+    public boolean hasGrowth() {
+        return growthMax > 0;
+    }
+
+    /**
+     * 실제로 성장도가 올라 다음 종류로 진화하는가.
+     *
+     * <p>{@link #hasNextStage} 와 {@link #hasGrowth} 를 둘 다 만족해야 한다 —
+     * {@code next-stage} 가 있어도 {@code growth-max: -1} 이면 자라지 않고,
+     * 반대로 {@code growth-max} 가 양수여도 {@code next-stage} 가 없으면 갈 곳이 없다.
+     * {@link kr.qmftm.betterpets.service.GrowthService} 와 GUI 가 이 하나로 판단한다.
+     */
+    public boolean growsToNextStage() {
+        return hasNextStage() && hasGrowth();
     }
 
     /**

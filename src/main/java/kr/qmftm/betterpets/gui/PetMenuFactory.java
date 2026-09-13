@@ -296,9 +296,9 @@ public final class PetMenuFactory {
      * 성장 단계 같은 나머지는 일부러 뺐다 — 한눈에 훑는 목록에서는 이 셋이면 충분하고,
      * 소환 중인지는 반짝임(아래 인챈트 글린트)으로 이미 구분된다.
      *
-     * <p><b>성장도는 next-stage 가 있는 종류에게만 의미가 있다.</b> 진화할 곳이 없는
-     * 종류는 성장도가 아예 오르지 않으므로(={@code GrowthService.growsOverTime}) 줄
-     * 자체를 뺀다 — 항상 0/max 로만 보이는 줄은 정보가 아니라 소음이다. 포만도는
+     * <p><b>성장도는 {@link PetType#growsToNextStage} 인 종류에게만 의미가 있다.</b>
+     * 그 밖의 종류는 성장도가 아예 오르지 않으므로(={@code GrowthService.growsOverTime})
+     * 줄 자체를 뺀다 — 항상 0/max 로만 보이는 줄은 정보가 아니라 소음이다. 포만도는
      * 진화 여부와 무관하게 보여준다 — 과급식(돼지 되기) 판정이 여기 걸려 있어서
      * 진화할 곳이 없는 종류에게도 뜻이 있다. 돼지가 된 뒤에는 둘 다 뺀다.
      */
@@ -316,7 +316,7 @@ public final class PetMenuFactory {
             lore.add(line("gui.pet-rarity", "rarity", type.rarity().name()));
         }
         if (pet.stage() != LifeStage.PIG) {
-            if (type != null && type.hasNextStage()) {
+            if (type != null && type.growsToNextStage()) {
                 lore.add(line("gui.pet-growth",
                     "growth", String.valueOf(pet.growth()),
                     "max", String.valueOf(growth.maxOf(pet))));

@@ -157,15 +157,4 @@ class PetDataTest {
         data.nickname("바둑이");
         assertFalse(data.isDirty());
     }
-
-    @Test
-    @DisplayName("능력은 소환하는 순간부터 붙는다 — 돼지가 되면 잃는다")
-    void lifeStageGating() {
-        final PetData data = sample();
-
-        assertTrue(data.stage().abilitiesActive());
-
-        data.stage(LifeStage.PIG);
-        assertFalse(data.stage().abilitiesActive());
-    }
 }

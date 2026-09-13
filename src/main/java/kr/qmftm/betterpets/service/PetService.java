@@ -35,7 +35,6 @@ public final class PetService {
     private final CarrierFactory carriers;
     private final PetRegistry registry;
     private final RideController rides;
-    private final AbilityService abilities;
     private final GrowthService growth;
     /**
      * 보유·동시 소환 한도.
@@ -52,7 +51,6 @@ public final class PetService {
                       final CarrierFactory carriers,
                       final PetRegistry registry,
                       final RideController rides,
-                      final AbilityService abilities,
                       final GrowthService growth,
                       final PetLimits limits) {
         this.catalog = catalog;
@@ -61,7 +59,6 @@ public final class PetService {
         this.carriers = carriers;
         this.registry = registry;
         this.rides = rides;
-        this.abilities = abilities;
         this.growth = growth;
         this.limits = limits;
     }
@@ -128,7 +125,6 @@ public final class PetService {
         registry.put(pet);
 
         data.active(true);
-        abilities.equip(owner, data, type);
         reindexFollowers(owner.getUniqueId());
         return replaced ? SummonResult.OK_REPLACED : SummonResult.OK;
     }
@@ -143,7 +139,6 @@ public final class PetService {
         if (rides.isRiding(owner, petId)) {
             rides.stop(owner);
         }
-        abilities.unequip(owner, pet.data(), pet.type());
         pet.data().active(false);
         store.saveAsync(pet.data());
 
@@ -205,22 +200,14 @@ public final class PetService {
     }
 
     /**
-     * 성장으로 펫이 달라졌을 때 화면과 능력을 현재 상태에 맞춘다.
+     * 진화로 펫 종류가 달라졌을 때 화면을 현재 상태에 맞춘다.
      *
-     * <p>성장은 <b>재소환 없이</b> 일어난다. 그래서 이 마무리를 빠뜨리면 데이터만 바뀌고
-     * 나머지가 예전 상태로 남는다. 두 가지가 어긋난다:
+     * <p>진화는 <b>재소환 없이</b> 일어난다. {@link ActivePet} 은 소환 시점의
+     * {@link PetType} 을 붙들고 있어서, {@code typeId} 만 바뀌면 예전 모델과 예전
+     * 애니메이션 이름을 계속 쓴다 — 이 마무리를 빠뜨리면 데이터만 바뀌고 화면은
+     * 예전 그대로 남는다.
      *
-     * <ul>
-     *   <li><b>모델</b> — {@link ActivePet} 은 소환 시점의 {@link PetType} 을 붙들고 있어서,
-     *       {@code typeId} 만 바뀌면 예전 모델과 예전 애니메이션 이름을 계속 쓴다
-     *   <li><b>능력</b> — {@code equip} 은 {@link #summon} 에서만 불린다. 아기로 소환해 둔
-     *       채 성체가 되면 능력이 영영 안 붙는다. "펫을 데리고 다니며 키운다"는 가장
-     *       자연스러운 경로에서 등급별 능력이 통째로 조용히 안 도는 상태였다
-     * </ul>
-     *
-     * <p>능력은 떼었다 다시 붙인다. {@code unequip} 은 생애주기와 무관하게 돌고
-     * {@code equip} 은 성체에게만 붙으므로, 이 한 쌍이 <b>어느 방향의 변화든</b> 맞춘다 —
-     * 아기→성체는 붙고, 성체→돼지는 떨어진다.
+     * <p>종류가 그대로면(먹기만 하고 진화는 안 한 경우) 할 일이 없다.
      *
      * <p>탑승 중에 종류가 바뀌었다면 {@link #summon} 안의 {@link #dismiss} 가 안전하게
      * 내려준다 — 드래곤이 돼지가 됐는데 그대로 하늘에 떠 있으면 곤란하다.
@@ -234,19 +221,17 @@ public final class PetService {
             return RefreshResult.NOT_ACTIVE;   // 소환 중이 아니다. 다음 소환 때 맞춰진다
         }
         if (!current.type().id().equals(data.typeId())) {
-            // 종류가 바뀌었다. 모델부터 다시 붙여야 하고, 그 과정에서 능력도 다시 붙는다.
-            // 이미 소환 중인 펫이라 동시 소환 한도를 새로 잡아먹지 않는다 — summon 이
-            // 같은 petId 를 먼저 해제하고 그 자리에 다시 넣는다.
+            // 종류가 바뀌었다. 모델부터 다시 붙여야 한다. 이미 소환 중인 펫이라 동시
+            // 소환 한도를 새로 잡아먹지 않는다 — summon 이 같은 petId 를 먼저 해제하고
+            // 그 자리에 다시 넣는다.
             final SummonResult result = summon(owner, data);
             if (result == SummonResult.OK || result == SummonResult.OK_REPLACED) {
                 return RefreshResult.OK;
             }
             // 새 종류의 모델이 없다. summon 이 이미 예전 개체를 해제했으므로 눈앞에서
-            // 펫이 사라진 상태다. 조용히 넘기면 "다 자랐습니다!" 와 빈자리만 남는다.
+            // 펫이 사라진 상태다. 조용히 넘기면 "진화했습니다!" 와 빈자리만 남는다.
             return RefreshResult.DETACHED;
         }
-        abilities.unequip(owner, data, current.type());
-        abilities.equip(owner, data, current.type());
         return RefreshResult.OK;
     }
 

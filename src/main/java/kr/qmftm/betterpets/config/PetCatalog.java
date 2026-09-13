@@ -1,7 +1,5 @@
 package kr.qmftm.betterpets.config;
 
-import kr.qmftm.betterpets.ability.AbilityDefinition;
-import kr.qmftm.betterpets.ability.AbilityRegistry;
 import kr.qmftm.betterpets.domain.EggDefinition;
 import kr.qmftm.betterpets.domain.FeedDefinition;
 import kr.qmftm.betterpets.domain.PetType;
@@ -70,7 +68,7 @@ public final class PetCatalog {
         return List.copyOf(problems);
     }
 
-    public void load(final File dataFolder, final AbilityRegistry abilities, final PetRenderer renderer) {
+    public void load(final File dataFolder, final PetRenderer renderer) {
         types.clear();
         eggs.clear();
         feeds.clear();
@@ -78,7 +76,7 @@ public final class PetCatalog {
 
         // 등급 수치를 먼저 읽는다. 펫 정의가 이 값을 박아 넣기 때문이다.
         rarities = loadRarities(new File(dataFolder, "rarity.yml"));
-        loadTypes(new File(dataFolder, "pets"), abilities);
+        loadTypes(new File(dataFolder, "pets"));
         loadItems(dataFolder);
 
         crossValidate(renderer);
@@ -144,7 +142,7 @@ public final class PetCatalog {
         return raw;
     }
 
-    private void loadTypes(final File folder, final AbilityRegistry abilities) {
+    private void loadTypes(final File folder) {
         final File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
         if (files == null || files.length == 0) {
             problems.add("pets/ 폴더에 펫 정의가 없습니다.");
@@ -188,16 +186,20 @@ public final class PetCatalog {
                 model,
                 rarity.get(),
                 rarities.stats(rarity.get()),
+                // growth-max 를 음수로 적으면(-1 권장) 이 종류는 성장도가 아예 없다는
+                // 뜻이다 — PetType 이 그대로 -1 을 유지한다. 0 이하 다른 값은 실수로 보고
+                // 1로 접는다.
                 yaml.getInt("growth-max", 100),
                 ride,
                 yaml.getDouble("ride-speed", rarities.stats(rarity.get()).rideSpeed()),
-                // 음수는 "설정 안 함" — RideController 가 전역 기본값(ride.flight-lift)을 쓴다.
+                // 둘 다 음수 = "설정 안 함". flight-speed 는 ride-speed 를, flight-lift 는
+                // config.yml 의 전역값을 대신 쓴다.
+                yaml.contains("flight-speed") ? yaml.getDouble("flight-speed") : -1.0,
                 yaml.contains("flight-lift") ? yaml.getDouble("flight-lift") : -1.0,
                 iconMaterial,
                 yaml.getDouble("size", 1.0),
                 readAnimations(file.getName(), yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
-                readAbilities(file.getName(), yaml.getMapList("abilities"), abilities),
                 readWeights(yaml.getConfigurationSection("next-stage")),
                 yaml.getInt("acquire.gacha-weight", 0)
             );
@@ -278,31 +280,6 @@ public final class PetCatalog {
         );
     }
 
-    private List<AbilityDefinition> readAbilities(final String fileName,
-                                                  final List<Map<?, ?>> raw,
-                                                  final AbilityRegistry abilities) {
-        final List<AbilityDefinition> result = new ArrayList<>();
-        for (final Map<?, ?> entry : raw) {
-            final Object idValue = entry.get("id");
-            if (idValue == null) {
-                problems.add(fileName + ": 능력에 id 가 없습니다.");
-                continue;
-            }
-            final String id = idValue.toString();
-            if (abilities.find(id).isEmpty()) {
-                problems.add(fileName + ": 알 수 없는 능력 '" + id + "'. 사용 가능: " + abilities.ids());
-                continue;
-            }
-            final Map<String, Double> values = new HashMap<>();
-            for (final var pair : entry.entrySet()) {
-                if (pair.getValue() instanceof Number number && !"id".equals(pair.getKey())) {
-                    values.put(pair.getKey().toString(), number.doubleValue());
-                }
-            }
-            result.add(new AbilityDefinition(id, values));
-        }
-        return result;
-    }
 
     /**
      * {@code items.yml} 에서 알과 먹이를 읽는다.

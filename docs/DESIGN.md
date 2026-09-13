@@ -12,7 +12,7 @@ BetterPets의 아키텍처, 검증된 API, 조사 근거, 리스크. 사용법�
 - [행동 설계](#행동-설계)
 - [탑승과 비행](#탑승과-비행)
 - [데이터와 영속화](#데이터와-영속화)
-- [등급과 능력](#등급과-능력)
+- [등급](#등급)
 - [획득 경로](#획득-경로)
 - [보유·소환 한도](#보유소환-한도)
 - [다국어](#다국어)
@@ -60,7 +60,7 @@ BetterPets의 아키텍처, 검증된 API, 조사 근거, 리스크. 사용법�
 ```
 Presentation   /pet · /betterpets · PetBoxMenu · listener/*
        ↓
-Application    PetService · GrowthService · RideService · AbilityService
+Application    PetService · GrowthService · RideService
        ↓
 Domain         Rarity · LifeStage · GrowthCurve · PetType · PetData · PetLimits
        ↓
@@ -220,7 +220,7 @@ BetterModel이 좌석 마운트를 네이티브로 지원하지만, [참고 구�
 | 탑승·비행 | 핵심 기능 | 핵심 기능 | 원작 준수 |
 | 획득 | NPC 알 구매(S2) + 뽑기권(S1) | **알 아이템 우클릭으로 통합** | 5명 서버에 NPC는 과잉. 랜덤 알로 뽑기 감각 유지 |
 | 부화 | 알에 먹이를 먹여 부화 | **알 아이템이 아기를 바로 준다** | 소환도 못 하는 대기 상태를 하나 줄인다. 키우는 재미는 아기→성체 구간이 담당한다 |
-| 능력 | 이동속도 위주 | 패시브/트리거 확장 | 원작보다 확장. 끄면 원작과 동일 |
+| 능력 | 이동속도 위주 | **제거함** | 펫이 아니라 주인에게 붙는 버프라는 요청으로 시스템 전체를 들어냈다 |
 
 ---
 
@@ -361,20 +361,18 @@ Java 타깃은 21이라 Java 25 JVM에서 도는 데는 문제가 없다.
 **아기·성체 구분은 없다.** 원래는 성장도가 상한에 닿아 `ADULT` 가 되어야 능력이
 붙었는데("다 자라야 쓸모 있어진다"), 그 대기가 모든 펫에게 있을 이유가 없다는
 요청으로 생애주기 자체를 걷어냈다. 지금은 `NORMAL`/`PIG` 둘뿐이고, 소환하는
-순간부터 탑승도 능력도 전부 붙는다 — `PIG` 만 과급식의 대가로 능력을 잃는다.
+순간부터 탑승이 전부 붙는다.
 
 **알은 생애주기 상태가 아니다.** 알 아이템은 그 안에 담긴 펫을 곧바로 꺼내주는 아이템이고, 보관함에 "알" 상태로 남지 않는다. 원작은 알을 사서 먹여 부화시켰지만, 5명 서버에서 그 한 단계는 소환도 못 하는 대기 시간만 늘린다 — 우클릭한 순간 데리고 다닐 수 있는 펫을 준다.
 
-| 상태 | 진입 조건 | 탑승 | 능력 |
-| --- | --- | :---: | :---: |
-| `NORMAL` | 알 아이템 우클릭 / `/betterpets give` | ✅ | ✅ |
-| `PIG` | 단시간 과급식 | ✅ | ❌ |
+| 상태 | 진입 조건 | 탑승 |
+| --- | --- | :---: |
+| `NORMAL` | 알 아이템 우클릭 / `/betterpets give` | ✅ |
+| `PIG` | 단시간 과급식 | ✅ |
 
-`PIG` 로 갈 때는 **상태뿐 아니라 종류(`typeId`)도 바꾼다.** 상태만 바꾸면 "돼지가 됐다"는 메시지와 화면이 어긋난다 — 겉모습은 여전히 원래 종류다. 어떤 펫으로 바뀔지는 `config.yml` 의 `gimmick.overfeed.becomes` 가 정하고(기본 `pig`), 기본 제공 `pets/pig.yml` 은 걷는 탑승만 되는 능력 없는 펫이다. 그 종류가 없으면 상태만 바꾸고 기동 시 경고한다.
+`PIG` 로 갈 때는 **상태뿐 아니라 종류(`typeId`)도 바꾼다.** 상태만 바꾸면 "돼지가 됐다"는 메시지와 화면이 어긋난다 — 겉모습은 여전히 원래 종류다. 어떤 펫으로 바뀔지는 `config.yml` 의 `gimmick.overfeed.becomes` 가 정하고(기본 `pig`), 기본 제공 `pets/pig.yml` 은 걷는 탑승만 되는 펫이다. 그 종류가 없으면 상태만 바꾸고 기동 시 경고한다.
 
-> ⚠️ **진화한 뒤에는 화면과 능력을 다시 맞춰야 한다.** 진화는 **재소환 없이** 일어나는데, 모델과 능력은 소환 시점에 붙는다. 빠뜨리면 두 가지가 어긋난다 — `ActivePet` 이 소환 시점의 `PetType` 을 붙들고 있어 진화해도 예전 모델과 예전 애니메이션 이름을 계속 쓰고, 종류가 바뀌는데도 새 능력이 안 붙는다. 급여 · 시간 경과 · `/betterpets growth` 세 경로 모두 `PetService.refreshAfterGrowth` 로 마무리한다.
->
-> 능력은 떼었다 다시 붙인다. `unequip` 은 생애주기와 무관하게 돌고 `equip` 은 `PIG` 만 걸러내므로, 이 한 쌍이 **어느 방향의 변화든** 맞춘다 — 진화해도 능력은 그대로 유지되고, `PIG` 가 되면 떨어진다.
+> ⚠️ **진화한 뒤에는 화면을 다시 맞춰야 한다.** 진화는 **재소환 없이** 일어나는데, 모델은 소환 시점에 붙는다. 빠뜨리면 `ActivePet` 이 소환 시점의 `PetType` 을 붙들고 있어 진화해도 예전 모델과 예전 애니메이션 이름을 계속 쓴다. 급여 · 시간 경과 · `/betterpets growth` 세 경로 모두 `PetService.refreshAfterGrowth` 로 마무리한다.
 
 ### 성장도
 
@@ -422,8 +420,12 @@ Java 타깃은 21이라 Java 25 JVM에서 도는 데는 문제가 없다.
 맞춰서다.
 
 `next-stage` 가 없는 종류는 **성장도가 아예 오르지 않는다.** 갈 곳이 없으니 잴
-이유가 없다(`GrowthService.growsOverTime`). `next-stage` 가 있는 종류만 먹이·시간
-경과로 성장도가 오르고, 상한(`growth-max`)에 닿으면:
+이유가 없다(`GrowthService.growsOverTime`). `growth-max` 를 음수(권장값 `-1`)로
+적어도 마찬가지다 — `next-stage` 는 있는데 설정으로 성장도만 꺼두고 싶은 경우를
+위한 신호다. 둘 다 `PetType.growsToNextStage()`(`hasNextStage() && hasGrowth()`)
+하나로 묶여서, GUI·플레이스홀더·`/pet list` 가 이 값을 보고 "0/-1" 같은 무의미한
+숫자 대신 성장도 표시 자체를 생략한다. `next-stage` 가 있고 `growth-max` 도 양수인
+종류만 먹이·시간 경과로 성장도가 오르고, 상한(`growth-max`)에 닿으면:
 
 1. 펫 종류의 `next-stage` 가중치 맵으로 다음 형태를 추첨한다 — 알의 랜덤 뽑기와 같은 알고리즘(`Weighted.pick`)이다. 자기 자신이 나오면 "한 단계 더 기다린다"가 된다
 2. `growthStage` 를 1 올린다 (표시·정렬용 — 몇 번째 진화인지)
@@ -634,9 +636,10 @@ int steps = Math.max(1, (int) Math.ceil(dist / 0.45));
 public record PetType(
         String id, String displayName, String modelId,
         Rarity rarity, AnimationSet animations, MovementProfile movement,
-        RideMode ride, double flightLift,  // ride:/flying: 두 불리언 + 음수="설정 안 함"
-        List<AbilityDefinition> abilities,
-        int growthMax, Map<String, Integer> nextStage   // 가중치. 비어 있으면 종류 유지
+        RideMode ride, double rideSpeed,
+        double flightSpeed, double flightLift,  // ride:/flying: 두 불리언 + 음수="설정 안 함"
+        int growthMax,   // 음수(권장 -1) = 성장도 없음
+        Map<String, Integer> nextStage   // 가중치. 비어 있으면 종류 유지
 ) {}
 
 public final class PetData {
@@ -678,7 +681,7 @@ pets:
 
 ---
 
-## 등급과 능력
+## 등급
 
 ### 등급 — D~S
 
@@ -701,29 +704,14 @@ pets:
 | `Rarity` | 코드 (enum) | 서열이자 식별자다. `min-rarity: A` 같은 설정이 이름으로 비교하고, `atLeast` 가 선언 순서에 기댄다 |
 | `RarityStats` | `rarity.yml` | 순전히 밸런싱이다. 서버마다 다를 수 있고, 우리가 정답을 모른다 |
 
-수치는 로드 시점에 **`PetType` 안으로 박아 넣는다.** 표를 들고 다니게 하면 이동 컨트롤러·능력·GUI·알림 전부에 표를 넘겨야 한다. 리로드하면 어차피 펫 정의를 통째로 다시 만들므로 값이 굳어 있어도 문제없다.
+수치는 로드 시점에 **`PetType` 안으로 박아 넣는다.** 표를 들고 다니게 하면 이동 컨트롤러·GUI·알림 전부에 표를 넘겨야 한다. 리로드하면 어차피 펫 정의를 통째로 다시 만들므로 값이 굳어 있어도 문제없다.
 
 빠진 등급·항목은 내장 기본값으로 채운다 — 언어 파일과 같은 원칙이다. `S` 의 `ride-speed` 만 손보는 게 흔한 경우인데, 그러자고 다섯 등급을 전부 적게 만들 이유가 없다.
 
-### 능력
-
-| 유형 | 발동 | 구현 | 예시 |
-| --- | --- | --- | --- |
-| `PASSIVE` | 소환 중 상시 | `AttributeModifier` 부착 | 이동속도, 최대체력 |
-| `TRIGGER` | 특정 이벤트 | 리스너 + 확률 판정 | 피격 시 회복, 처치 시 추가 드랍 |
-
-> 쿨다운 기반 수동 발동(액티브) 능력은 만들지 않기로 했다. `PetAbility.Type` 은 `PASSIVE`/`TRIGGER` 둘뿐이다.
-
-```java
-public interface PetAbility {
-    AbilityType type();
-    void onEquip(AbilityContext ctx);
-    void onUnequip(AbilityContext ctx);    // onEquip 의 정확한 역연산이어야 한다
-    default void onTrigger(AbilityContext ctx, Event event) {}
-}
-```
-
-> ⚠️ **모디파이어 누적 버그.** 재접속·펫 교체·리로드마다 `AttributeModifier` 가 쌓이면 플레이어가 로켓처럼 날아간다. **부착 전 항상 같은 키의 모디파이어를 제거**하고 접속 시점에도 청소한다.
+> **능력 시스템은 제거했다.** 이동속도·최대체력 패시브와 처치 시 추가 드랍 트리거를
+> `AttributeModifier`·리스너로 구현해뒀었지만, 펫이 아니라 주인에게 붙는 버프라는
+> 요청으로 시스템 전체(`ability` 패키지, `AbilityService`, `AbilityTriggerListener`)를
+> 들어냈다. 펫 종류의 개성은 등급별 수치(`rarity.yml`)와 모델·탑승 속도로만 표현한다.
 
 ---
 
@@ -796,7 +784,6 @@ feeds:
 - `PetRegistry` 가 소유자당 여러 마리를 **소환 순서대로** 들고 있어야 한다 (`CopyOnWriteArrayList`) — "가장 오래된 것"이 순서에 기대고 있어서다
 - **추종 목표를 마리마다 벌려야 한다.** 안 그러면 전부 "주인 뒤 한 점"을 노려서 겹쳐 떨거나 서로 밀어내는 것처럼 보인다. 슬롯마다 각도를 `0° · +35° · -35° · +70° …` 로 줘서 부채꼴로 세운다. 전체 마릿수를 모르는 채 고정 간격을 쓰는 이유는, 마릿수에 맞춰 매번 다시 배치하면 한 마리를 넣고 뺄 때마다 나머지가 우르르 움직여 더 어수선해지기 때문이다
 - 탑승은 여전히 한 번에 한 마리다. 대신 `Ride` 가 **어느 펫인지**(`petId`)를 들고 있어야 한다. 없으면 틱 루프가 같이 나와 있는 펫을 전부 마운트로 순간이동시킨다
-- 능력치 모디파이어 키가 **능력별이 아니라 개체별**이어야 한다(`ability_<능력>_<펫id>`). 능력별 키면 둘째 펫이 첫째 것을 덮어쓰고, 둘째를 해제할 때 첫째 것까지 사라진다. 개체별 키라서 여러 마리의 보너스는 **겹쳐서** 적용된다
 - 소환한 마릿수만큼 캐리어 엔티티와 렌더 트래커가 늘어난다. 5명 서버라도 1인 10마리면 트래커 50개다
 
 ---
@@ -905,7 +892,7 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 
 **리로드가 실제로 반영되는지가 별도의 문제다.** 값을 읽어 들고 있는 쪽은 `/betterpets reload` 때 다시 밀어 넣어야 한다 — 지금은 셋이다: 비행 수치(`RideController`), 보유·소환 한도(`PetService`), 방송 조건(`BroadcastService`). 하나라도 빠뜨리면 "설정을 다시 읽었습니다"가 거짓말이 되고, 그 침묵은 관리자의 오후를 통째로 잡아먹는다. GUI 와 플레이스홀더는 값을 들지 않고 **매번 서비스에 묻는다** — 들고 있으면 같은 문제가 하나 더 생긴다.
 
-**설정 검증** — 로드 시 필수 필드 누락, 존재하지 않는 모델 참조(`BetterModel.modelKeys()` 로 대조), 미등록 능력 id를 **모두 수집해 한 번에 보고**한다. 첫 오류에서 멈추지 않는다. 관리자가 재시작을 반복하게 만들지 않기 위해서다.
+**설정 검증** — 로드 시 필수 필드 누락, 존재하지 않는 모델 참조(`BetterModel.modelKeys()` 로 대조)를 **모두 수집해 한 번에 보고**한다. 첫 오류에서 멈추지 않는다. 관리자가 재시작을 반복하게 만들지 않기 위해서다.
 
 ---
 
@@ -934,7 +921,6 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 | `RideController.drive`·`isSafe` | 매 틱, 탑승자마다, 서브스텝마다 `getConfig()` | 기동/리로드 시 캐시 |
 | `RideController.isSafe` | 오프셋 배열이 **메서드 안 리터럴**이라 검사마다 배열 여섯 개. 거기에 `Location.clone()` 이 열 번 | 배열은 상수로, 위치는 인스턴스 버퍼로 |
 | `GrowthService.refresh` | 1분이 안 지나도 `Projection` 을 하나 만든다. 초당 5번 × 펫 수 | 값이 안 바뀌는 경우를 먼저 쳐냄 |
-| `AbilityTriggerListener` | 피격·처치 이벤트마다 `List.copyOf` | 복사 없는 `forEachOf` |
 | `Tags.strip` | `String.replaceAll` 이 호출마다 `Pattern.compile` | 미리 컴파일해 한곳으로 |
 | `PetStore.persist` | 한 마리씩 저장 → 같은 `<uuid>.yml` 을 마리 수만큼 파싱·직렬화 | 소유자별로 묶어 파일당 한 번 |
 
@@ -966,16 +952,14 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 | `BroadcastService.Rules` | 등급·단계 문턱이 <b>둘 다</b> 걸린다 |
 | `Messages` | 언어 코드가 파일 경로로 새지 않는다 (`../../`) |
 | `LanguageFilesTest` | ko_kr 과 en_us 의 키·치환 자리가 어긋나지 않는다 |
-| `AbilityDefinition` | `base` 수치에 등급 배율이 곱해진다 |
-| `GrowthService` | 급여 → 성장 → 진화(next-stage 있을 때만), 과급식 기믹 |
+| `GrowthService` | 급여 → 성장 → 진화(next-stage 와 growth-max 둘 다 있을 때만), 과급식 기믹 |
 | `YamlPetRepository` | 저장·복원, 손상 파일 격리, 한 마리가 깨져도 나머지 보존 |
 | `PetSort` · `PetFilter` | 정렬이 흔들리지 않고, `NORMAL`·`PIG` 모든 생애주기를 빠짐없이 덮는다 |
-| `PetAbility` · `AbilityContext` | 보관함이 보여주는 수치가 실제로 붙는 수치와 같다 |
 | `PetCatalog.gachaTable` | `gacha-weight` 0 인 펫이 뽑기에서 빠지고, 구간 순서가 기계와 무관하다 |
 
 `GrowthService` 가 여기 들어온 것은 **카탈로그 대신 조회 함수를 받게 바꾼 덕분**이다.
-`PetCatalog` 는 파일과 `AbilityRegistry`(그 뒤의 `Plugin`)에 묶여 있어서, 그대로 두면
-플러그인이 하는 일의 핵심인 성장·진화·과급식이 서버 없이는 한 줄도 검증되지 않는다.
+`PetCatalog` 는 파일과 `Plugin`(리소스 로딩)에 묶여 있어서, 그대로 두면 플러그인이
+하는 일의 핵심인 성장·진화·과급식이 서버 없이는 한 줄도 검증되지 않는다.
 필요한 건 `id → Optional<PetType>` 조회 하나뿐이라 값이 맞지 않았다.
 
 ### 수동 체크리스트
@@ -985,9 +969,6 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 - [ ] 소환 → 로그아웃 → 재접속 시 유령 모델이 남지 않는가
 - [ ] 소환 상태로 서버 재시작 시 캐리어 엔티티가 청소되는가
 - [ ] 월드 이동 / 네더 포탈 통과 시 펫이 따라오는가
-- [ ] 펫 교체 20회 반복 시 `AttributeModifier` 가 누적되지 않는가
-- [ ] 진화 전 종류도 소환 즉시 능력이 붙어 있는가. 과급식으로 돼지가 되면 그때만 떨어지는가
-- [ ] 소환 중인 펫의 캐리어를 강제로 죽이면 능력 버프가 같이 사라지는가
 - [ ] 탑승 중 로그아웃 → 재접속 시 안전하게 하차되는가
 - [ ] 탑승 중 펫이 디스폰돼도 안전하게 하차되는가 (낙하 피해 방지는 의도적으로 없다)
 - [ ] 알 아이템을 모루로 개명해도 여전히 인식되는가 (PDC 식별)
@@ -1029,7 +1010,6 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 | # | 질문 | 지금 상태 |
 | --- | --- | --- |
 | **Q1** | 등급별 이동속도·비행 확률의 적절한 수치 | 코드에서 빼내 `rarity.yml` 로 옮겼다. 기본값은 여전히 플레이스홀더지만, **고치는 데 재컴파일이 필요 없다.** 타보면서 정하면 된다 |
-| **Q2** | `ExtraDropAbility` 에 등급 배율을 곱할 것인가 | 지금은 안 곱한다. 확률에 1.0~1.7배를 곱하면 상한(1.0)에 금방 붙어 등급 차이가 오히려 뭉개진다는 판단이다. 등급별 차이는 `chance-base` 로 낸다. 바꾸려면 `onEvent` 한 줄 |
 | **Q3** | 라이선스 | 정하지 않았다. `LICENSE` 파일이 없으면 기본이 "모든 권리 보유"라 남이 쓰거나 고칠 수 없다. 참고한 BetterModel 과 betterpets-paper 는 둘 다 MIT |
 
-해소된 질문: JDK 버전(Java 25 — 바이트코드로 확인), 서버 규모(5명), 저장소(YAML), 경제 연동(보류), NPC(제거), 모델 에셋(직접 제작), 비행 조작(`ArmorStand` + `Input`), 등급 수치의 위치(`rarity.yml`).
+해소된 질문: JDK 버전(Java 25 — 바이트코드로 확인), 서버 규모(5명), 저장소(YAML), 경제 연동(보류), NPC(제거), 모델 에셋(직접 제작), 비행 조작(`ArmorStand` + `Input`), 등급 수치의 위치(`rarity.yml`), 능력 시스템(제거).

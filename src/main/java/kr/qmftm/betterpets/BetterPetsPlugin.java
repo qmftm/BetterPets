@@ -1,6 +1,5 @@
 package kr.qmftm.betterpets;
 
-import kr.qmftm.betterpets.ability.AbilityRegistry;
 import kr.qmftm.betterpets.command.PetAdminCommand;
 import kr.qmftm.betterpets.command.PetCommand;
 import kr.qmftm.betterpets.config.Messages;
@@ -12,7 +11,6 @@ import kr.qmftm.betterpets.integration.BedrockSupport;
 import kr.qmftm.betterpets.integration.DiscordBridge;
 import kr.qmftm.betterpets.integration.PetPlaceholders;
 import kr.qmftm.betterpets.item.PetItems;
-import kr.qmftm.betterpets.listener.AbilityTriggerListener;
 import kr.qmftm.betterpets.listener.InteractionListener;
 import kr.qmftm.betterpets.listener.MenuListener;
 import kr.qmftm.betterpets.listener.SessionListener;
@@ -22,7 +20,6 @@ import kr.qmftm.betterpets.runtime.CarrierFactory;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.runtime.PetTicker;
 import kr.qmftm.betterpets.runtime.RideController;
-import kr.qmftm.betterpets.service.AbilityService;
 import kr.qmftm.betterpets.service.BroadcastService;
 import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.GrowthService;
@@ -93,11 +90,9 @@ public final class BetterPetsPlugin extends JavaPlugin {
         saveResourceIfMissing("pets/phantom_ender.yml");
         saveResourceIfMissing("pets/pig.yml");
 
-        final AbilityRegistry abilityRegistry = new AbilityRegistry(this);
-
         messages = new Messages();
         catalog = new PetCatalog();
-        reloadDefinitions(abilityRegistry);
+        reloadDefinitions();
 
         store = new PetStore(
             new YamlPetRepository(new File(getDataFolder(), "playerdata"), getLogger()),
@@ -119,9 +114,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
         broadcasts = new BroadcastService(getServer(), messages, discord, readBroadcastRules());
 
-        final AbilityService abilities = new AbilityService(this, abilityRegistry);
         pets = new PetService(
-            catalog, store, renderer, carriers, registry, rides, abilities, growth, readLimits());
+            catalog, store, renderer, carriers, registry, rides, growth, readLimits());
 
         final PetItems items = new PetItems(this, catalog, messages, growth);
         final PetMenuFactory menus = new PetMenuFactory(
@@ -138,8 +132,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 + orphanCarriers + "개, 마운트 " + orphanMounts + "개");
         }
 
-        registerListeners(items, menus, abilities, growth, broadcasts, catchUp);
-        registerCommands(items, menus, abilityRegistry, catchUp, growth);
+        registerListeners(items, menus, growth, broadcasts, catchUp);
+        registerCommands(items, menus, catchUp, growth);
 
         ticker = new PetTicker(this, registry, rides, pets, catchUp);
         ticker.start();
@@ -160,9 +154,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
         // 리로드로 들어온 경우 이미 접속해 있는 플레이어의 데이터를 읽어야 한다.
         for (final var online : getServer().getOnlinePlayers()) {
-            abilities.purge(online);
             // 접속 이벤트와 같은 마무리를 해 줘야 한다. 리로드로 들어온 플레이어만
-            // 성장 확인을 건너뛰면, 그 자리에서만 펫이 아기로 굳는다.
+            // 성장 확인을 건너뛰면, 그 자리에서만 펫이 진화하지 못한 채로 굳는다.
             store.loadAsync(online.getUniqueId(), () -> {
                 if (isEnabled()) {
                     getServer().getScheduler().runTask(this, () -> {
@@ -198,29 +191,26 @@ public final class BetterPetsPlugin extends JavaPlugin {
 
     private void registerListeners(final PetItems items,
                                    final PetMenuFactory menus,
-                                   final AbilityService abilities,
                                    final GrowthService growth,
                                    final BroadcastService broadcasts,
                                    final GrowthCatchUp catchUp) {
         final var manager = getServer().getPluginManager();
         manager.registerEvents(
-            new SessionListener(this, store, pets, registry, abilities, catchUp), this);
+            new SessionListener(this, store, pets, registry, catchUp), this);
         manager.registerEvents(new InteractionListener(pets, store, items, registry, rides, growth,
             messages, broadcasts), this);
         manager.registerEvents(new MenuListener(pets, store, menus, messages, catchUp), this);
-        manager.registerEvents(new AbilityTriggerListener(registry, abilities), this);
     }
 
     private void registerCommands(final PetItems items,
                                   final PetMenuFactory menus,
-                                  final AbilityRegistry abilityRegistry,
                                   final GrowthCatchUp catchUp,
                                   final GrowthService growth) {
         bind("pet", "betterpets.use", new PetCommand(pets, store, menus, rides, messages, catchUp));
         bind("betterpets", List.of("bp"), "betterpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
             messages, catchUp, () -> {
                 reloadConfig();
-                reloadDefinitions(abilityRegistry);
+                reloadDefinitions();
                 // 아래 다섯은 값을 들고 있는 쪽이라 다시 밀어 넣어야 반영된다.
                 // 빠뜨리면 "설정을 다시 읽었습니다" 가 거짓말이 된다.
                 // 새로 무언가를 들고 있게 만들었다면 여기도 같이 늘려야 한다 —
@@ -307,9 +297,9 @@ public final class BetterPetsPlugin extends JavaPlugin {
     }
 
     /** 설정을 다시 읽는다. 문제가 있으면 전부 모아 한 번에 보고한다. */
-    private void reloadDefinitions(final AbilityRegistry abilityRegistry) {
+    private void reloadDefinitions() {
         messages.load(this, getDataFolder(), getConfig().getString("language", Messages.FALLBACK_LANGUAGE));
-        catalog.load(getDataFolder(), abilityRegistry, renderer);
+        catalog.load(getDataFolder(), renderer);
 
         final var problems = catalog.problems();
         if (!problems.isEmpty()) {
