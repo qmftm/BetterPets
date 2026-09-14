@@ -159,7 +159,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         // BetterPetsSkript 는 SkriptEvent·SimpleExpression 을 상속한 클래스들을 참조하므로
         // 여기서 먼저 막아야 한다.
         if (getServer().getPluginManager().isPluginEnabled("Skript")) {
-            BetterPetsSkript.tryRegister(this, registry, store);
+            BetterPetsSkript.tryRegister(this, registry, store, pets, catalog);
         } else {
             getLogger().info("Skript 가 없어 관련 구문(on pet obtain 등)을 건너뜁니다.");
         }

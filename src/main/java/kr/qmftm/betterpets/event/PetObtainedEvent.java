@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>이미 지급이 끝난 뒤에 알리는 <b>결과 통지</b>라 취소할 수 없다 — 취소하고 싶은
  * 지점(보유 한도 등)은 {@code grantPet} 자신이 그 전에 이미 판단한다.
  */
-public final class PetObtainedEvent extends PlayerEvent {
+public final class PetObtainedEvent extends PlayerEvent implements PetEvent {
 
     private static final HandlerList HANDLERS = new HandlerList();
 
@@ -27,6 +27,7 @@ public final class PetObtainedEvent extends PlayerEvent {
         this.pet = pet;
     }
 
+    @Override
     public PetData pet() {
         return pet;
     }

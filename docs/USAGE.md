@@ -392,7 +392,7 @@ language: ko_kr          # lang/ko_kr.yml 을 읽습니다
 | **DiscordSRV** | 서버 전체 알림을 디스코드 채널로도 보냅니다 |
 | **PlaceholderAPI** | `%betterpets_pet_name%` · `%betterpets_owned%` · `%betterpets_active%` 등 |
 | **Floodgate / Geyser** | GeyserModelEngine 이 있는지 기동 로그로 알려줍니다 |
-| **Skript** | `on pet obtain` · `event-pet` · 소환/보유 펫 목록을 스크립트에서 씁니다 |
+| **Skript** | 획득·소환·해제·급여 감지, 펫 목록·추가·제거·보유 여부를 스크립트에서 씁니다 |
 
 ```yaml
 integrations:
@@ -422,21 +422,53 @@ Bedrock 클라이언트는 BetterModel 의 커스텀 모델을 그냥은 못 봅
 on pet obtain:
     send "%player% 가 %event-pet% 를 얻었습니다!" to console
 
+on pet summon:
+    send "%player% 가 %event-pet% 를 소환했습니다." to console
+
+on pet dismiss:
+    send "%player% 가 펫을 돌려보냈습니다." to console
+
+on pet feed:
+    send "%player% 가 %event-pet% 에게 먹이를 줬습니다." to console
+
 command /내펫:
     trigger:
         send "소환 중: %summoned pets of player%"
         send "보유: %owned pets of player%"
+        if player has pet "phantom_normal":
+            send "팬텀을 가지고 있네요."
+        add pet "phantom_normal" to player
+        remove pet "{_그펫의-id}" from player   # id 는 event-pet 등으로 미리 얻어둡니다
 ```
+
+**감지(이벤트)** — 전부 `player` 로 누구인지, `event-pet` 으로 그 펫의 id 를 줍니다.
 
 | 구문 | 뜻 |
 | --- | --- |
-| `on pet obtain` | 알을 까거나 관리자가 지급해 **새 펫을 얻은 순간** (`player` 로 누구인지도 나옵니다) |
-| `event-pet` | 그 안에서, 새로 얻은 펫의 id |
+| `on pet obtain` | 알을 까거나 관리자가 지급해 **새 펫을 얻은 순간** |
+| `on pet summon` | 펫을 **소환한** 순간 |
+| `on pet dismiss` | 펫을 **소환 해제한** 순간 (퇴장·놓아주기 전 자동 해제도 포함) |
+| `on pet feed` | 펫에게 **먹이가 실제로 반영된** 순간 (포만도가 꽉 차 거절된 경우는 제외) |
+
+**목록**
+
+| 구문 | 뜻 |
+| --- | --- |
 | `summoned pets of %player%` | 지금 **소환 중인** 펫 id 목록 (`%player%'s summoned pets` 도 됩니다) |
 | `owned pets of %player%` | **보관함 전체**(소환 여부 무관) 펫 id 목록 (`%player%'s pets` 도 됩니다) |
 
+**추가·제거·보유 여부**
+
+| 구문 | 뜻 |
+| --- | --- |
+| `add pet %string% to %player%` | 그 **종류**(예: `phantom_normal`)의 펫 한 마리를 지급 — `/betterpets give` 와 같은 경로입니다 |
+| `remove pet %string% from %player%` | 그 **id**(앞자리만 적어도 됩니다)를 가진 펫을 놓아줍니다 — `/pet release` 와 같은 경로라 **되돌릴 수 없습니다** |
+| `%player% has pet %string%` | 그 **종류를 하나라도** 가졌거나, 그 **id** 를 가진 펫이 있으면 참 (`doesn't have pet` 도 됩니다) |
+
 `on pet obtain` 은 알 우클릭·관리자 지급(`/betterpets give`·`egg`) 을 전부 잡습니다 —
-"뽑기로 얻었을 때만" 가리고 싶으면 스크립트 안에서 따로 조건을 거세요.
+"뽑기로 얻었을 때만" 가리고 싶으면 스크립트 안에서 따로 조건을 거세요. `add`/`remove`·
+종류 id 를 잘못 적으면(없는 종류, 없는 펫) **조용히 아무 일도 하지 않습니다** — 콘솔
+경고 없이 실패하니, 먼저 `has pet`/`owned pets of` 로 확인하고 쓰는 편이 안전합니다.
 
 ---
 

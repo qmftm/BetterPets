@@ -6,12 +6,16 @@ import ch.njol.skript.lang.ExpressionType;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
-import kr.qmftm.betterpets.event.PetObtainedEvent;
+import kr.qmftm.betterpets.event.PetEvent;
 import org.bukkit.event.Event;
 
 /**
- * {@code event-pet} — {@link EvtPetObtain}({@code on pet obtain}) 안에서, 새로 얻은
- * 펫의 id(문자열)를 준다.
+ * {@code event-pet} — 펫 관련 이벤트({@code on pet obtain/summon/dismiss/feed}) 안에서,
+ * 그 펫의 id(문자열)를 준다.
+ *
+ * <p><b>{@code PetEvent} 인터페이스 하나만 본다.</b> 이벤트 클래스를 직접 나열하지 않는다 —
+ * {@link kr.qmftm.betterpets.event.PetEvent} 를 구현하기만 하면(지금은 obtain·summon·
+ * dismiss·feed 넷) 이 Expression 을 고칠 필요 없이 바로 {@code event-pet} 을 쓸 수 있다.
  *
  * <p><b>{@code EventValues.registerEventValue} 대신 직접 패턴을 등록한다.</b> 그 API 는
  * 등록한 자바 타입의 {@code ClassInfo} 코드네임으로 {@code event-<코드네임>} 을 자동으로
@@ -36,10 +40,10 @@ public final class ExprEventPet extends SimpleExpression<String> {
 
     @Override
     protected String[] get(final Event event) {
-        if (!(event instanceof PetObtainedEvent obtained)) {
+        if (!(event instanceof PetEvent petEvent)) {
             return new String[0];
         }
-        return new String[] {obtained.pet().petId().toString()};
+        return new String[] {petEvent.pet().petId().toString()};
     }
 
     @Override

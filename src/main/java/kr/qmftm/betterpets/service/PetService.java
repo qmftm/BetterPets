@@ -5,7 +5,9 @@ import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.RideMode;
+import kr.qmftm.betterpets.event.PetDismissedEvent;
 import kr.qmftm.betterpets.event.PetObtainedEvent;
+import kr.qmftm.betterpets.event.PetSummonedEvent;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.render.PetRenderHandle;
 import kr.qmftm.betterpets.render.PetRenderer;
@@ -137,6 +139,7 @@ public final class PetService {
 
         data.active(true);
         reindexFollowers(owner.getUniqueId());
+        owner.getServer().getPluginManager().callEvent(new PetSummonedEvent(owner, data));
         return replaced ? SummonResult.OK_REPLACED : SummonResult.OK;
     }
 
@@ -155,6 +158,7 @@ public final class PetService {
 
         registry.remove(owner.getUniqueId(), petId);
         reindexFollowers(owner.getUniqueId());
+        owner.getServer().getPluginManager().callEvent(new PetDismissedEvent(owner, pet.data()));
         return true;
     }
 

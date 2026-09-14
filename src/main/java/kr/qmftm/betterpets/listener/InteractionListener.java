@@ -7,6 +7,7 @@ import kr.qmftm.betterpets.domain.FeedDefinition;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.RideMode;
+import kr.qmftm.betterpets.event.PetFedEvent;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.MovementController;
@@ -188,6 +189,9 @@ public final class InteractionListener implements Listener {
         }
         held.setAmount(held.getAmount() - 1);
         store.saveAsync(data);
+        // TOO_FULL 이면 이미 위에서 return 했다 — 여기 도달했다는 것 자체가 급여가
+        // 실제로 반영됐다는 뜻이다(성장·진화·과급식 전부 포함).
+        player.getServer().getPluginManager().callEvent(new PetFedEvent(player, data));
 
         // 먹는 동작은 종류가 바뀌기 전에 얹어야 한다. 아래 refreshAfterGrowth 가
         // 모델을 다시 붙이면 이 오버레이는 어차피 사라진다.
