@@ -41,6 +41,11 @@ import java.util.Set;
  *                     {@code icon-glow} 로 정한다 — 안 적으면 꺼져 있다
  * @param size         모델 크기 배율. {@code pets/*.yml} 의 {@code size} 로 정한다.
  *                     1.0 이 모델 원래 크기이고, 안 적으면 1.0
+ * @param hitboxScale  엔티티 판정(히트박스·충돌) 크기 배율. {@code pets/*.yml} 의
+ *                     {@code hitbox-scale} 로 정한다. 음수면 "설정 안 함"이고, 그때는
+ *                     {@code size} 를 그대로 쓴다 — 모델과 판정 크기가 항상 같이
+ *                     움직이던 예전 동작이다. 둘을 갈라둔 이유는 모델이 커도 클릭
+ *                     자리는 작게(또는 그 반대로) 두고 싶은 경우가 있어서다
  * @param nextStage    비어 있으면 다음 단계에서도 같은 종류를 유지한다
  */
 public record PetType(
@@ -58,6 +63,7 @@ public record PetType(
     String iconMaterial,
     boolean iconGlow,
     double size,
+    double hitboxScale,
     AnimationSet animations,
     MovementProfile movement,
     Map<String, Integer> nextStage,
@@ -85,6 +91,12 @@ public record PetType(
         // floor 를 두면 그 값 자체를 못 쓰게 된다. NaN(설정 안 함)만 그대로 통과시킨다.
         // 0이나 음수는 모델이 안 보이거나 뒤집혀 보인다 — 설정 실수의 흔한 형태다.
         size = Math.max(0.05, size);
+        // hitboxScale 도 flightSpeed·flightLift 와 같은 규칙이다 — 음수는 "설정 안 함"
+        // 신호로 그대로 두고, 0 이상만 최솟값으로 접는다. 0이면 판정 자체가 사라져
+        // 우클릭도 탑승도 못 먹는다.
+        if (hitboxScale >= 0) {
+            hitboxScale = Math.max(0.05, hitboxScale);
+        }
     }
 
     /**

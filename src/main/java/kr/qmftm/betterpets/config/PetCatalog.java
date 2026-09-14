@@ -215,6 +215,9 @@ public final class PetCatalog {
                 iconMaterial,
                 yaml.getBoolean("icon-glow", false),
                 yaml.getDouble("size", 1.0),
+                // 음수 = "설정 안 함". 안 적으면 size 를 그대로 판정 크기로도 쓴다 —
+                // 지금까지 해오던 동작이다.
+                yaml.contains("hitbox-scale") ? yaml.getDouble("hitbox-scale") : -1.0,
                 readAnimations(file.getName(), yaml.getConfigurationSection("animations")),
                 readMovement(yaml.getConfigurationSection("movement")),
                 readWeights(yaml.getConfigurationSection("next-stage")),

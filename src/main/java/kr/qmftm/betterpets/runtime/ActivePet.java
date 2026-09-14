@@ -51,9 +51,13 @@ public final class ActivePet implements AutoCloseable {
         // 덩치와 실제로 우클릭이 먹는 자리가 어긋난다 — size 를 키운 펫일수록 클릭이
         // 안 먹는 것처럼 보였다. Attribute.SCALE 은 모델 렌더링과 별개로 엔티티 자체의
         // 판정 크기를 바꾼다.
+        //
+        // hitbox-scale 을 따로 적어뒀으면 그 값을, 안 적었으면 size 를 그대로 판정
+        // 크기로도 쓴다 — 모델과 판정 크기를 갈라 둘 이유(모델은 크게, 클릭 자리는
+        // 작게 등)가 있는 펫만 따로 적으면 된다.
         final AttributeInstance scale = carrier.getAttribute(Attribute.SCALE);
         if (scale != null) {
-            scale.setBaseValue(type.size());
+            scale.setBaseValue(type.hitboxScale() >= 0 ? type.hitboxScale() : type.size());
         }
     }
 
