@@ -22,6 +22,7 @@
     <paper.version>26.2.build.121-stable</paper.version>
     <bettermodel.version>3.4.1</bettermodel.version>
     <placeholderapi.version>2.11.6</placeholderapi.version>
+    <skript.version>2.16.2</skript.version>
     <junit.version>5.13.0</junit.version>
   </properties>
 
@@ -43,6 +44,11 @@
     <repository>
       <id>extendedclip</id>
       <url>https://repo.extendedclip.com/releases/</url>
+    </repository>
+    <!-- Skript. -->
+    <repository>
+      <id>skript-releases</id>
+      <url>https://repo.skriptlang.org/releases</url>
     </repository>
   </repositories>
 
@@ -83,6 +89,18 @@
           <artifactId>bukkit</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+
+    <!--
+      Skript. event-pet 등을 등록하려면 SkriptEvent·SimpleExpression 을 상속해야 해서
+      PlaceholderAPI 와 같은 이유로 컴파일 의존을 건다. provided 라 jar 에는 안 들어가고,
+      Skript 가 없는 서버에서는 BetterPetsSkript.tryRegister 가 이 클래스들을 건드리지 않는다.
+    -->
+    <dependency>
+      <groupId>com.github.SkriptLang</groupId>
+      <artifactId>Skript</artifactId>
+      <version>${skript.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <!-- 저장소 의존성은 M3 에서 추가한다. 지금 넣지 않는 이유는 아래 build 주석 참고. -->

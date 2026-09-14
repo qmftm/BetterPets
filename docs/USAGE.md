@@ -392,6 +392,7 @@ language: ko_kr          # lang/ko_kr.yml 을 읽습니다
 | **DiscordSRV** | 서버 전체 알림을 디스코드 채널로도 보냅니다 |
 | **PlaceholderAPI** | `%betterpets_pet_name%` · `%betterpets_owned%` · `%betterpets_active%` 등 |
 | **Floodgate / Geyser** | GeyserModelEngine 이 있는지 기동 로그로 알려줍니다 |
+| **Skript** | `on pet obtain` · `event-pet` · 소환/보유 펫 목록을 스크립트에서 씁니다 |
 
 ```yaml
 integrations:
@@ -410,6 +411,32 @@ Bedrock 클라이언트는 BetterModel 의 커스텀 모델을 그냥은 못 봅
 | `plugins/[Geyser]/extensions/` | GeyserModelEngineExtension, geyserutils-geyser |
 
 모델도 Bedrock 용으로 따로 내보내야 합니다 → [MODELING.md](MODELING.md#bedrockgeyser-대응)
+
+### 📜 Skript 연동
+
+펫은 전부 **id(문자열, 예: `a1b2c3d4-...`)** 로 다룹니다 — 이름은 바꿀 수 있어서
+식별자로 못 씁니다. `/pet list` 로 앞 8자리를 볼 수 있지만, Skript 쪽은 항상
+전체 id 를 돌려줍니다.
+
+```
+on pet obtain:
+    send "%player% 가 %event-pet% 를 얻었습니다!" to console
+
+command /내펫:
+    trigger:
+        send "소환 중: %summoned pets of player%"
+        send "보유: %owned pets of player%"
+```
+
+| 구문 | 뜻 |
+| --- | --- |
+| `on pet obtain` | 알을 까거나 관리자가 지급해 **새 펫을 얻은 순간** (`player` 로 누구인지도 나옵니다) |
+| `event-pet` | 그 안에서, 새로 얻은 펫의 id |
+| `summoned pets of %player%` | 지금 **소환 중인** 펫 id 목록 (`%player%'s summoned pets` 도 됩니다) |
+| `owned pets of %player%` | **보관함 전체**(소환 여부 무관) 펫 id 목록 (`%player%'s pets` 도 됩니다) |
+
+`on pet obtain` 은 알 우클릭·관리자 지급(`/betterpets give`·`egg`) 을 전부 잡습니다 —
+"뽑기로 얻었을 때만" 가리고 싶으면 스크립트 안에서 따로 조건을 거세요.
 
 ---
 

@@ -5,6 +5,7 @@ import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.RideMode;
+import kr.qmftm.betterpets.event.PetObtainedEvent;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.render.PetRenderHandle;
 import kr.qmftm.betterpets.render.PetRenderer;
@@ -199,6 +200,9 @@ public final class PetService {
         }
         final PetData data = PetData.newBaby(owner.getUniqueId(), typeId, System.currentTimeMillis());
         store.add(data);
+        // 알 우클릭과 관리자 지급이 전부 여기로 모인다 — Skript 연동(event-pet)이
+        // 이 이벤트 하나만 들으면 모든 획득 경로를 다 잡는다.
+        owner.getServer().getPluginManager().callEvent(new PetObtainedEvent(owner, data));
         return Optional.of(data);
     }
 

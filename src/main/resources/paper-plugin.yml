@@ -37,6 +37,11 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: false
+    # event-pet · on pet obtain 등. 상속이 필요해 PlaceholderAPI 처럼 join-classpath 를 켠다.
+    Skript:
+      load: BEFORE
+      required: false
+      join-classpath: true
 
 commands:
   pet:
