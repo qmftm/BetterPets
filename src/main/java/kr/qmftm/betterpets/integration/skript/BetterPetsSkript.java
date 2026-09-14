@@ -8,7 +8,7 @@ import kr.qmftm.betterpets.storage.PetStore;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Skript 구문(펫 획득·소환·해제·급여 이벤트, {@code event-pet}, 목록·추가·제거·보유
+ * Skript 구문(펫 획득·소환·해제·작별·급여 이벤트, {@code event-pet}, 목록·추가·제거·보유
  * 여부)을 등록한다.
  *
  * <p><b>호출자가 먼저 {@code isPluginEnabled("Skript")} 를 확인해야 한다.</b> 이 클래스는
@@ -52,6 +52,7 @@ public final class BetterPetsSkript {
             EvtPetObtain.register();
             EvtPetSummon.register();
             EvtPetDismiss.register();
+            EvtPetRelease.register();
             EvtPetFeed.register();
             ExprEventPet.register();
 
@@ -64,7 +65,7 @@ public final class BetterPetsSkript {
             EffRemovePet.register();
             CondHasPet.register();
 
-            plugin.getLogger().info("Skript 연동됨. on pet obtain/summon/dismiss/feed · event-pet ·"
+            plugin.getLogger().info("Skript 연동됨. on pet obtain/summon/dismiss/release/feed · event-pet ·"
                 + " summoned/owned pets of ... · add/remove pet ... · has pet ... 를 쓸 수 있습니다.");
             return true;
         } catch (final LinkageError | RuntimeException error) {

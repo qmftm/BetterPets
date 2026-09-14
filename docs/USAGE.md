@@ -428,6 +428,9 @@ on pet summon:
 on pet dismiss:
     send "%player% 가 펫을 돌려보냈습니다." to console
 
+on pet release:
+    send "%player% 가 펫과 작별했습니다." to console
+
 on pet feed:
     send "%player% 가 %event-pet% 에게 먹이를 줬습니다." to console
 
@@ -448,6 +451,7 @@ command /내펫:
 | `on pet obtain` | 알을 까거나 관리자가 지급해 **새 펫을 얻은 순간** |
 | `on pet summon` | 펫을 **소환한** 순간 |
 | `on pet dismiss` | 펫을 **소환 해제한** 순간 (퇴장·놓아주기 전 자동 해제도 포함) |
+| `on pet release` | 펫과 **작별한**(`/pet release`, 영구 삭제) 순간. 소환 중이었다면 `on pet dismiss` 가 먼저 나갑니다 |
 | `on pet feed` | 펫에게 **먹이가 실제로 반영된** 순간 (포만도가 꽉 차 거절된 경우는 제외) |
 
 **목록**

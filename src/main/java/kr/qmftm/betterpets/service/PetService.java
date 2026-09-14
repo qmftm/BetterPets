@@ -7,6 +7,7 @@ import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.event.PetDismissedEvent;
 import kr.qmftm.betterpets.event.PetObtainedEvent;
+import kr.qmftm.betterpets.event.PetReleasedEvent;
 import kr.qmftm.betterpets.event.PetSummonedEvent;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.render.PetRenderHandle;
@@ -212,10 +213,11 @@ public final class PetService {
 
     /** 펫을 놓아준다. 소환 중이면 먼저 해제하고, 설정된 보상이 있으면 지급한다. */
     public void release(final Player owner, final PetData data) {
-        dismiss(owner, data.petId());
+        dismiss(owner, data.petId());   // 소환 중이었다면 PetDismissedEvent 가 먼저 나간다
         growth.forget(data);    // 과급식 카운터를 들고 있을 이유가 없다
         store.remove(data);
         grantReleaseReward(owner);
+        owner.getServer().getPluginManager().callEvent(new PetReleasedEvent(owner, data));
     }
 
     /**
