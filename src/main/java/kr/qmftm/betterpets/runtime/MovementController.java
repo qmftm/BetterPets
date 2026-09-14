@@ -1,6 +1,7 @@
 package kr.qmftm.betterpets.runtime;
 
 import kr.qmftm.betterpets.domain.PetType;
+import kr.qmftm.betterpets.domain.RideMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -77,6 +78,8 @@ public final class MovementController {
     private final PetType.MovementProfile profile;
     private final double walkStep;
     private final double runStep;
+    /** 나는 탑승 종류인가. 순간이동 복귀 지점을 정할 때(=false 면 땅으로) 쓴다. */
+    private final boolean canFly;
 
     /**
      * 틱마다 다시 쓰는 위치 버퍼.
@@ -109,6 +112,7 @@ public final class MovementController {
         // 등급은 표기 전용이라 속도에 배율을 곱하지 않는다 — movement 값을 그대로 쓴다.
         this.walkStep = profile.walkSpeed();
         this.runStep = profile.runSpeed();
+        this.canFly = type.ride() == RideMode.FLY;
     }
 
     public Mode mode() {
@@ -189,6 +193,11 @@ public final class MovementController {
      *
      * <p>여러 마리를 데리고 다니면 슬롯마다 각도를 벌려, 같은 방향에서 동시에
      * 순간이동해도 서로 겹치지 않게 한다.
+     *
+     * <p><b>나는 능력이 없으면 주인 높이 대신 발밑 땅을 목표로 삼는다.</b> 주인이
+     * 비행 중이거나 다리 위에 있으면 주인 위치 그대로는 땅에서 뜬 지점이라, 걷는
+     * 펫이 거기로 순간이동하면 허공에 남는다 — 캐리어 중력을 켜뒀어도 착지할 때까지
+     * 눈에 보이게 떨어지는 동안은 어색하다. 아예 착지 지점으로 바로 보낸다.
      */
     private Location standoffNear(final Player owner, final Location current) {
         final Location base = owner.getLocation();
@@ -198,7 +207,11 @@ public final class MovementController {
         }
         away.normalize().multiply(profile.followDistance());
         Vectors.rotateAroundY(away, slotAngleRadians());
-        return base.clone().add(away);
+        final Location target = base.clone().add(away);
+        if (!canFly) {
+            target.setY(Ground.findY(target.getWorld(), target.getX(), target.getZ(), target.getY()));
+        }
+        return target;
     }
 
     private void teleportNear(final Player owner, final Location current) {
@@ -325,9 +338,9 @@ public final class MovementController {
     /**
      * 이 지점에 몸이 들어갈 수 있는가 — 발치와 머리 높이 둘 다 본다.
      *
-     * <p>{@code RideController.isSafe} 와 같은 목적이지만, 캐리어가 {@code Allay}
-     * (0.35×0.6)라 몸통이 작아 중심 한 점만 봐도 충분하다 — 플레이어를 태우는
-     * {@code ArmorStand} 처럼 어깨가 넓어 네 방향을 더 볼 필요는 없다.
+     * <p>{@code RideController.isSafe} 와 같은 목적이지만, 캐리어({@code Allay} 또는
+     * {@code Rabbit})가 둘 다 몸통이 작아(0.4 안팎) 중심 한 점만 봐도 충분하다 —
+     * 플레이어를 태우는 {@code ArmorStand} 처럼 어깨가 넓어 네 방향을 더 볼 필요는 없다.
      */
     private boolean fits(final World world, final double x, final double y, final double z) {
         probe.setWorld(world);

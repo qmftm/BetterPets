@@ -4,11 +4,13 @@ import kr.qmftm.betterpets.config.PetCatalog;
 import kr.qmftm.betterpets.domain.PetData;
 import kr.qmftm.betterpets.domain.PetLimits;
 import kr.qmftm.betterpets.domain.PetType;
+import kr.qmftm.betterpets.domain.RideMode;
 import kr.qmftm.betterpets.item.PetItems;
 import kr.qmftm.betterpets.render.PetRenderHandle;
 import kr.qmftm.betterpets.render.PetRenderer;
 import kr.qmftm.betterpets.runtime.ActivePet;
 import kr.qmftm.betterpets.runtime.CarrierFactory;
+import kr.qmftm.betterpets.runtime.Ground;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.runtime.RideController;
 import kr.qmftm.betterpets.runtime.Vectors;
@@ -107,8 +109,9 @@ public final class PetService {
         // 먼저 정리해야 트래커와 캐리어를 흘리지 않는다.
         dismiss(owner, data.petId());
 
-        final Location at = spawnLocation(owner);
-        final Mob carrier = carriers.spawn(at, data.petId());
+        final boolean flying = type.ride() == RideMode.FLY;
+        final Location at = spawnLocation(owner, flying);
+        final Mob carrier = carriers.spawn(at, data.petId(), flying);
 
         final Optional<PetRenderHandle> handle = renderer.attach(carrier, type.modelId());
         if (handle.isEmpty()) {
@@ -291,9 +294,15 @@ public final class PetService {
      *
      * <p>그래서 소유자를 중심으로 각도를 돌려가며 빈 자리를 찾는다. 전부 막혔으면
      * <b>소유자가 서 있는 자리</b>를 쓴다 — 사람이 서 있으니 반드시 비어 있다.
+     *
+     * <p><b>나는 능력이 없는 펫은 소유자 높이가 아니라 발밑 땅을 기준으로 삼는다.</b>
+     * 소유자가 비행 중이거나 다리 위에 있으면, 소유자 위치 그대로는 땅에서 뜬
+     * 지점이다 — 나는 펫이야 그 자리에 떠 있어도 자연스럽지만, 걷는 펫이 거기서
+     * 시작하면 착지할 때까지 잠깐이라도 허공에 있는 것처럼 보인다.
      */
-    private Location spawnLocation(final Player owner) {
-        final Location base = owner.getLocation();
+    private Location spawnLocation(final Player owner, final boolean flying) {
+        final Location ownerAt = owner.getLocation();
+        final Location base = flying ? ownerAt : groundedBase(ownerAt);
         final Vector facing = base.getDirection().setY(0);
         if (facing.lengthSquared() < 1.0e-4) {
             facing.setX(0).setZ(1);
@@ -309,6 +318,15 @@ public final class PetService {
             }
         }
         return base.clone();
+    }
+
+    /**
+     * 주어진 위치의 발밑 땅을 찾아 그 위로 내린 위치를 돌려준다. 시선(yaw·pitch)은
+     * 그대로 둔다 — {@link #spawnLocation} 이 뒤쪽을 계산할 때 그대로 써야 한다.
+     */
+    private static Location groundedBase(final Location at) {
+        final double groundY = Ground.findY(at.getWorld(), at.getX(), at.getZ(), at.getY());
+        return new Location(at.getWorld(), at.getX(), groundY, at.getZ(), at.getYaw(), at.getPitch());
     }
 
     /** 발치와 머리 높이가 모두 비어 있는가. 한 칸만 보면 반쯤 파묻힌다. */
