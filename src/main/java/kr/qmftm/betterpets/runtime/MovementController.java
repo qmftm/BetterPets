@@ -88,6 +88,15 @@ public final class MovementController {
     private final boolean canFly;
 
     /**
+     * 나는 펫이 추종할 때 주인 위로 띄워 둘 높이. {@code canFly} 가 false 면 안 쓰인다.
+     *
+     * <p>전역 기본값과의 병합은 여기 들어오기 전에 끝나 있다 — {@code PetService} 가
+     * {@code type.hoverHeight()} 가 NaN(설정 안 함)이면 {@code RideController} 의
+     * 전역값으로 바꿔 넘긴다. 이 클래스는 전역 설정을 모른다.
+     */
+    private final double hoverHeight;
+
+    /**
      * 틱마다 다시 쓰는 위치 버퍼.
      *
      * <p>한 펫의 tick 은 항상 메인 스레드에서 순차적으로 돈다. 그래서 인스턴스마다
@@ -121,13 +130,14 @@ public final class MovementController {
     private long lastProgressAt = System.currentTimeMillis();
     private float lastYaw = Float.NaN;
 
-    public MovementController(final Mob carrier, final PetType type) {
+    public MovementController(final Mob carrier, final PetType type, final double hoverHeight) {
         this.carrier = carrier;
         this.profile = type.movement();
         // 등급은 표기 전용이라 속도에 배율을 곱하지 않는다 — movement 값을 그대로 쓴다.
         this.walkStep = profile.walkSpeed();
         this.runStep = profile.runSpeed();
         this.canFly = type.ride() == RideMode.FLY;
+        this.hoverHeight = hoverHeight;
     }
 
     public Mode mode() {
@@ -153,6 +163,12 @@ public final class MovementController {
         }
         final Location current = carrier.getLocation(here);
         final Location ownerAt = owner.getLocation(ownerHere);
+        if (canFly && hoverHeight != 0.0) {
+            // 목표 지점 자체를 주인 머리 위로 올린다. distance·상태 판정·step·IDLE 정지
+            // 자리가 전부 이 ownerAt 하나를 보므로, 여기서 한 번만 올리면 나머지는
+            // 그 목표를 향해 3D 로 자연히 따라간다.
+            ownerAt.add(0, hoverHeight, 0);
+        }
 
         if (!current.getWorld().equals(ownerAt.getWorld())) {
             teleportNear(owner, current);
@@ -217,6 +233,10 @@ public final class MovementController {
      * 비행 중이거나 다리 위에 있으면 주인 위치 그대로는 땅에서 뜬 지점이라, 걷는
      * 펫이 거기로 순간이동하면 허공에 남는다 — 캐리어 중력을 켜뒀어도 착지할 때까지
      * 눈에 보이게 떨어지는 동안은 어색하다. 아예 착지 지점으로 바로 보낸다.
+     *
+     * <p><b>나는 능력이 있으면 대신 {@link #hoverHeight} 만큼 올린다.</b> 안 그러면
+     * 순간이동으로는 발높이에 나타났다가, 그 뒤 {@link #tick} 의 추종이 다시 끌어올리는
+     * 어색한 그림이 된다 — 목표를 처음부터 같은 높이로 맞춘다.
      */
     private Location standoffNear(final Player owner, final Location current) {
         final Location base = owner.getLocation();
@@ -227,7 +247,9 @@ public final class MovementController {
         away.normalize().multiply(profile.followDistance());
         Vectors.rotateAroundY(away, slotAngleRadians());
         final Location target = base.clone().add(away);
-        if (!canFly) {
+        if (canFly) {
+            target.add(0, hoverHeight, 0);
+        } else {
             target.setY(Ground.findY(target.getWorld(), target.getX(), target.getZ(), target.getY()));
         }
         return target;

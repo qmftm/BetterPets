@@ -47,16 +47,16 @@ eggs:
 # 지급: /betterpets feed <플레이어> <먹이id> [개수]
 feeds:
 
-  milk:
-    display-name: "<white>펫 우유"
-    material: MILK_BUCKET
+  feed:
+    display-name: "<gold>성장 사료"
+    material: COOKIE
     growth: 10           # 원작의 우유가 +10 이다
     # item-model: "betterpets:feed_milk"
 
   premium_feed:
-    display-name: "<gold>고급 사료"
-    material: WHEAT
-    growth: 30
+    display-name: "<gold>고급 성장 사료"
+    material: GLOW_BERRIES
+    growth: 100
     glow: true           # 고급 사료답게 눈에 띄게
     # item-model: "betterpets:feed_premium"
 

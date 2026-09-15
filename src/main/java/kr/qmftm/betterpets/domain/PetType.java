@@ -30,6 +30,12 @@ import java.util.Set;
  *                     "설정 안 함"이라는 뜻이고, 그때는 {@code config.yml} 의
  *                     {@code ride.flight-lift} 전역값을 그대로 쓴다.
  *                     {@code ride} 가 {@link RideMode#FLY} 가 아니면 의미가 없다
+ * @param hoverHeight  나는 펫이 <b>추종할 때</b> 주인 위로 띄워 둘 높이. {@link Double#NaN}
+ *                     이면 "설정 안 함"이고, 그때는 {@code config.yml} 의
+ *                     {@code ride.hover-height} 전역값을 그대로 쓴다. {@code seatOffset}
+ *                     와 같은 이유로 음수도 유효한 값이라({@code -0.3} 처럼 주인보다
+ *                     낮게 띄우고 싶은 경우) NaN 을 대신 쓴다. {@code ride} 가
+ *                     {@link RideMode#FLY} 가 아니면 의미가 없다
  * @param seatOffset   탑승 시 플레이어가 앉는 높이를 기본 자리에서 위(+)·아래(-)로
  *                     밀어내는 오프셋. {@link Double#NaN} 이면 "설정 안 함"이고, 그때는
  *                     {@code config.yml} 의 {@code ride.seat-offset} 전역값을 그대로
@@ -59,6 +65,7 @@ public record PetType(
     double rideSpeed,
     double flightSpeed,
     double flightLift,
+    double hoverHeight,
     double seatOffset,
     String iconMaterial,
     boolean iconGlow,

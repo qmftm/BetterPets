@@ -7,7 +7,8 @@ display-name: "<gray>팬텀"
 model: phantom_normal
 rarity: A
 growth-max: -1          # 음수 = 성장도 없음. next-stage 가 없는 종류의 권장 값
-# icon: NETHER_STAR      # 보관함 아이콘 재질. 안 적으면 LEAD
+
+icon: phantom_spawn_egg
 # icon-glow: true        # 보관함 아이콘에 인챈트 반짝임을 항상 켜둔다. 안 적으면 꺼져 있다
                           # (소환 중일 때는 icon-glow 와 무관하게 항상 반짝인다)
 
@@ -16,7 +17,7 @@ ride: true
 flying: true
 
 # 모델이 커서 실제 크기보다 눈에 띄게 키운다.
-size: 2
+size: 1.5
 # 판정(히트박스·클릭) 크기는 안 적으면 size 를 그대로 쓴다. 모델은 크게 그리되
 # 클릭 자리는 원래 크기로 두고 싶으면 따로 적는다.
 # hitbox-scale: 1.0
@@ -31,6 +32,10 @@ size: 2
 # 이 펫만 다른 상승력을 쓰고 싶으면 여기에 적는다. 안 적으면 config.yml 의
 # ride.flight-lift 전역값을 그대로 쓴다.
 # flight-lift: 0.6
+
+# 추종할 때(탑승 중이 아닐 때) 주인 위로 띄워 둘 높이. 안 적으면 config.yml 의
+# ride.hover-height 전역값(기본 0, 발높이)을 그대로 쓴다. 음수도 유효하다.
+# hover-height: 1.3
 
 # 탑승 시 앉는 높이를 기본 자리에서 위(+)·아래(-)로 밀어낸다. size 가 큰 이
 # 펫은 플레이어가 몸통에 파묻혀 보일 수 있어 예시로 남겨둔다. 안 적으면

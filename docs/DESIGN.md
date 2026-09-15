@@ -758,15 +758,15 @@ eggs:
     gives: egg               # 고정 알 — 진화 사슬의 시작점을 준다
 
 feeds:
-  milk:
-    display-name: "<white>펫 우유"
-    material: MILK_BUCKET
+  feed:
+    display-name: "<gold>성장 사료"
+    material: COOKIE
     growth: 10               # 이 먹이가 올려줄 성장도
 
   premium_feed:
-    display-name: "<gold>고급 사료"
-    material: WHEAT
-    growth: 30
+    display-name: "<gold>고급 성장 사료"
+    material: GLOW_BERRIES
+    growth: 100
 ```
 
 `growth` 를 적지 않은 먹이는 `config.yml` 의 `growth.feed-amount` 를 쓴다 (`FeedDefinition.growthOr`).

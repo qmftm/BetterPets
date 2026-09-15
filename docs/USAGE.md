@@ -198,9 +198,9 @@ eggs:
 
 ```yaml
 feeds:
-  milk:
-    display-name: "<white>우유"
-    material: MILK_BUCKET
+  feed:
+    display-name: "<gold>성장 사료"
+    material: COOKIE
     growth: 10               # 안 적으면 config 의 feed-amount 를 씁니다
 ```
 
@@ -355,6 +355,29 @@ ride:
 ```yaml
 # pets/phantom_normal.yml
 seat-offset: 0.3   # 기본 자리보다 0.3블록 위에 앉힙니다
+```
+
+### 🕊️ 추종 호버 높이
+
+```yaml
+# config.yml
+ride:
+  hover-height: 0.0   # 나는 펫이 추종할 때 주인 위로 띄워 둘 높이. 0이 발높이(기본)
+```
+
+**탑승 중이 아니라, 따라올 때 얘기입니다.** 나는 펫(`flying: true`)은 기본적으로
+주인 발높이를 목표로 추종해요 — 머리 위로 살짝 띄우고 싶으면 이 값을 올리세요.
+플레이어 키가 1.8블록이니 `1.2`~`1.5` 정도면 머리 위쯤입니다. 너무 크게 잡으면
+목표 거리가 순전히 수직 오프셋만으로 채워져서, 펫이 옆이 아니라 **정수리 위**에
+자리잡는 것처럼 보일 수 있어요 — `follow-distance` 와 비교해 가며 조정하세요.
+
+`pets/*.yml` 에 `hover-height` 를 펫별로 적으면 그 펫만 다른 높이에 띄울 수
+있습니다 — 안 적으면 `config.yml` 의 전역값을 그대로 씁니다. 걷는 펫에는
+의미가 없어요(추종은 항상 지면을 따라갑니다).
+
+```yaml
+# pets/phantom_normal.yml
+hover-height: 1.3   # 주인 머리 위쯤에 떠서 따라옵니다
 ```
 
 ### 📢 알림

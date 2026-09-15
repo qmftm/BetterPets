@@ -81,6 +81,7 @@ public final class RideController {
     private volatile double flightLift;
     private volatile double flightMaxHeight;
     private volatile double seatOffset;
+    private volatile double hoverHeight;
 
     /**
      * 지형 검사용 위치 버퍼.
@@ -102,6 +103,7 @@ public final class RideController {
         flightLift = plugin.getConfig().getDouble("ride.flight-lift", 0.5);
         flightMaxHeight = plugin.getConfig().getDouble("ride.flight-max-height", 1024.0);
         seatOffset = plugin.getConfig().getDouble("ride.seat-offset", 0.0);
+        hoverHeight = plugin.getConfig().getDouble("ride.hover-height", 0.0);
     }
 
     /**
@@ -118,6 +120,15 @@ public final class RideController {
      */
     public double seatOffset() {
         return seatOffset;
+    }
+
+    /**
+     * 나는 펫이 추종할 때 띄워 둘 높이 전역 기본값. {@code pets/*.yml} 에
+     * {@code hover-height} 를 따로 적지 않은 종류는 이 값을 쓴다. 기본값 0 은
+     * "지금까지 그대로"(주인 발높이)라는 뜻이다.
+     */
+    public double hoverHeight() {
+        return hoverHeight;
     }
 
     /**

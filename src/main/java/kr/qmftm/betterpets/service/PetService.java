@@ -136,7 +136,11 @@ public final class PetService {
             }
         }
 
-        final ActivePet pet = new ActivePet(owner.getUniqueId(), data, type, carrier, handle.get(), modelId);
+        // 나는 펫만 의미가 있지만, 안 나는 펫은 hoverHeight 가 그냥 안 쓰인다 — 여기서
+        // ride 로 걸러낼 필요가 없다.
+        final double hoverHeight = Double.isNaN(type.hoverHeight()) ? rides.hoverHeight() : type.hoverHeight();
+        final ActivePet pet =
+            new ActivePet(owner.getUniqueId(), data, type, carrier, handle.get(), modelId, hoverHeight);
         registry.put(pet);
 
         data.active(true);

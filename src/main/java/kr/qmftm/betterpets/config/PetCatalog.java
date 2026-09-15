@@ -209,6 +209,9 @@ public final class PetCatalog {
                 // config.yml 의 전역값을 대신 쓴다.
                 yaml.contains("flight-speed") ? yaml.getDouble("flight-speed") : -1.0,
                 yaml.contains("flight-lift") ? yaml.getDouble("flight-lift") : -1.0,
+                // hover-height 도 seat-offset 과 같은 이유로 NaN 을 "설정 안 함"으로 쓴다 —
+                // 음수(주인보다 낮게)도 유효한 값이라 -1 로는 구분할 수 없다.
+                yaml.contains("hover-height") ? yaml.getDouble("hover-height") : Double.NaN,
                 // seat-offset 은 음수도 유효한 값이라 -1 을 "설정 안 함"으로 못 쓴다 —
                 // NaN 을 대신 쓰고, 안 적으면 config.yml 의 ride.seat-offset 전역값을 쓴다.
                 yaml.contains("seat-offset") ? yaml.getDouble("seat-offset") : Double.NaN,

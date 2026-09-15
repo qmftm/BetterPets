@@ -6,7 +6,9 @@ id: baby_phantom
 display-name: "<white>아기 팬텀"
 model: baby_phantom
 rarity: A
-growth-max: 100
+growth-max: 1000
+
+icon: phantom_membrane
 
 # 아직 어느 팬텀이 될지 모르는 단계라 탈 수 없다.
 ride: false

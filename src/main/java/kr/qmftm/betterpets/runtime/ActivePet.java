@@ -38,20 +38,24 @@ public final class ActivePet implements AutoCloseable {
      *                따로 받는다. {@code refreshAfterGrowth} 가 "화면이 지금 상태와
      *                맞는가"를 판단할 때 {@code type} 의 id 비교만으로는 부족하다:
      *                종류는 그대로인데 오버라이드만 바뀐 경우를 놓친다.
+     * @param hoverHeight 나는 펫이 추종할 때 띄워 둘 높이. {@code type.hoverHeight()} 가
+     *                    NaN(설정 안 함)이면 {@code PetService} 가 이미 전역 기본값으로
+     *                    바꿔서 넘긴다 — {@code MovementController} 는 전역 설정을 모른다.
      */
     public ActivePet(final UUID ownerId,
                      final PetData data,
                      final PetType type,
                      final Mob carrier,
                      final PetRenderHandle handle,
-                     final String modelId) {
+                     final String modelId,
+                     final double hoverHeight) {
         this.ownerId = ownerId;
         this.data = data;
         this.type = type;
         this.carrier = carrier;
         this.handle = handle;
         this.modelId = modelId;
-        this.movement = new MovementController(carrier, type);
+        this.movement = new MovementController(carrier, type, hoverHeight);
         this.animation = new AnimationStateMachine(handle, type);
         this.animation.start();
         // 크기 배율은 소환 시점에 한 번만 정하면 된다 — 개체가 살아 있는 동안 안 바뀐다.
