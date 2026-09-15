@@ -276,4 +276,26 @@ class PetTypeTest {
         }
         assertFalse(known.contains("wlak"), "오타를 통과시키면 경고를 낼 수 없다");
     }
+
+    @Test
+    @DisplayName("기본 설정에서는 걷기 문턱 안쪽이 정지, 8블록부터 달리기다")
+    void movementThresholdsOnDefaults() {
+        final PetType.MovementProfile profile = PetType.MovementProfile.defaults();
+
+        assertEquals(2.8, profile.walkThreshold(), 1.0e-9, "follow-distance 2.0 + 데드존 0.8");
+        assertEquals(8.0, profile.runThreshold(), 1.0e-9, "기본값에서는 예전 상수 그대로여야 한다");
+    }
+
+    @Test
+    @DisplayName("follow-distance 를 크게 잡아도 멈춰야 할 거리에서 달리지 않는다")
+    void runThresholdNeverFallsBelowWalkThreshold() {
+        // 예전에는 달리기 문턱이 8.0 으로 박혀 있었다. follow-distance 를 10 으로 두면
+        // 걷기 문턱(10.8)보다 작아지는데, 판정이 달리기를 먼저 보기 때문에 9블록처럼
+        // "멈춰 있어야 할 거리"에서 펫이 주인에게 달려들었다.
+        final PetType.MovementProfile far = new PetType.MovementProfile(10.0, 0.25, 0.45, 24.0);
+
+        assertEquals(10.8, far.walkThreshold(), 1.0e-9);
+        assertTrue(far.runThreshold() >= far.walkThreshold(),
+            "달리기 문턱이 걷기 문턱보다 작으면 멈출 거리에서 달린다");
+    }
 }

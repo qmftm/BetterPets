@@ -196,5 +196,33 @@ public record PetType(
         public static MovementProfile defaults() {
             return new MovementProfile(2.0, 0.25, 0.45, 24.0);
         }
+
+        /** 목표 지점 근처에서 미세하게 떠는 것을 막는 데드존. */
+        private static final double DEAD_ZONE = 0.8;
+
+        /** 이 거리부터는 걷지 않고 달린다. 주인을 놓치지 않을 만큼은 따라붙어야 한다. */
+        private static final double RUN_DISTANCE = 8.0;
+
+        /**
+         * 이 거리부터 움직이기 시작한다. 안쪽이면 멈춰 선다.
+         *
+         * <p>데드존을 더하는 이유는 멈춤 경계에 딱 걸친 펫이 걷기와 정지를 매 틱
+         * 오가며 떨지 않게 하기 위해서다.
+         */
+        public double walkThreshold() {
+            return followDistance + DEAD_ZONE;
+        }
+
+        /**
+         * 이 거리부터 달린다.
+         *
+         * <p><b>걷기 문턱보다 작을 수 없다.</b> 예전에는 {@value #RUN_DISTANCE} 가 그냥
+         * 박혀 있었는데, 그 값이 걷기 문턱보다 작아지는 설정({@code follow-distance} 를
+         * 7.2 이상으로 잡은 경우)에서는 <b>멈춰야 할 거리에서 펫이 달렸다.</b> 판정
+         * 순서상 달리기를 먼저 보기 때문이다. 기본값(2~4)에서는 드러나지 않는다.
+         */
+        public double runThreshold() {
+            return Math.max(RUN_DISTANCE, walkThreshold());
+        }
     }
 }

@@ -15,6 +15,10 @@ import org.bukkit.util.Vector;
  * <p>바닐라 경로탐색을 쓰지 않는다({@code setAI(false)}). 대신 목표 지점을 계산해
  * 보간 이동하고, 막히면 간이 지형 처리로 넘어가거나 텔레포트로 폴백한다.
  *
+ * <p><b>걷는 펫과 나는 펫은 전진 방식이 다르다.</b> 걷는 쪽은 {@link #advance} 가
+ * 한 칸 오르내리기로 지형을 따라가고, 나는 쪽은 {@link #glide} 가 높이까지 포함해
+ * 곧장 간다. 상태 판정과 갇힘 폴백은 둘이 공유한다.
+ *
  * <p><b>여기는 초당 5번, 소환된 펫마다 도는 자리다.</b> 두 가지를 아낀다:
  * <ul>
  *   <li><b>패킷</b> — {@code teleport}/{@code setRotation} 은 시청자 수만큼 패킷이 된다.
@@ -60,9 +64,6 @@ public final class MovementController {
         IDLE, WALK, RUN, TELEPORT
     }
 
-    /** 목표 지점 근처에서 미세하게 떠는 것을 막는 데드존. */
-    private static final double DEAD_ZONE = 0.8;
-
     /**
      * 경로 검사 서브스텝 간격. {@code RideController.SUB_STEP} 과 같은 기법이다 —
      * 목적지만 보면 한 틱에 여러 블록을 가는 설정(빠른 run-speed)에서 중간의 얇은 벽을
@@ -80,7 +81,10 @@ public final class MovementController {
     private final PetType.MovementProfile profile;
     private final double walkStep;
     private final double runStep;
-    /** 나는 탑승 종류인가. 순간이동 복귀 지점을 정할 때(=false 면 땅으로) 쓴다. */
+    /**
+     * 나는 종류인가. 추종을 3D({@link #glide})로 할지 지면 스냅({@link #advance})으로
+     * 할지, 순간이동 복귀 지점을 주인 높이로 잡을지 땅으로 잡을지를 이 값이 가른다.
+     */
     private final boolean canFly;
 
     /**
@@ -181,14 +185,18 @@ public final class MovementController {
         step(current, ownerAt, distance);
     }
 
+    /**
+     * 거리 → 상태. 문턱값 계산은 {@link PetType.MovementProfile} 에 있다 — Bukkit 이
+     * 필요 없는 순수 계산이라 거기서는 단위 테스트로 덮을 수 있다.
+     */
     private State resolveState(final double distance) {
         if (distance >= profile.teleportDistance()) {
             return State.TELEPORT;
         }
-        if (distance >= 8.0) {
+        if (distance >= profile.runThreshold()) {
             return State.RUN;
         }
-        if (distance >= profile.followDistance() + DEAD_ZONE) {
+        if (distance >= profile.walkThreshold()) {
             return State.WALK;
         }
         return State.IDLE;
@@ -250,13 +258,16 @@ public final class MovementController {
         final double speed = state == State.RUN ? runStep : walkStep;
 
         final Vector direction = target.toVector().subtract(current.toVector());
-        direction.setY(0);
+        if (!canFly) {
+            // 걷는 펫은 수평 성분만 쓴다. 높이는 지형이 정하기 때문이다.
+            direction.setY(0);
+        }
         if (direction.lengthSquared() < 1.0e-6) {
             return;
         }
         direction.normalize().multiply(Math.min(speed, distance));
 
-        final Location next = advance(current, direction);
+        final Location next = canFly ? glide(current, direction) : advance(current, direction);
         if (next == null) {
             return;     // 한 발짝도 못 뗀다 — 벽이거나 디딜 곳이 없다. isStuck 이 결국 텔레포트로 꺼낸다
         }
@@ -301,6 +312,47 @@ public final class MovementController {
             final double ny = groundLevel(world, nx, nz, y);
 
             if (Double.isNaN(ny) || !fits(world, nx, ny, nz)) {
+                break;      // 여기부터 막혔다. 직전까지만 인정한다
+            }
+            x = nx;
+            y = ny;
+            z = nz;
+            moved = true;
+        }
+        return moved ? new Location(world, x, y, z) : null;
+    }
+
+    /**
+     * 나는 펫의 전진. {@link #advance} 와 같은 서브스텝 검사를 쓰되 <b>지면 스냅만 뺀다.</b>
+     *
+     * <p>예전에는 나는 펫도 {@link #groundLevel} 을 거쳤다. {@code canFly} 가 순간이동
+     * 목적지를 정할 때({@link #standoffNear})만 쓰이고 추종 이동에는 쓰이지 않았기
+     * 때문이다. 그래서 팬텀이 땅을 기어다녔고, <b>주인이 공중에 있으면 발밑에서 디딜
+     * 곳을 못 찾아 아예 못 움직였다</b> — 3초 갇힘 판정이 걸린 뒤에야 순간이동으로
+     * 올라왔다. 캐리어는 이미 {@code setGravity(false)} 로 떠 있게 만들어 두므로
+     * 여기서 높이를 직접 정해도 그대로 유지된다.
+     *
+     * <p>블록을 관통하지 않는 것은 {@link #fits} 가 그대로 맡는다. 막히면 그 앞에서
+     * 멈추고, 결국 {@link #isStuck} 이 순간이동으로 꺼낸다 — 걷는 펫과 같은 폴백이다.
+     *
+     * @return 실제로 도달한 위치. 첫 서브스텝부터 막혀 있으면 {@code null}(제자리)
+     */
+    private Location glide(final Location current, final Vector direction) {
+        final World world = current.getWorld();
+        final int steps = Math.max(1, (int) Math.ceil(direction.length() / SUB_STEP));
+
+        double x = current.getX();
+        double y = current.getY();
+        double z = current.getZ();
+        boolean moved = false;
+
+        for (int i = 1; i <= steps; i++) {
+            final double fraction = (double) i / steps;
+            final double nx = current.getX() + direction.getX() * fraction;
+            final double ny = current.getY() + direction.getY() * fraction;
+            final double nz = current.getZ() + direction.getZ() * fraction;
+
+            if (!fits(world, nx, ny, nz)) {
                 break;      // 여기부터 막혔다. 직전까지만 인정한다
             }
             x = nx;
@@ -370,7 +422,9 @@ public final class MovementController {
      * 지형 처리가 감당 못 하는 상황에서 펫이 영영 뒤처지는 것을 막는다.
      */
     private boolean isStuck(final double distance) {
-        if (distance <= profile.followDistance() + DEAD_ZONE) {
+        // 멈춰도 되는 거리면 갇힌 게 아니다. resolveState 의 IDLE 경계와 반드시
+        // 같은 값을 써야 해서 문턱을 직접 계산하지 않고 프로파일에 물어본다.
+        if (distance <= profile.walkThreshold()) {
             lastProgressAt = System.currentTimeMillis();
             return false;
         }
