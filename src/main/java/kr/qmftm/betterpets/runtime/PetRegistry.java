@@ -42,8 +42,20 @@ public final class PetRegistry {
         owned.add(pet);
     }
 
+    /**
+     * 한 마리를 찾는다.
+     *
+     * <p>{@link #allOf} 를 거치지 않는다: 그쪽은 호출마다 {@code List.copyOf} 를 뜨는데,
+     * 여기는 <b>탑승 중 매 틱</b>({@code PetTicker.tickRides}) 도는 자리라 그 복사가
+     * 그대로 쓰레기가 된다. 소유자별 목록이 {@link CopyOnWriteArrayList} 라 순회 중
+     * 변경이 안전하므로 스냅샷을 뜰 이유도 없다.
+     */
     public Optional<ActivePet> of(final UUID ownerId, final UUID petId) {
-        for (final ActivePet pet : allOf(ownerId)) {
+        final List<ActivePet> owned = active.get(ownerId);
+        if (owned == null) {
+            return Optional.empty();
+        }
+        for (final ActivePet pet : owned) {
             if (pet.petId().equals(petId)) {
                 return Optional.of(pet);
             }

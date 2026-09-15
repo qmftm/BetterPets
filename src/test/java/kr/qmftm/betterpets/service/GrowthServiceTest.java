@@ -258,6 +258,47 @@ class GrowthServiceTest {
     }
 
     @Test
+    @DisplayName("감소 간격이 아직 안 지났으면 값도 기준 시각도 그대로다 — 남은 시간이 살아남아야 한다")
+    void fullnessKeepsRemainderWithinOneInterval() {
+        // refreshFullness 의 빠른 경로가 여기로 온다. 기준 시각을 지금으로 당겨버리면
+        // 이미 흐른 29초가 사라져서, 계속 들여다보는 펫일수록 영원히 안 깎인다.
+        final long decayMillis = 30_000L;
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
+
+        final long now = System.currentTimeMillis();
+        final long fullnessAt = now - 29_000L;
+        final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null, null,
+            LifeStage.NORMAL, 0, 1, 20, fullnessAt, false, now, now);
+
+        growth.refreshFullness(pet);
+
+        assertEquals(20, pet.fullness());
+        assertEquals(fullnessAt, pet.fullnessUpdatedAt(), "기준 시각을 당기면 남은 29초가 사라진다");
+    }
+
+    @Test
+    @DisplayName("포만도가 0이면 기준 시각만 지금으로 당긴다 — 나중에 먹였을 때 몰아서 깎이지 않게")
+    void zeroFullnessStillAdvancesTheClock() {
+        // 값이 안 바뀐다고 건너뛰면 안 되는 경우다. 여기서 시각을 안 당기면 하루 뒤
+        // 먹인 펫이 그 하루치만큼 곧바로 깎인다.
+        final long decayMillis = 30_000L;
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
+
+        final long now = System.currentTimeMillis();
+        final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null, null,
+            LifeStage.NORMAL, 0, 1, 0, now - DAY, false, now, now);
+
+        growth.refreshFullness(pet);
+
+        assertEquals(0, pet.fullness());
+        assertTrue(pet.fullnessUpdatedAt() >= now, "기준 시각이 하루 전에 머물러 있으면 안 된다");
+    }
+
+    @Test
     @DisplayName("먹이에 growth 를 적으면 그 값을, 아니면 전역 기본값을 쓴다")
     void feedAmountComesFromTheFood() {
         final GrowthService growth = service();

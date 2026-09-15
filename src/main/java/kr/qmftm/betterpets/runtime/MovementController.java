@@ -21,14 +21,16 @@ import org.bukkit.util.Vector;
  *       원작이 렉으로 무너진 지점이 여기라, <b>바뀐 게 없으면 부르지 않는다</b>
  *   <li><b>블록 검사</b> — 지형 확인은 한 걸음에 최대 다섯 번인데, 예전엔 검사마다
  *       {@code clone()} 이 하나씩 났다. 버퍼({@link #probe})를 y 만 바꿔가며 돌려 쓴다
+ *   <li><b>위치 읽기</b> — 캐리어와 주인 위치는 버퍼({@link #here}·{@link #ownerHere})에
+ *       채워 읽는다. 가장 자주 도는 경로인 정지 상태에서 틱마다 두 개가 버려지고 있었다
  * </ul>
  *
- * <p><b>할당을 전부 없애지는 않았다.</b> {@link #tick} 과 {@link #step} 은
- * 여전히 틱마다 {@code Location}·{@code Vector} 를 몇 개 만든다. 없애려면 목표 지점
- * 계산을 yaw 삼각함수와 버퍼로 직접 다시 쓰고 부채꼴 각도까지 손으로 돌려야 하는데,
+ * <p><b>할당을 전부 없애지는 않았다.</b> {@link #step} 과 {@link #standoffNear} 는
+ * 여전히 목표 지점 계산에 {@code Location}·{@code Vector} 를 몇 개 만든다. 없애려면
+ * 그 계산을 yaw 삼각함수와 버퍼로 직접 다시 쓰고 부채꼴 각도까지 손으로 돌려야 하는데,
  * <b>서버 없이는 추종이 여전히 자연스러운지 확인할 방법이 없다.</b> 5명 규모에서
- * 아끼는 양(초당 수백 개의 짧은 수명 객체)보다 "펫이 이상하게 걷는다"가 훨씬 비싸다.
- * 실측할 수 있게 되면 그때 판단한다 — ROADMAP 의 확인 목록에 있다.
+ * 아끼는 양보다 "펫이 이상하게 걷는다"가 훨씬 비싸다. 위치 버퍼처럼 값이 그대로임을
+ * 코드로 증명할 수 있는 것만 먼저 걷어냈다 — 나머지는 실측할 수 있게 되면 판단한다.
  */
 public final class MovementController {
 
@@ -91,6 +93,15 @@ public final class MovementController {
     private final Location here = new Location(null, 0, 0, 0);
     private final Location probe = new Location(null, 0, 0, 0);
 
+    /**
+     * 주인 위치 버퍼. {@link #here} 와 같은 규칙으로 쓴다.
+     *
+     * <p>{@code owner.getLocation()} 은 호출마다 새 {@link Location} 을 만든다. 가만히
+     * 서 있는 펫은 {@link #tick} 에서 한 번, {@link #faceOwner} 에서 또 한 번 불러
+     * 틱마다 두 개를 버리고 있었다: 그게 가장 자주 도는 경로다.
+     */
+    private final Location ownerHere = new Location(null, 0, 0, 0);
+
     private Mode mode = Mode.GROUND;
     private State state = State.IDLE;
 
@@ -137,7 +148,7 @@ public final class MovementController {
             return;     // 타고 있는 동안은 RideController 가 위치를 정한다
         }
         final Location current = carrier.getLocation(here);
-        final Location ownerAt = owner.getLocation();
+        final Location ownerAt = owner.getLocation(ownerHere);
 
         if (!current.getWorld().equals(ownerAt.getWorld())) {
             teleportNear(owner, current);
@@ -160,7 +171,7 @@ public final class MovementController {
         if (state == State.IDLE) {
             lastProgressAt = System.currentTimeMillis();
             lastDistance = distance;
-            faceOwner(owner);
+            faceOwner(current, ownerAt);
             return;
         }
         if (isStuck(distance)) {
@@ -372,10 +383,12 @@ public final class MovementController {
      * <p>가만히 서 있는 펫이 여기로 온다 — 가장 자주 도는 경로다. 그래서 <b>회전이
      * 눈에 띄게 달라졌을 때만</b> 패킷을 보낸다. 매 틱 같은 각도를 다시 보내면
      * 소환된 펫 수 × 시청자 수만큼 의미 없는 트래픽이 된다.
+     *
+     * <p>위치는 {@link #tick} 이 이미 읽어둔 것을 그대로 받는다. 같은 틱 안이고 그 사이
+     * 아무것도 움직이지 않으므로 다시 읽어도 같은 값인데, 다시 읽으면 주인 쪽은
+     * {@link Location} 이 하나 더 생긴다.
      */
-    private void faceOwner(final Player owner) {
-        final Location ownerAt = owner.getLocation();
-        final Location current = carrier.getLocation(here);
+    private void faceOwner(final Location current, final Location ownerAt) {
         final double dx = ownerAt.getX() - current.getX();
         final double dz = ownerAt.getZ() - current.getZ();
         if (dx * dx + dz * dz < 1.0e-4) {

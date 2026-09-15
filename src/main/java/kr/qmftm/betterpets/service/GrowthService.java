@@ -104,6 +104,9 @@ public final class GrowthService {
      */
     private static final int BURST_PRUNE_THRESHOLD = 64;
 
+    /** 종류를 찾지 못했을 때 쓰는 성장 상한. 설정이 깨져도 0으로 나누거나 즉시 진화하지 않게 한다. */
+    private static final int DEFAULT_GROWTH_MAX = 100;
+
     private record FeedBurst(int count, long since) {}
 
     /** 운영용. 조회를 카탈로그에 맡긴다. */
@@ -147,20 +150,25 @@ public final class GrowthService {
      */
     public void refresh(final PetData data) {
         final long now = System.currentTimeMillis();
-        if (!growsOverTime(data)) {
+        // 종류를 한 번만 찾는다. 예전에는 growsOverTime 이 한 번, maxOf 가 최대 두 번
+        // 같은 id 를 다시 조회했다: 조회마다 Optional 두 개와 박싱이 따라붙는데
+        // 여기는 소환된 펫마다 초당 5번 도는 자리라 그 쓰레기가 그대로 쌓인다.
+        final PetType type = types.apply(data.typeId()).orElse(null);
+        if (!growsOverTime(data, type)) {
             if (data.updatedAt() != now) {
                 data.applyGrowth(new GrowthCurve.Projection(data.growth(), now));
             }
             return;
         }
+        final int max = maxOf(type);
         final long elapsed = now - data.updatedAt();
         // elapsed 가 음수면 시계가 뒤로 간 것이다. 그 처리는 project 에 맡긴다.
         // growth 가 상한을 넘어 있으면(설정에서 growth-max 를 낮춘 경우) 깎아야 하므로
         // 이때도 건너뛰지 않는다.
-        if (elapsed >= 0 && elapsed < GrowthCurve.MILLIS_PER_POINT && data.growth() <= maxOf(data)) {
+        if (elapsed >= 0 && elapsed < GrowthCurve.MILLIS_PER_POINT && data.growth() <= max) {
             return;
         }
-        data.applyGrowth(GrowthCurve.project(data.growth(), data.updatedAt(), now, maxOf(data)));
+        data.applyGrowth(GrowthCurve.project(data.growth(), data.updatedAt(), now, max));
     }
 
     /**
@@ -169,12 +177,15 @@ public final class GrowthService {
      * <p>둘 다 필요하다 — <b>꺼내져 있어야</b> 하고(보관함에 있는 동안은 자라지 않는다),
      * {@link PetType#growsToNextStage} 여야 한다(next-stage 가 없거나 {@code growth-max}
      * 로 껐으면 성장도가 할 일이 없다).
+     *
+     * <p>종류는 호출부가 찾아서 넘긴다. 이 판정과 성장 상한이 같은 종류를 보는데, 여기서
+     * 다시 찾으면 틱마다 같은 조회가 두 번씩 난다.
      */
-    private boolean growsOverTime(final PetData data) {
+    private boolean growsOverTime(final PetData data, final PetType type) {
         if (!data.active()) {
             return false;
         }
-        return types.apply(data.typeId()).map(PetType::growsToNextStage).orElse(false);
+        return type != null && type.growsToNextStage();
     }
 
     /**
@@ -200,8 +211,22 @@ public final class GrowthService {
      */
     public void refreshFullness(final PetData data) {
         final long now = System.currentTimeMillis();
-        data.applyFullness(FullnessCurve.project(
-            data.fullness(), data.fullnessUpdatedAt(), now, tuning.fullnessDecayMillis()));
+        final int fullness = data.fullness();
+        final long updatedAt = data.fullnessUpdatedAt();
+        final long interval = tuning.fullnessDecayMillis();
+
+        // 흔한 경우를 먼저 쳐낸다. {@link #refresh} 와 같은 이유다: 여기도 소환된 펫마다
+        // 초당 5번 도는데, 실제로 값이 바뀌는 건 decay-seconds 에 한 번뿐이다. 나머지
+        // 호출은 입력과 똑같은 Projection 을 만들어 그대로 버린다.
+        //
+        // 아래 세 조건은 project 가 "값도 기준 시각도 그대로"를 돌려주는 경우와 정확히
+        // 같다. 포만도가 0 이하인 경우는 일부러 제외한다: 그때는 project 가 기준 시각을
+        // 지금으로 당기므로 건너뛰면 안 된다.
+        if (fullness > 0
+            && (interval <= 0 || now <= updatedAt || now - updatedAt < interval)) {
+            return;
+        }
+        data.applyFullness(FullnessCurve.project(fullness, updatedAt, now, interval));
     }
 
     /**
@@ -365,7 +390,12 @@ public final class GrowthService {
     }
 
     public int maxOf(final PetData data) {
-        return types.apply(data.typeId()).map(PetType::growthMax).orElse(100);
+        return maxOf(types.apply(data.typeId()).orElse(null));
+    }
+
+    /** 종류를 이미 찾아둔 호출부용. 종류를 모르면 {@value #DEFAULT_GROWTH_MAX} 로 본다. */
+    private int maxOf(final PetType type) {
+        return type == null ? DEFAULT_GROWTH_MAX : type.growthMax();
     }
 
     /** 포만도 상한. GUI 에서 "포만도 N/max" 표시에 쓴다. */
