@@ -149,11 +149,18 @@ public final class GrowthService {
      * 성장도로 잡힌다.
      */
     public void refresh(final PetData data) {
+        refresh(data, types.apply(data.typeId()).orElse(null));
+    }
+
+    /**
+     * 종류를 이미 찾아둔 호출부용({@link #catchUp}).
+     *
+     * <p>예전에는 이 안에서 growsOverTime 이 한 번, maxOf 가 최대 두 번 같은 id 를 다시
+     * 조회했다: 조회마다 {@code Optional} 두 개와 박싱이 따라붙는데, 여기는 소환된
+     * 펫마다 초당 5번 도는 자리라 그 쓰레기가 그대로 쌓인다.
+     */
+    private void refresh(final PetData data, final PetType type) {
         final long now = System.currentTimeMillis();
-        // 종류를 한 번만 찾는다. 예전에는 growsOverTime 이 한 번, maxOf 가 최대 두 번
-        // 같은 id 를 다시 조회했다: 조회마다 Optional 두 개와 박싱이 따라붙는데
-        // 여기는 소환된 펫마다 초당 5번 도는 자리라 그 쓰레기가 그대로 쌓인다.
-        final PetType type = types.apply(data.typeId()).orElse(null);
         if (!growsOverTime(data, type)) {
             if (data.updatedAt() != now) {
                 data.applyGrowth(new GrowthCurve.Projection(data.growth(), now));
@@ -200,9 +207,13 @@ public final class GrowthService {
      * @return 이번 확인으로 일어난 일
      */
     public StageResult catchUp(final PetData data) {
-        refresh(data);
+        // 종류를 한 번만 찾아 둘에게 넘긴다. refresh 는 성장도와 기준 시각만 건드리고
+        // typeId 는 손대지 않으므로, promoteIfGrown 이 나중에 다시 찾아도 같은 종류가
+        // 나온다. 틱 루프가 펫마다 부르는 자리라 조회 한 번이 그대로 줄어든다.
+        final PetType type = types.apply(data.typeId()).orElse(null);
+        refresh(data, type);
         refreshFullness(data);
-        return promoteIfGrown(data);
+        return promoteIfGrown(data, type);
     }
 
     /**
@@ -286,10 +297,14 @@ public final class GrowthService {
      * @return 이번 호출로 일어난 일. 아직 자랄 게 남았으면 {@link StageResult#NONE}
      */
     public StageResult promoteIfGrown(final PetData data) {
+        return promoteIfGrown(data, types.apply(data.typeId()).orElse(null));
+    }
+
+    /** 종류를 이미 찾아둔 호출부용({@link #catchUp}). 같은 조회를 두 번 하지 않으려고 나눠 뒀다. */
+    private StageResult promoteIfGrown(final PetData data, final PetType type) {
         if (data.stage() != LifeStage.NORMAL) {
             return StageResult.NONE;
         }
-        final PetType type = types.apply(data.typeId()).orElse(null);
         if (type == null || !type.growsToNextStage() || data.growth() < type.growthMax()) {
             return StageResult.NONE;
         }
