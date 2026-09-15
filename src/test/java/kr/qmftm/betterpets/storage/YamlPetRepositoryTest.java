@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -57,6 +58,7 @@ class YamlPetRepositoryTest {
         final PetData saved = PetData.newBaby(OWNER, "dragon", 1_700_000_000_000L);
         saved.nickname("화룡이");
         saved.stage(LifeStage.PIG);
+        saved.modelOverride("pet_pig");
         repository.save(saved);
 
         final List<PetData> loaded = repository.loadOwner(OWNER);
@@ -67,6 +69,16 @@ class YamlPetRepositoryTest {
         assertEquals("dragon", pet.typeId());
         assertEquals("화룡이", pet.nickname());
         assertEquals(LifeStage.PIG, pet.stage());
+        assertEquals("pet_pig", pet.modelOverride(), "과급식 등으로 붙은 모델 오버라이드도 저장돼야 한다");
+    }
+
+    @Test
+    @DisplayName("모델 오버라이드가 없는 펫은 null 로 그대로 읽힌다")
+    void modelOverrideDefaultsToNull(@TempDir final Path dir) {
+        final YamlPetRepository repository = repo(dir);
+        repository.save(PetData.newBaby(OWNER, "wolf", 1L));
+
+        assertNull(repository.loadOwner(OWNER).getFirst().modelOverride());
     }
 
     @Test

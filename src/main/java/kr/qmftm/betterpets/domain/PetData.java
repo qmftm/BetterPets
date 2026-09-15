@@ -20,6 +20,7 @@ public final class PetData {
     private final long acquiredAt;
 
     private String typeId;
+    private String modelOverride;   // nullable. 종류는 그대로 두고 모습만 바꿀 때 쓴다(과급식 기믹 등)
     private String nickname;        // nullable
     private LifeStage stage;
     private int growth;
@@ -36,6 +37,7 @@ public final class PetData {
     public PetData(final UUID petId,
                    final UUID ownerId,
                    final String typeId,
+                   final String modelOverride,
                    final String nickname,
                    final LifeStage stage,
                    final int growth,
@@ -48,6 +50,7 @@ public final class PetData {
         this.petId = petId;
         this.ownerId = ownerId;
         this.typeId = typeId;
+        this.modelOverride = modelOverride == null || modelOverride.isBlank() ? null : modelOverride;
         this.nickname = sanitizeNickname(nickname);
         this.stage = stage;
         this.growth = growth;
@@ -61,13 +64,15 @@ public final class PetData {
 
     /** 새로 획득한 펫. 알에서 갓 나온 상태다. */
     public static PetData newBaby(final UUID ownerId, final String typeId, final long now) {
-        return new PetData(UUID.randomUUID(), ownerId, typeId, null,
+        return new PetData(UUID.randomUUID(), ownerId, typeId, null, null,
             LifeStage.NORMAL, 0, 1, 0, now, false, now, now);
     }
 
     public UUID petId() { return petId; }
     public UUID ownerId() { return ownerId; }
     public String typeId() { return typeId; }
+    /** 종류의 기본 모델 대신 붙일 모델. 없으면 {@code null}. */
+    public String modelOverride() { return modelOverride; }
     public String nickname() { return nickname; }
     public LifeStage stage() { return stage; }
     public int growth() { return growth; }
@@ -83,6 +88,15 @@ public final class PetData {
 
     public void typeId(final String value) {
         if (!value.equals(typeId)) { typeId = value; dirty = true; }
+    }
+
+    /** 모델 오버라이드를 정하거나 지운다. 빈 문자열은 {@code null}(= 오버라이드 없음)로 접는다. */
+    public void modelOverride(final String value) {
+        final String normalized = value == null || value.isBlank() ? null : value;
+        if (!java.util.Objects.equals(normalized, modelOverride)) {
+            modelOverride = normalized;
+            dirty = true;
+        }
     }
 
     /**

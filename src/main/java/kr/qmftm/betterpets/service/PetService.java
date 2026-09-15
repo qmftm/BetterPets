@@ -117,7 +117,8 @@ public final class PetService {
         final Location at = spawnLocation(owner, flying);
         final Mob carrier = carriers.spawn(at, data.petId(), flying);
 
-        final Optional<PetRenderHandle> handle = renderer.attach(carrier, type.modelId());
+        final String modelId = resolveModelId(data, type);
+        final Optional<PetRenderHandle> handle = renderer.attach(carrier, modelId);
         if (handle.isEmpty()) {
             // 모델이 없다. 이미 스폰한 캐리어를 되돌린다.
             carrier.remove();
@@ -135,13 +136,19 @@ public final class PetService {
             }
         }
 
-        final ActivePet pet = new ActivePet(owner.getUniqueId(), data, type, carrier, handle.get());
+        final ActivePet pet = new ActivePet(owner.getUniqueId(), data, type, carrier, handle.get(), modelId);
         registry.put(pet);
 
         data.active(true);
         reindexFollowers(owner.getUniqueId());
         owner.getServer().getPluginManager().callEvent(new PetSummonedEvent(owner, data));
         return replaced ? SummonResult.OK_REPLACED : SummonResult.OK;
+    }
+
+    /** 실제로 붙일 모델 id. {@code data.modelOverride()} 가 있으면 그쪽이 종류의 기본 모델을 이긴다. */
+    private String resolveModelId(final PetData data, final PetType type) {
+        final String override = data.modelOverride();
+        return override != null && !override.isBlank() ? override : type.modelId();
     }
 
     /** 한 마리를 해제한다. 소환 중이 아니면 아무 일도 하지 않는다. */
@@ -250,7 +257,9 @@ public final class PetService {
      * 애니메이션 이름을 계속 쓴다 — 이 마무리를 빠뜨리면 데이터만 바뀌고 화면은
      * 예전 그대로 남는다.
      *
-     * <p>종류가 그대로면(먹기만 하고 진화는 안 한 경우) 할 일이 없다.
+     * <p>종류도 모델도 그대로면(먹기만 하고 진화는 안 한 경우) 할 일이 없다. <b>종류가
+     * 같아도 모델은 바뀔 수 있다</b> — 과급식 기믹의 {@code model} 처럼 종류는 그대로 두고
+     * 모습만 바꾸는 경로가 있어서, 종류 id 비교만으로는 부족하다.
      *
      * <p>탑승 중에 종류가 바뀌었다면 {@link #summon} 안의 {@link #dismiss} 가 안전하게
      * 내려준다 — 드래곤이 돼지가 됐는데 그대로 하늘에 떠 있으면 곤란하다.
@@ -263,15 +272,17 @@ public final class PetService {
         if (current == null) {
             return RefreshResult.NOT_ACTIVE;   // 소환 중이 아니다. 다음 소환 때 맞춰진다
         }
-        if (!current.type().id().equals(data.typeId())) {
-            // 종류가 바뀌었다. 모델부터 다시 붙여야 한다. 이미 소환 중인 펫이라 동시
+        final PetType desiredType = catalog.type(data.typeId()).orElse(current.type());
+        final String desiredModelId = resolveModelId(data, desiredType);
+        if (!current.type().id().equals(data.typeId()) || !desiredModelId.equals(current.modelId())) {
+            // 종류나 모델이 바뀌었다. 다시 붙여야 한다. 이미 소환 중인 펫이라 동시
             // 소환 한도를 새로 잡아먹지 않는다 — summon 이 같은 petId 를 먼저 해제하고
             // 그 자리에 다시 넣는다.
             final SummonResult result = summon(owner, data);
             if (result == SummonResult.OK || result == SummonResult.OK_REPLACED) {
                 return RefreshResult.OK;
             }
-            // 새 종류의 모델이 없다. summon 이 이미 예전 개체를 해제했으므로 눈앞에서
+            // 새 모델이 없다. summon 이 이미 예전 개체를 해제했으므로 눈앞에서
             // 펫이 사라진 상태다. 조용히 넘기면 "진화했습니다!" 와 빈자리만 남는다.
             return RefreshResult.DETACHED;
         }

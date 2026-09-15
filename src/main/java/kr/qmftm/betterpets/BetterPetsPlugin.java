@@ -328,14 +328,23 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 + " 기믹을 끄려면 gimmick.overfeed.enabled: false 로 하세요.");
         }
 
-        // 과급식 기믹이 가리키는 펫이 없으면 상태만 '돼지'가 되고 모습은 그대로 남는다.
-        // 조용히 넘어가면 "돼지가 됐다는데 왜 드래곤이지"로 헤매게 된다.
+        final boolean overfeedOn = getConfig().getBoolean("gimmick.overfeed.enabled", true);
+
+        // becomes 가 가리키는 펫이 없으면 종류는 안 바뀐다. model 이 따로 있으면 모습은
+        // 그걸로 바뀌므로 완전히 조용하지는 않지만, 종류(능력치)가 안 바뀐다는 사실은
+        // 알려야 한다 — "돼지가 됐다는데 왜 능력치가 그대로지"로 헤매게 된다.
         final String pigType = getConfig().getString("gimmick.overfeed.becomes", "pig");
-        if (getConfig().getBoolean("gimmick.overfeed.enabled", true)
-            && pigType != null && !pigType.isBlank()
-            && catalog.type(pigType).isEmpty()) {
+        if (overfeedOn && pigType != null && !pigType.isBlank() && catalog.type(pigType).isEmpty()) {
             getLogger().warning("gimmick.overfeed.becomes 가 가리키는 펫 '" + pigType
-                + "' 가 없습니다. 과급식해도 모습은 그대로 남습니다.");
+                + "' 가 없습니다. 과급식해도 종류(능력치)는 그대로 남습니다.");
+        }
+
+        // model 이 BetterModel 에 없는 모델을 가리키면 과급식 자체가 조용히 실패한다
+        // (summon 이 MODEL_MISSING 을 돌려주고, 눈앞의 펫이 사라진다) — 부팅 시 미리 잡는다.
+        final String pigModel = getConfig().getString("gimmick.overfeed.model");
+        if (overfeedOn && pigModel != null && !pigModel.isBlank() && !renderer.modelExists(pigModel)) {
+            getLogger().warning("gimmick.overfeed.model 이 가리키는 모델 '" + pigModel
+                + "' 을 BetterModel 에서 찾을 수 없습니다.");
         }
     }
 
@@ -353,6 +362,9 @@ public final class BetterPetsPlugin extends JavaPlugin {
             getConfig().getInt("gimmick.overfeed.count", 10),
             getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L,
             getConfig().getString("gimmick.overfeed.becomes", "pig"),
+            getConfig().getString("gimmick.overfeed.model"),
+            getConfig().getInt("gimmick.overfeed.chance", 100),
+            getConfig().getInt("gimmick.overfeed.min-fullness", 0),
             getConfig().getInt("growth.fullness.min-gain", 5),
             getConfig().getInt("growth.fullness.max-gain", 15),
             getConfig().getInt("growth.fullness.max", 100),

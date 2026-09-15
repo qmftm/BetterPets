@@ -66,6 +66,25 @@ class PetDataTest {
     }
 
     @Test
+    @DisplayName("모델 오버라이드는 값이 실제로 바뀔 때만 dirty 가 서고, 빈 문자열은 null 로 접힌다")
+    void modelOverrideNormalizesBlankToNullAndTracksDirty() {
+        final PetData data = sample();
+        assertNull(data.modelOverride(), "기본값은 오버라이드 없음이다");
+
+        data.modelOverride(null);
+        assertFalse(data.isDirty(), "null 을 null 로 다시 넣어도 안 바뀐 것이다");
+
+        data.modelOverride("pet_pig");
+        assertTrue(data.isDirty());
+        assertEquals("pet_pig", data.modelOverride());
+
+        data.clearDirty();
+        data.modelOverride("");
+        assertNull(data.modelOverride(), "빈 문자열은 오버라이드 없음과 같다");
+        assertTrue(data.isDirty(), "값 자체는 null 로 실제로 바뀌었다");
+    }
+
+    @Test
     @DisplayName("성장도와 기준 시각은 항상 함께 갱신된다")
     void growthAndTimestampMoveTogether() {
         final PetData data = sample();
@@ -140,7 +159,7 @@ class PetDataTest {
     @Test
     @DisplayName("파일에서 읽어 온 별명도 같은 문을 지난다")
     void nicknameFromStorageIsSanitized() {
-        final PetData loaded = new PetData(UUID.randomUUID(), UUID.randomUUID(), "wolf",
+        final PetData loaded = new PetData(UUID.randomUUID(), UUID.randomUUID(), "wolf", null,
             "<red>옛날에 저장된 이름", LifeStage.NORMAL, 0, 1, 0, 0L, false, 0L, 0L);
 
         assertEquals("옛날에 저장된 이름", loaded.nickname(),

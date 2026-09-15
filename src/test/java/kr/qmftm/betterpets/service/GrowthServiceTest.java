@@ -62,7 +62,7 @@ class GrowthServiceTest {
             id -> Optional.ofNullable(WORLD.get(id)),
             // 포만도·감소는 여기서 다루지 않는 테스트들이 걸리지 않게 넉넉히/꺼둔 채로 둔다.
             // 그 자체를 보는 테스트는 별도 Tuning 을 직접 만든다.
-            new GrowthService.Tuning(10, overfeed, overfeedCount, windowMillis, "pig", 0, 0, 1_000, 0));
+            new GrowthService.Tuning(10, overfeed, overfeedCount, windowMillis, "pig", null, 100, 0, 0, 0, 1_000, 0));
     }
 
     private static final FeedDefinition MILK =
@@ -94,7 +94,7 @@ class GrowthServiceTest {
         final GrowthService service = service();
         assertEquals(1_000, service.fullnessMax());
 
-        service.tuning(new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 0, 0, 500, 0));
+        service.tuning(new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 500, 0));
 
         assertEquals(500, service.fullnessMax(), "리로드하면 반영돼야 한다");
         assertEquals(10, service.feedAmount());
@@ -103,7 +103,7 @@ class GrowthServiceTest {
     @Test
     @DisplayName("설정 묶음이 값을 접는다 — 접는 자리가 하나여야 새는 경로가 없다")
     void tuningClampsBadValues() {
-        final var broken = new GrowthService.Tuning(10, true, 0, 60_000L, "pig", -5, -1, 0, -100L);
+        final var broken = new GrowthService.Tuning(10, true, 0, 60_000L, "pig", null, 100, 0, -5, -1, 0, -100L);
 
         assertEquals(2, broken.overfeedCount(), "0 이면 첫 급여에 바로 돼지가 된다");
         assertEquals(0, broken.fullnessMinGain(), "음수 증가량은 먹일수록 깎는다는 뜻이라 안 된다");
@@ -196,7 +196,7 @@ class GrowthServiceTest {
     void feedingTerminalTypeDoesNotRaiseGrowth() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 5, 5, 1_000, 0));
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 5, 5, 1_000, 0));
         final PetData pet = baby("wolf");
 
         assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
@@ -209,7 +209,7 @@ class GrowthServiceTest {
     void fullnessBlocksFeedingAtThreshold() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 10, 10, 15, 0));
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 10, 10, 15, 0));
         final PetData pet = baby("hatchling");
 
         assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
@@ -231,11 +231,11 @@ class GrowthServiceTest {
         final long decayMillis = 30_000L;
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 0, 0, 1_000, decayMillis));
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
 
         final long now = System.currentTimeMillis();
         // 다섯 간격 전에 포만도 20으로 저장돼 있던 펫 — 지금 보면 15여야 한다.
-        final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null,
+        final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null, null,
             LifeStage.NORMAL, 0, 1, 20, now - 5 * decayMillis, false, now, now);
 
         growth.refreshFullness(pet);
@@ -247,10 +247,10 @@ class GrowthServiceTest {
     void fullnessDecayCanBeDisabled() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 0, 0, 1_000, 0));
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, 0));
 
         final long now = System.currentTimeMillis();
-        final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null,
+        final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null, null,
             LifeStage.NORMAL, 0, 1, 20, now - DAY, false, now, now);
 
         growth.refreshFullness(pet);
@@ -289,7 +289,7 @@ class GrowthServiceTest {
         chain.put("juvenile", type("juvenile", 100, RideMode.GROUND, Map.of("dragon", 1)));
         chain.put("dragon", type("dragon", 100, RideMode.FLY, Map.of()));
         final GrowthService growth = new GrowthService(id -> Optional.ofNullable(chain.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 0, 0, 1_000, 0));
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, 0));
         final PetData pet = PetData.newBaby(OWNER, "egg", System.currentTimeMillis());
 
         assertEquals(GrowthService.FeedResult.STAGE_UP, growth.feed(pet, FEAST));
@@ -312,7 +312,7 @@ class GrowthServiceTest {
         final Map<String, PetType> world = new LinkedHashMap<>();
         world.put("hatchling", type("hatchling", 100, RideMode.GROUND, Map.of("hatchling", 1)));
         final GrowthService growth = new GrowthService(id -> Optional.ofNullable(world.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", 0, 0, 1_000, 0));
+            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, 0));
         final PetData pet = PetData.newBaby(OWNER, "hatchling", System.currentTimeMillis());
 
         assertEquals(GrowthService.FeedResult.STAGE_UP, growth.feed(pet, FEAST));
@@ -346,6 +346,66 @@ class GrowthServiceTest {
 
         assertEquals(LifeStage.PIG, pet.stage());
         assertEquals("pig", pet.typeId(), "상태만 바꾸면 메시지와 화면이 어긋난다");
+    }
+
+    @Test
+    @DisplayName("becomes 없이 model 만 설정하면 종류는 그대로, 모습만 바뀐다")
+    void overfeedModelAloneOnlyChangesAppearance() {
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, true, 2, 60_000L, "", "custom_pig_model", 100, 0, 0, 0, 1_000, 0));
+        final PetData pet = baby("wolf");
+
+        growth.feed(pet, MILK);
+        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, MILK));
+
+        assertEquals(LifeStage.PIG, pet.stage());
+        assertEquals("wolf", pet.typeId(), "becomes 가 없으면 종류는 안 바뀐다");
+        assertEquals("custom_pig_model", pet.modelOverride());
+    }
+
+    @Test
+    @DisplayName("becomes 와 model 을 같이 설정하면 종류는 becomes 를, 모습은 model 을 따른다")
+    void overfeedBecomesAndModelCanCombine() {
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, true, 2, 60_000L, "pig", "custom_pig_model", 100, 0, 0, 0, 1_000, 0));
+        final PetData pet = baby("wolf");
+
+        growth.feed(pet, MILK);
+        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, MILK));
+
+        assertEquals("pig", pet.typeId());
+        assertEquals("custom_pig_model", pet.modelOverride());
+    }
+
+    @Test
+    @DisplayName("발동 확률이 0이면 조건을 아무리 채워도 발동하지 않는다")
+    void overfeedNeverFiresWhenChanceIsZero() {
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, true, 2, 60_000L, "pig", null, 0, 0, 0, 0, 1_000, 0));
+        final PetData pet = baby("wolf");
+
+        for (int i = 0; i < 20; i++) {
+            assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
+        }
+        assertFalse(pet.stage() == LifeStage.PIG);
+    }
+
+    @Test
+    @DisplayName("발동 조건(횟수)을 채워도 포만도가 기준에 못 미치면 발동을 미룬다")
+    void overfeedWaitsForMinimumFullness() {
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, true, 2, 60_000L, "pig", null, 100, 25, 10, 10, 1_000, 0));
+        final PetData pet = baby("wolf");
+
+        assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK), "1번째: 포만도 10");
+        assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK),
+            "횟수 조건은 채웠지만(2/2) 포만도(20)가 기준(25)에 못 미친다");
+        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, MILK),
+            "포만도(30)가 기준을 넘긴 순간 발동한다");
     }
 
     @Test

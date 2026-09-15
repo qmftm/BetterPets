@@ -99,6 +99,7 @@ public final class YamlPetRepository implements PetRepository {
     private void writeInto(final YamlConfiguration yaml, final PetData pet) {
         final String path = "pets." + pet.petId();
         yaml.set(path + ".type", pet.typeId());
+        yaml.set(path + ".model-override", pet.modelOverride());
         yaml.set(path + ".nickname", pet.nickname());
         yaml.set(path + ".stage", pet.stage().name());
         yaml.set(path + ".growth", pet.growth());
@@ -129,6 +130,7 @@ public final class YamlPetRepository implements PetRepository {
             UUID.fromString(key),
             ownerId,
             node.getString("type", ""),
+            node.getString("model-override"),
             node.getString("nickname"),
             LifeStage.parse(node.getString("stage")).orElse(LifeStage.NORMAL),
             node.getInt("growth"),

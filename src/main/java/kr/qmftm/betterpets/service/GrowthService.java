@@ -57,6 +57,9 @@ public final class GrowthService {
                          int overfeedCount,
                          long overfeedWindowMillis,
                          String overfeedBecomes,
+                         String overfeedModel,
+                         int overfeedChance,
+                         int overfeedMinFullness,
                          int fullnessMinGain,
                          int fullnessMaxGain,
                          int fullnessMax,
@@ -65,6 +68,11 @@ public final class GrowthService {
             // 0 이하로 두면 registerBurst 가 첫 급여에서 바로 참이 된다 — 먹이 한 번에
             // 모든 펫이 돼지가 된다는 뜻이다. 끄고 싶으면 enabled: false 를 쓴다.
             overfeedCount = Math.max(2, overfeedCount);
+            // 100 이상이면 항상 발동, 0 이하면 조건을 채워도 절대 발동하지 않는다는 뜻이라
+            // 그대로 둔다 — enabled 와 달리 "거의 안 터지게" 도 의도일 수 있다.
+            overfeedChance = Math.min(100, Math.max(0, overfeedChance));
+            // 음수는 "조건 없음"과 구분이 안 되므로 0으로 접는다.
+            overfeedMinFullness = Math.max(0, overfeedMinFullness);
             // 음수 증가량은 포만도를 먹일수록 깎는다는 뜻이라 의도가 아니다.
             fullnessMinGain = Math.max(0, fullnessMinGain);
             // 최소가 최대보다 크면 ThreadLocalRandom.nextInt(min, max+1) 이 예외를 던진다.
@@ -223,7 +231,7 @@ public final class GrowthService {
             data.addGrowth(feed.growthOr(tuning.feedAmount()), type.growthMax());
         }
 
-        if (tuning.overfeedGimmick() && registerBurst(data)) {
+        if (tuning.overfeedGimmick() && registerBurst(data) && meetsOverfeedFullness(data) && rollOverfeedChance()) {
             becomePig(data);
             bursts.remove(data.petId());
             return FeedResult.BECAME_PIG;
@@ -270,25 +278,48 @@ public final class GrowthService {
     }
 
     /**
-     * 과급식 이스터에그. 상태를 {@link LifeStage#PIG} 로 바꾸고 종류도 돼지로 갈아끼운다.
+     * 과급식 이스터에그. 상태를 {@link LifeStage#PIG} 로 바꾸고, 설정에 따라 종류나
+     * 모습(또는 둘 다)을 바꾼다.
      *
-     * <p>상태만 바꾸면 겉모습은 그대로라 "돼지가 됐다"는 메시지와 화면이 어긋난다.
-     * 설정된 돼지 종류가 없으면 상태만 바꾼다 — 기믹은 못 살려도 펫을 망가뜨리지는 않는다.
-     * (그 경우 기동 시 경고가 뜬다)
+     * <p><b>둘은 서로 다른 일을 한다.</b> {@code becomes} 는 종류 자체를 다른 펫으로
+     * 완전히 갈아끼운다(능력치·성장 상한·라이드 설정까지 전부 그 종류를 따른다).
+     * {@code model} 은 종류는 그대로 두고 <b>모습만</b> 바꾼다 — 별도의 {@code pets/*.yml}
+     * 없이 겉모습만 바꾸고 싶을 때 쓴다. 뭐가 안 통하든 기믹은 못 살려도 펫을 망가뜨리지는
+     * 않는다(그 경우 기동 시 경고가 뜬다).
      *
-     * <p>모델 교체는 호출부가 {@code PetService.refreshAfterGrowth} 로 마무리한다.
-     * 소환 중인 개체는 소환 시점의 종류를 들고 있어서, 데이터만 바꾸면 화면이 안 바뀐다.
+     * <p>화면 반영은 호출부가 {@code PetService.refreshAfterGrowth} 로 마무리한다.
+     * 소환 중인 개체는 소환 시점의 모델을 들고 있어서, 데이터만 바꾸면 화면이 안 바뀐다.
      */
     private void becomePig(final PetData data) {
         data.stage(LifeStage.PIG);
         final String becomes = tuning.overfeedBecomes();
-        if (becomes == null || becomes.isBlank()) {
-            return;
+        if (becomes != null && !becomes.isBlank() && types.apply(becomes).isPresent()) {
+            data.typeId(becomes);
         }
-        if (types.apply(becomes).isEmpty()) {
-            return;
+        final String model = tuning.overfeedModel();
+        if (model != null && !model.isBlank()) {
+            data.modelOverride(model);
         }
-        data.typeId(becomes);
+    }
+
+    /** 과급식 최종 발동에 필요한 최소 포만도. 0 이면 조건 없음(항상 통과). */
+    private boolean meetsOverfeedFullness(final PetData data) {
+        return data.fullness() >= tuning.overfeedMinFullness();
+    }
+
+    /**
+     * 조건을 다 채워도 이 확률로만 실제 발동한다. 100 이상이면 항상 발동, 0이면 절대
+     * 발동하지 않는다. 실패해도 과급식 카운터는 그대로 둔다 — 다음 급여에서 다시 굴린다.
+     */
+    private boolean rollOverfeedChance() {
+        final int chance = tuning.overfeedChance();
+        if (chance >= 100) {
+            return true;
+        }
+        if (chance <= 0) {
+            return false;
+        }
+        return ThreadLocalRandom.current().nextInt(100) < chance;
     }
 
     /** 이번 급여로 오를 포만도. {@code min}~{@code max} 사이에서 고른다(양끝 포함). */

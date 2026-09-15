@@ -26,21 +26,31 @@ public final class ActivePet implements AutoCloseable {
     private final PetType type;
     private final Mob carrier;
     private final PetRenderHandle handle;
+    private final String modelId;
     private final MovementController movement;
     private final AnimationStateMachine animation;
 
     private boolean closed;
 
+    /**
+     * @param modelId 실제로 붙인 모델 id. {@code type.modelId()} 와 다를 수 있다
+     *                ({@code data.modelOverride()} 가 있으면 그쪽이 우선한다) — 그래서
+     *                따로 받는다. {@code refreshAfterGrowth} 가 "화면이 지금 상태와
+     *                맞는가"를 판단할 때 {@code type} 의 id 비교만으로는 부족하다:
+     *                종류는 그대로인데 오버라이드만 바뀐 경우를 놓친다.
+     */
     public ActivePet(final UUID ownerId,
                      final PetData data,
                      final PetType type,
                      final Mob carrier,
-                     final PetRenderHandle handle) {
+                     final PetRenderHandle handle,
+                     final String modelId) {
         this.ownerId = ownerId;
         this.data = data;
         this.type = type;
         this.carrier = carrier;
         this.handle = handle;
+        this.modelId = modelId;
         this.movement = new MovementController(carrier, type);
         this.animation = new AnimationStateMachine(handle, type);
         this.animation.start();
@@ -66,6 +76,8 @@ public final class ActivePet implements AutoCloseable {
     public UUID petId() { return data.petId(); }
     public PetData data() { return data; }
     public PetType type() { return type; }
+    /** 실제로 붙어 있는 모델 id. {@link PetType#modelId()} 와 다를 수 있다. */
+    public String modelId() { return modelId; }
     public Mob carrier() { return carrier; }
     public MovementController movement() { return movement; }
     public AnimationStateMachine animation() { return animation; }
