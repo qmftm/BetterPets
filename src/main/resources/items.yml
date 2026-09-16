@@ -33,13 +33,6 @@ eggs:
     glow: true            # 뽑기 알이니 손에 잡히자마자 특별해 보이도록
     # item-model: "betterpets:egg_chaos"
 
-  # chaos_egg 와 주는 펫은 같다(gives: egg) — 재질만 다른 자매품이다.
-  chaos_shard:
-    display-name: "<dark_purple>혼돈의 조각"
-    material: AMETHYST_SHARD
-    gives: egg
-    glow: true
-
   # gives 도 weights 도 적지 않은 알을 만들고 싶다면, 그때는 펫 파일에
   # acquire.gacha-weight 를 적은 펫들이 그 표를 이룬다 — 지금은 그런 펫이
   # 하나도 없어서(egg 는 gacha-weight: 0) 여기 예시로 두면 "아무것도 못 준다"는
