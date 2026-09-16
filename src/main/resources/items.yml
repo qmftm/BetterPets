@@ -64,8 +64,8 @@ feeds:
 # 펫을 놓아줬을 때(/pet release) min-amount~max-amount 개수를 무작위로 준다.
 # 이 섹션 자체를 지우면 놓아줘도 아무것도 주지 않는다 — 선택 기능이다.
 release-reward:
-  material: PAPER
-  display-name: "<yellow>펫 놓아주기 증표"
+  material: AMETHYST_SHARD
+  display-name: "<dark_purple>혼돈의 조각"
   lore:
     - "<gray>펫을 놓아줘서 받았습니다."
   min-amount: 1
