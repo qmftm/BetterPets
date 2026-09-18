@@ -34,17 +34,20 @@ public final class GrowthCatchUp {
     private final GrowthService growth;
     private final BroadcastService broadcasts;
     private final Messages messages;
+    private final EffectService effects;
 
     public GrowthCatchUp(final PetStore store,
                          final PetService pets,
                          final GrowthService growth,
                          final BroadcastService broadcasts,
-                         final Messages messages) {
+                         final Messages messages,
+                         final EffectService effects) {
         this.store = store;
         this.pets = pets;
         this.growth = growth;
         this.broadcasts = broadcasts;
         this.messages = messages;
+        this.effects = effects;
     }
 
     /** 이 플레이어가 가진 펫 전부를 지금 시각에 맞춘다. */
@@ -99,7 +102,7 @@ public final class GrowthCatchUp {
         }
         // 이름은 지금 종류 기준이다. 진화로 종류가 바뀌었으면 새 이름을 불러야 한다.
         final String name = Tags.strip(data.displayNameOr(type.displayName()));
-        owner.playSound(owner.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+        effects.play("growth", owner);
         messages.send(owner, "pet.stage-up",
             "name", name,
             "stage", String.valueOf(data.growthStage()));

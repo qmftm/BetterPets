@@ -7,6 +7,7 @@ import kr.qmftm.betterpets.domain.PetType;
 import kr.qmftm.betterpets.gui.Menus;
 import kr.qmftm.betterpets.gui.PetMenuFactory;
 import kr.qmftm.betterpets.runtime.RideController;
+import kr.qmftm.betterpets.service.EffectService;
 import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
@@ -42,19 +43,22 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
 
     /** 목록을 보여주기 전에 시간 경과분을 반영한다 — 보관함의 펫도 자란다. */
     private final GrowthCatchUp catchUp;
+    private final EffectService effects;
 
     public PetCommand(final PetService pets,
                       final PetStore store,
                       final PetMenuFactory menus,
                       final RideController rides,
                       final Messages messages,
-                      final GrowthCatchUp catchUp) {
+                      final GrowthCatchUp catchUp,
+                      final EffectService effects) {
         this.pets = pets;
         this.store = store;
         this.menus = menus;
         this.rides = rides;
         this.messages = messages;
         this.catchUp = catchUp;
+        this.effects = effects;
     }
 
     @Override
@@ -203,7 +207,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         if (rides.isRiding(player)) {
             rides.stop(player);
             // 채팅 문구는 없다 — 내렸다는 건 화면으로 이미 보인다. 소리만 알린다.
-            player.playSound(player.getLocation(), Sound.ENTITY_HORSE_LAND, 0.8f, 1.0f);
+            effects.play("dismount", player);
         } else {
             messages.send(player, "ride.not-riding");
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);

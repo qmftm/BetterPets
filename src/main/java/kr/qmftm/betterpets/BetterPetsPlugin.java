@@ -22,6 +22,7 @@ import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.runtime.PetTicker;
 import kr.qmftm.betterpets.runtime.RideController;
 import kr.qmftm.betterpets.service.BroadcastService;
+import kr.qmftm.betterpets.service.EffectService;
 import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
@@ -104,6 +105,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
         rides = new RideController(this);
 
         final GrowthService growth = new GrowthService(catalog, readGrowthTuning());
+        // 값을 들고 있지 않는다 — /betterpets reload 목록에 오를 일이 없다.
+        final EffectService effects = new EffectService(this);
 
         bedrock = new BedrockSupport(this);
         bedrock.detect();
@@ -125,7 +128,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
             catalog, growth, registry, pets, messages);
 
         // 시간이 흘러 일어난 성장을 확인하는 자리. 접속·보관함·목록·틱이 모두 여기를 지난다.
-        final GrowthCatchUp catchUp = new GrowthCatchUp(store, pets, growth, broadcasts, messages);
+        final GrowthCatchUp catchUp = new GrowthCatchUp(store, pets, growth, broadcasts, messages, effects);
 
         // 기동 시 청소. 정상 종료였다면 지울 게 없고, 크래시였다면 여기서 정리된다.
         final int orphanCarriers = carriers.purgeOrphans(this);
@@ -135,8 +138,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 + orphanCarriers + "개, 마운트 " + orphanMounts + "개");
         }
 
-        registerListeners(items, menus, growth, broadcasts, catchUp);
-        registerCommands(items, menus, catchUp, growth);
+        registerListeners(items, menus, growth, broadcasts, catchUp, effects);
+        registerCommands(items, menus, catchUp, growth, effects);
 
         ticker = new PetTicker(this, registry, rides, pets, catchUp);
         ticker.start();
@@ -205,20 +208,22 @@ public final class BetterPetsPlugin extends JavaPlugin {
                                    final PetMenuFactory menus,
                                    final GrowthService growth,
                                    final BroadcastService broadcasts,
-                                   final GrowthCatchUp catchUp) {
+                                   final GrowthCatchUp catchUp,
+                                   final EffectService effects) {
         final var manager = getServer().getPluginManager();
         manager.registerEvents(
             new SessionListener(this, store, pets, registry, catchUp), this);
         manager.registerEvents(new InteractionListener(pets, store, items, registry, rides, growth,
-            messages, broadcasts), this);
+            messages, broadcasts, effects), this);
         manager.registerEvents(new MenuListener(pets, store, menus, messages, catchUp), this);
     }
 
     private void registerCommands(final PetItems items,
                                   final PetMenuFactory menus,
                                   final GrowthCatchUp catchUp,
-                                  final GrowthService growth) {
-        bind("pet", "betterpets.use", new PetCommand(pets, store, menus, rides, messages, catchUp));
+                                  final GrowthService growth,
+                                  final EffectService effects) {
+        bind("pet", "betterpets.use", new PetCommand(pets, store, menus, rides, messages, catchUp, effects));
         bind("betterpets", List.of("bp"), "betterpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
             messages, catchUp, () -> {
                 reloadConfig();
@@ -345,6 +350,53 @@ public final class BetterPetsPlugin extends JavaPlugin {
         if (overfeedOn && pigModel != null && !pigModel.isBlank() && !renderer.modelExists(pigModel)) {
             getLogger().warning("gimmick.overfeed.model 이 가리키는 모델 '" + pigModel
                 + "' 을 BetterModel 에서 찾을 수 없습니다.");
+        }
+
+        validateEffects();
+    }
+
+    /**
+     * {@code effects.*.sound}·{@code effects.*.particle} 오타를 미리 잡는다.
+     *
+     * <p>{@link EffectService} 는 재생할 때마다 같은 경고를 반복하지 않으려고 잘못된
+     * 이름을 조용히 넘긴다 — 그 대신 여기서 리로드 시점에 한 번만 전부 검사한다.
+     */
+    private void validateEffects() {
+        final var effects = getConfig().getConfigurationSection("effects");
+        if (effects == null) {
+            return;
+        }
+        for (final String key : effects.getKeys(false)) {
+            final var section = effects.getConfigurationSection(key);
+            if (section == null) {
+                continue;
+            }
+            final String sound = section.getString("sound");
+            if (sound != null && !sound.isBlank() && !isValidSound(sound)) {
+                getLogger().warning("effects." + key + ".sound 에 알 수 없는 소리 '" + sound + "' 가 적혀 있습니다.");
+            }
+            final String particle = section.getString("particle");
+            if (particle != null && !particle.isBlank() && !isValidParticle(particle)) {
+                getLogger().warning("effects." + key + ".particle 에 알 수 없는 파티클 '" + particle + "' 가 적혀 있습니다.");
+            }
+        }
+    }
+
+    private static boolean isValidSound(final String name) {
+        try {
+            org.bukkit.Sound.valueOf(name.toUpperCase(java.util.Locale.ROOT));
+            return true;
+        } catch (final IllegalArgumentException invalidName) {
+            return false;
+        }
+    }
+
+    private static boolean isValidParticle(final String name) {
+        try {
+            org.bukkit.Particle.valueOf(name.toUpperCase(java.util.Locale.ROOT));
+            return true;
+        } catch (final IllegalArgumentException invalidName) {
+            return false;
         }
     }
 

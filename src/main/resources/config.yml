@@ -113,3 +113,44 @@ ride:
   # 0 이 지금까지의 기본 자리다. 이 펫만 다르게 하고 싶으면 pets/*.yml 에
   # seat-offset 을 적는다 — 안 적은 펫은 이 전역값을 그대로 쓴다.
   seat-offset: 0.0
+
+# 펫 관련 사운드·파티클. 모든 펫이 공통으로 쓴다(펫 종류별로 다르게 줄 수는 없다) —
+# 이벤트 하나마다 sound(소리 이름)·volume·pitch·particle(파티클 이름)·particle-count 를
+# 적을 수 있다. 이름은 Bukkit 의 Sound·Particle enum 이름을 그대로 쓴다(대소문자 무관).
+# 오타는 /betterpets reload 응답에서 한 번에 알려준다.
+#
+# sound 나 particle 을 비우면 그 효과만 꺼지고, 이벤트 섹션 전체를 지우면(예: 이 줄
+# 아래 dismount: 를 통째로 삭제) 그 이벤트는 아무 소리도 파티클도 내지 않는다.
+effects:
+  feed:
+    sound: ENTITY_GENERIC_EAT
+    volume: 0.8
+    pitch: 1.0
+    # particle: ITEM_SLIME
+    # particle-count: 8
+
+  # 나는 펫과 걷는 펫을 따로 뒀다 — 원래도 서로 다른 소리를 냈다.
+  mount-ground:
+    sound: ENTITY_HORSE_SADDLE
+    volume: 1.0
+    pitch: 1.0
+
+  mount-flying:
+    sound: ENTITY_PHANTOM_FLAP
+    volume: 1.0
+    pitch: 1.0
+
+  # 지상·비행 하차, /pet dismount 세 경로가 전부 이 하나를 쓴다.
+  dismount:
+    sound: ENTITY_HORSE_LAND
+    volume: 0.8
+    pitch: 1.0
+
+  # 먹여서 자란 경우와 시간이 흘러 자란 경우 둘 다 여기를 쓴다. 과급식으로 돼지가
+  # 되는 건 제외다 — 그건 이스터에그 전용 소리(ENTITY_PIG_AMBIENT)로 따로 둔다.
+  growth:
+    sound: ENTITY_PLAYER_LEVELUP
+    volume: 1.0
+    pitch: 1.0
+    # particle: TOTEM_OF_UNDYING
+    # particle-count: 20

@@ -380,6 +380,41 @@ ride:
 hover-height: 1.3   # 주인 머리 위쯤에 떠서 따라옵니다
 ```
 
+### 🔔 먹이·탑승·하차·성장 효과음
+
+```yaml
+# config.yml
+effects:
+  feed:
+    sound: ENTITY_GENERIC_EAT
+    volume: 0.8
+    pitch: 1.0
+    # particle: ITEM_SLIME
+    # particle-count: 8
+
+  mount-ground:
+    sound: ENTITY_HORSE_SADDLE
+  mount-flying:
+    sound: ENTITY_PHANTOM_FLAP
+  dismount:
+    sound: ENTITY_HORSE_LAND
+
+  growth:
+    sound: ENTITY_PLAYER_LEVELUP
+    # particle: TOTEM_OF_UNDYING
+    # particle-count: 20
+```
+
+**펫 종류와 무관하게 전부 공통으로 씁니다** — 먹이(`feed`)·지상 탑승(`mount-ground`)·
+비행 탑승(`mount-flying`)·하차(`dismount`)·성장(`growth`) 다섯 이벤트마다 소리와
+파티클을 하나씩 정할 수 있어요. 이름은 Bukkit 의 `Sound`·`Particle` enum 이름을
+그대로 씁니다(대소문자는 안 가려요). 잘못 적으면 `/betterpets reload` 응답에서
+한 번에 알려드립니다 — 재생될 때마다 콘솔에 같은 경고가 반복되지 않아요.
+
+`sound`나 `particle`을 비워두면 그 효과만 꺼지고, 이벤트 섹션 자체를 지우면
+(`dismount:` 통째로 삭제 등) 그 순간엔 아무 소리도 파티클도 안 납니다. 과급식으로
+돼지가 될 때 나는 소리는 여기 안 들어가요 — 이스터에그 전용이라 일부러 빼뒀습니다.
+
 ### 📢 알림
 
 ```yaml

@@ -14,6 +14,7 @@ import kr.qmftm.betterpets.runtime.MovementController;
 import kr.qmftm.betterpets.runtime.PetRegistry;
 import kr.qmftm.betterpets.runtime.RideController;
 import kr.qmftm.betterpets.service.BroadcastService;
+import kr.qmftm.betterpets.service.EffectService;
 import kr.qmftm.betterpets.service.GrowthService;
 import kr.qmftm.betterpets.service.PetService;
 import kr.qmftm.betterpets.storage.PetStore;
@@ -42,6 +43,7 @@ public final class InteractionListener implements Listener {
     private final GrowthService growth;
     private final Messages messages;
     private final BroadcastService broadcasts;
+    private final EffectService effects;
 
     public InteractionListener(final PetService pets,
                                final PetStore store,
@@ -50,7 +52,8 @@ public final class InteractionListener implements Listener {
                                final RideController rides,
                                final GrowthService growth,
                                final Messages messages,
-                               final BroadcastService broadcasts) {
+                               final BroadcastService broadcasts,
+                               final EffectService effects) {
         this.pets = pets;
         this.store = store;
         this.items = items;
@@ -59,6 +62,7 @@ public final class InteractionListener implements Listener {
         this.growth = growth;
         this.messages = messages;
         this.broadcasts = broadcasts;
+        this.effects = effects;
     }
 
     /**
@@ -206,10 +210,12 @@ public final class InteractionListener implements Listener {
             case STAGE_UP -> {
                 messages.send(player, "feed.stage-up",
                     "stage", String.valueOf(data.growthStage()));
-                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                effects.play("growth", player);
                 broadcasts.onStageUp(player, data, current);
             }
             case BECAME_PIG -> {
+                // 이건 effects.growth 로 옮기지 않는다 — 과급식 이스터에그 전용 농담이라
+                // 다른 성장과 같은 소리를 내면 그 재미가 없어진다.
                 messages.send(player, "feed.became-pig");
                 player.playSound(player.getLocation(), Sound.ENTITY_PIG_AMBIENT, 1.0f, 1.0f);
             }
@@ -221,7 +227,7 @@ public final class InteractionListener implements Listener {
                 } else {
                     messages.send(player, "feed.fed-no-growth");
                 }
-                player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EAT, 0.8f, 1.0f);
+                effects.play("feed", player);
             }
         }
 
@@ -272,8 +278,7 @@ public final class InteractionListener implements Listener {
                 ? MovementController.Mode.RIDDEN_FLYING
                 : MovementController.Mode.RIDDEN);
             // 채팅 문구는 없다 — 타고 있다는 건 화면으로 이미 보인다. 소리만 알린다.
-            player.playSound(player.getLocation(),
-                flying ? Sound.ENTITY_PHANTOM_FLAP : Sound.ENTITY_HORSE_SADDLE, 1.0f, 1.0f);
+            effects.play(flying ? "mount-flying" : "mount-ground", player);
         } else {
             messages.send(player, "ride.failed");
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
@@ -298,7 +303,7 @@ public final class InteractionListener implements Listener {
         }
         rides.stop(event.getPlayer());
         // 채팅 문구는 없다 — 내렸다는 건 화면으로 이미 보인다. 소리만 알린다.
-        event.getPlayer().playSound(event.getPlayer().getLocation(), Sound.ENTITY_HORSE_LAND, 0.8f, 1.0f);
+        effects.play("dismount", event.getPlayer());
     }
 
 }
