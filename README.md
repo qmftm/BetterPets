@@ -6,14 +6,15 @@ _알에서 키워 타고 다니는 펫: Paper 26.2와 [BetterModel](https://gith
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![BetterModel](https://img.shields.io/badge/BetterModel-3.4.1+-blue)
 ![Language](https://img.shields.io/badge/Language-KO%20%2F%20EN-yellow)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
 알을 까면 아기 펫이 나옵니다. 먹이를 주거나 그냥 데리고 다니면 자라고, 다 크면 등에
 올라탈 수 있어요. 운이 좋으면 하늘을 나는 펫이 나옵니다. 악어의 놀이터 2의 펫 시스템을
 Paper 서버에 옮긴 플러그인이에요.
 
-> **⚠️ 아직 서버에서 돌려본 적이 없습니다.** 기능은 전부 구현됐고 단위 테스트도 전부
-> 통과하지만, 펫이 화면에 뜨는지는 `.bbmodel` 모델 파일이 있어야 확인할 수 있어요.
-> 자세한 상태는 [ROADMAP](docs/ROADMAP.md)에 있습니다.
+> 소환·탑승·먹이·성장·놓아주기 같은 핵심 기능은 실제 서버에서 확인했습니다.
+> Bedrock(Geyser) 대응만 아직 실기 확인 전이에요. 자세한 상태는
+> [ROADMAP](docs/ROADMAP.md)에 있습니다.
 
 ## 시작하기
 
@@ -41,6 +42,7 @@ Paper 서버에 옮긴 플러그인이에요.
 | [모델 규격](docs/MODELING.md) | 애니메이션 이름, 본 태그, Bedrock 내보내기 |
 | [설계 문서](docs/DESIGN.md) | 아키텍처와 그 근거, 원작 분석, 리스크 |
 | [진행 상황](docs/ROADMAP.md) | 무엇이 끝났고 무엇이 남았는지 |
+| [위키](https://github.com/qmftm/BetterPets/wiki) | Skript 연동 구문 등 추가 참고 자료 |
 
 ## 빌드
 
@@ -62,5 +64,4 @@ mvn clean package                    # target/BetterPets-*.jar
 
 ## 라이선스
 
-아직 정하지 않았습니다. `LICENSE` 파일이 없으면 기본값이 "모든 권리 보유"이기 때문에
-다른 사람이 쓰거나 고칠 수 없어요. 공개하실 거면 하나 추가해 주세요.
+[MIT](LICENSE). 자유롭게 쓰고 고치고 재배포하되, 저작권 표시만 남겨 주세요.
