@@ -144,19 +144,28 @@ public final class RideController {
         private final boolean flying;
         private final double speed;
         private final double flightLift;
+        private final double seatOffset;
 
         private Ride(final UUID petId, final ArmorStand mount, final boolean flying,
-                    final double speed, final double flightLift) {
+                    final double speed, final double flightLift, final double seatOffset) {
             this.petId = petId;
             this.mount = mount;
             this.flying = flying;
             this.speed = speed;
             this.flightLift = flightLift;
+            this.seatOffset = seatOffset;
         }
 
         public UUID petId() { return petId; }
         public ArmorStand mount() { return mount; }
         public boolean flying() { return flying; }
+
+        /**
+         * 마운트를 스폰할 때 얹은 높이. {@link kr.qmftm.betterpets.runtime.PetTicker} 가
+         * 펫 본체를 마운트 위치로 되돌릴 때 이 값을 다시 빼야 한다 — 안 그러면 몸체가
+         * 마운트를 그대로 따라가면서 처음 얹은 높이 차이가 첫 틱에 사라진다.
+         */
+        public double seatOffset() { return seatOffset; }
     }
 
     /** 이 플레이어가 그 펫에 타고 있는가. */
@@ -189,7 +198,8 @@ public final class RideController {
      * @return 성공 여부. 실패 시 마운트를 남기지 않는다
      */
     public boolean start(final Player player, final UUID petId, final Location at,
-                         final boolean flying, final double speed, final double flightLift) {
+                         final boolean flying, final double speed, final double flightLift,
+                         final double seatOffset) {
         if (rides.containsKey(player.getUniqueId())) {
             return false;
         }
@@ -219,7 +229,7 @@ public final class RideController {
             mount.remove();
             return false;
         }
-        rides.put(player.getUniqueId(), new Ride(petId, mount, flying, speed, flightLift));
+        rides.put(player.getUniqueId(), new Ride(petId, mount, flying, speed, flightLift, seatOffset));
         return true;
     }
 

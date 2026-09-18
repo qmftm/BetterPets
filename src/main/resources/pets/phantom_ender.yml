@@ -13,6 +13,14 @@ icon: phantom_spawn_egg
 ride: true
 flying: true
 
+# 비행 중 수평 이동 속도. 안 적으면 ride-speed(안 적으면 고정 기본값 0.28)를 그대로 쓴다.
+flight-speed: 0.86
+
+# 탑승 시 플레이어가 앉는 높이를 기본 자리에서 위(+)·아래(-)로 밀어낸다. size 가 커서
+# 기본 자리 그대로면 몸통에 파묻혀 보일 수 있다. 안 적으면 config.yml 의
+# ride.seat-offset 전역값(지금 0.0)을 그대로 쓴다.
+
+
 size: 2
 
 animations:

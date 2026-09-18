@@ -2,6 +2,7 @@ package kr.qmftm.betterpets.runtime;
 
 import kr.qmftm.betterpets.service.GrowthCatchUp;
 import kr.qmftm.betterpets.service.PetService;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -134,8 +135,15 @@ public final class PetTicker {
                 continue;
             }
             if (rides.tick(owner)) {
-                // 탑승 중에는 펫 본체가 마운트를 밀착 추적한다.
-                pet.carrier().teleport(ride.mount().getLocation());
+                // 탑승 중에는 펫 본체가 마운트를 밀착 추적한다. seatOffset 은 도로 뺀다 —
+                // 마운트는 스폰될 때 이미 그만큼 위(또는 아래)에 있었는데, 몸체를 그
+                // 위치 그대로 따라가게 두면 첫 틱에 몸체가 앉는 높이까지 튀어 올라
+                // (또는 내려가) seatOffset 으로 벌려둔 차이가 그대로 사라져 보인다.
+                final Location bodyAt = ride.mount().getLocation();
+                if (ride.seatOffset() != 0.0) {
+                    bodyAt.subtract(0, ride.seatOffset(), 0);
+                }
+                pet.carrier().teleport(bodyAt);
             } else {
                 // 하차했다. 추종으로 되돌린다. tickFollow 의 보정보다 한 틱 빠르다.
                 pet.movement().mode(MovementController.Mode.GROUND);
