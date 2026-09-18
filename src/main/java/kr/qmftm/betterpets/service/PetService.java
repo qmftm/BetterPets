@@ -338,6 +338,14 @@ public final class PetService {
             final Vector offset = facing.clone();
             Vectors.rotateAroundY(offset, Math.toRadians(degrees));
             final Location candidate = base.clone().add(offset);
+            if (!flying) {
+                // base 의 지면 높이는 주인이 서 있는 지점 기준이다. 후보는 거기서
+                // 옆으로 벌어지므로, 주인이 절벽·경사 근처에 있으면 후보가 허공일 수
+                // 있다 — isOpen 은 "비어 있는가"만 볼 뿐 "땅인가"는 안 보므로 그걸
+                // 그대로 통과시켜 펫이 공중에 뜬다. MovementController.standoffNear
+                // 는 이미 후보마다 다시 구하고 있었는데 여기만 빠져 있었다.
+                candidate.setY(Ground.findY(candidate.getWorld(), candidate.getX(), candidate.getZ(), candidate.getY()));
+            }
             if (isOpen(candidate)) {
                 return candidate;
             }
