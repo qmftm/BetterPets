@@ -26,6 +26,8 @@ pet:
   released: "<gray>펫을 놓아줬습니다."
   # 시간이 흘러 진화한 경우. 먹여서 진화한 쪽은 feed.stage-up 을 쓴다.
   stage-up: "<aqua>%name% <gray>이(가) 진화했습니다. <dark_gray>(%stage%단계)"
+  # 시간이 흘러 진화하려던 순간 돼지가 된 경우. 먹여서 된 쪽은 feed.became-pig 를 쓴다.
+  became-pig: "<yellow>너무 많이 먹여서... 돼지가 됐습니다."
   release-hint: "<yellow>/pet release %id% <gray>로 놓아줄 수 있습니다. <red>되돌릴 수 없습니다."
   rename-hint: "<gray>/pet rename %id% <이름> 으로 바꿀 수 있습니다."
   rename-pick: "<yellow>여러 마리를 소환 중입니다. <gray>/pet rename <펫id> <이름> 으로 지정하세요."

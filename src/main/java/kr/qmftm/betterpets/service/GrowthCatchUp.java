@@ -84,7 +84,7 @@ public final class GrowthCatchUp {
             messages.send(owner, "pet.model-missing");
             owner.playSound(owner.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.6f, 1.0f);
         }
-        announce(owner, data);
+        announce(owner, data, result);
         return result;
     }
 
@@ -94,10 +94,21 @@ public final class GrowthCatchUp {
      * <p><b>주인에게는 등급과 무관하게 알린다.</b> 방송은 문턱이 있어서 흔한 펫은
      * 걸리지 않는데, 그것만 두면 D등급 펫도 조용히 진화한다. 알림의 목적은
      * 자랑이 아니라 "네 펫이 달라졌다"를 알리는 것이다.
+     *
+     * @param result {@link StageResult#STAGE_UP} 이면 진화 문구, {@link StageResult#BECAME_PIG}
+     *               면 과급식 문구를 보낸다 — 둘을 같은 문구로 묶으면 "가만히 뒀더니
+     *               진화했다"와 "돼지가 됐다"가 똑같이 들린다.
      */
-    private void announce(final Player owner, final PetData data) {
+    private void announce(final Player owner, final PetData data, final StageResult result) {
         final PetType type = pets.catalog().type(data.typeId()).orElse(null);
         if (type == null) {
+            return;
+        }
+        if (result == StageResult.BECAME_PIG) {
+            // 먹여서 된 쪽(feed.became-pig)과 다른 소리를 쓴다 — 여기는 시간이 흘러
+            // 조용히 진화하려던 참이었으므로 effects.growth 로 묶지 않는다.
+            messages.send(owner, "pet.became-pig");
+            owner.playSound(owner.getLocation(), Sound.ENTITY_PIG_AMBIENT, 1.0f, 1.0f);
             return;
         }
         // 이름은 지금 종류 기준이다. 진화로 종류가 바뀌었으면 새 이름을 불러야 한다.

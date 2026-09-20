@@ -240,8 +240,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
                 discord.reload(
                     getConfig().getBoolean("integrations.discord.enabled", true),
                     getConfig().getString("integrations.discord.channel", "global"));
-                // 성장·기믹도 마찬가지였다. gimmick.overfeed.count 를 고치고 리로드해도
-                // 예전 값으로 돌았다 — 기동 코드는 리로드 때마다 그 값을
+                // 성장·기믹도 마찬가지였다. gimmick.overfeed.min-fullness 를 고치고
+                // 리로드해도 예전 값으로 돌았다 — 기동 코드는 리로드 때마다 그 값을
                 // 다시 읽어 경고까지 내면서, 정작 쓰는 쪽에는 안 밀어 넣고 있었다.
                 growth.tuning(readGrowthTuning());
             }, getDataFolder()));
@@ -324,15 +324,6 @@ public final class BetterPetsPlugin extends JavaPlugin {
             problems.forEach(problem -> getLogger().warning("  - " + problem));
         }
 
-        // 0 이하는 "첫 급여에 바로 돼지"가 된다. 코드가 2로 막지만, 관리자가 의도한
-        // 건 대개 '끄기'이므로 무엇이 일어나는지 알려준다.
-        final int overfeedCount = getConfig().getInt("gimmick.overfeed.count", 10);
-        if (getConfig().getBoolean("gimmick.overfeed.enabled", true) && overfeedCount < 2) {
-            getLogger().warning("gimmick.overfeed.count 가 " + overfeedCount
-                + " 입니다. 2 미만은 먹이 몇 번에 바로 돼지가 된다는 뜻이라 2로 올려 씁니다."
-                + " 기믹을 끄려면 gimmick.overfeed.enabled: false 로 하세요.");
-        }
-
         final boolean overfeedOn = getConfig().getBoolean("gimmick.overfeed.enabled", true);
 
         // becomes 가 가리키는 펫이 없으면 종류는 안 바뀐다. model 이 따로 있으면 모습은
@@ -411,8 +402,6 @@ public final class BetterPetsPlugin extends JavaPlugin {
         return new GrowthService.Tuning(
             getConfig().getInt("growth.feed-amount", 10),
             getConfig().getBoolean("gimmick.overfeed.enabled", true),
-            getConfig().getInt("gimmick.overfeed.count", 10),
-            getConfig().getLong("gimmick.overfeed.window-seconds", 60) * 1000L,
             getConfig().getString("gimmick.overfeed.becomes", "pig"),
             getConfig().getString("gimmick.overfeed.model"),
             getConfig().getInt("gimmick.overfeed.chance", 100),

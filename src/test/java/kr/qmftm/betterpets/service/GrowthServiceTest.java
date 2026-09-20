@@ -10,7 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,6 +25,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>아기·성체 생애주기 구분은 없다 — 성장도의 유일한 역할은 next-stage 로 진화하기까지
  * 걸리는 시간이다. {@code wolf}/{@code pig} 는 next-stage 가 없는(=절대 안 자라는) 종류,
  * {@code hatchling} 은 next-stage 가 있어(=dragon) 실제로 진화하는 종류로 나눠 쓴다.
+ *
+ * <p>돼지가 되는 것도 이 진화의 갈림길에서만 일어난다 — {@code wolf}/{@code pig} 처럼
+ * next-stage 가 없는 종류는 자랄 기회 자체가 없으므로 포만도를 아무리 채워도 돼지가
+ * 되지 않는다.
  */
 class GrowthServiceTest {
 
@@ -53,16 +56,16 @@ class GrowthServiceTest {
     }
 
     private static GrowthService service() {
-        return service(false, 10, 60_000L);
+        return service(false);
     }
 
-    private static GrowthService service(final boolean overfeed,
-                                         final int overfeedCount, final long windowMillis) {
+    /** 과급식 기믹만 켜고 끄는 축약형. 확률·포만도 기준을 따로 볼 테스트는 Tuning 을 직접 만든다. */
+    private static GrowthService service(final boolean overfeed) {
         return new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
             // 포만도·감소는 여기서 다루지 않는 테스트들이 걸리지 않게 넉넉히/꺼둔 채로 둔다.
             // 그 자체를 보는 테스트는 별도 Tuning 을 직접 만든다.
-            new GrowthService.Tuning(10, overfeed, overfeedCount, windowMillis, "pig", null, 100, 0, 0, 0, 1_000, 0));
+            new GrowthService.Tuning(10, overfeed, "pig", null, 100, 0, 0, 0, 1_000, 0));
     }
 
     private static final FeedDefinition MILK =
@@ -94,7 +97,7 @@ class GrowthServiceTest {
         final GrowthService service = service();
         assertEquals(1_000, service.fullnessMax());
 
-        service.tuning(new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 500, 0));
+        service.tuning(new GrowthService.Tuning(10, false, "pig", null, 100, 0, 0, 0, 500, 0));
 
         assertEquals(500, service.fullnessMax(), "리로드하면 반영돼야 한다");
         assertEquals(10, service.feedAmount());
@@ -103,9 +106,8 @@ class GrowthServiceTest {
     @Test
     @DisplayName("설정 묶음이 값을 접는다 — 접는 자리가 하나여야 새는 경로가 없다")
     void tuningClampsBadValues() {
-        final var broken = new GrowthService.Tuning(10, true, 0, 60_000L, "pig", null, 100, 0, -5, -1, 0, -100L);
+        final var broken = new GrowthService.Tuning(10, true, "pig", null, 100, 0, -5, -1, 0, -100L);
 
-        assertEquals(2, broken.overfeedCount(), "0 이면 첫 급여에 바로 돼지가 된다");
         assertEquals(0, broken.fullnessMinGain(), "음수 증가량은 먹일수록 깎는다는 뜻이라 안 된다");
         assertEquals(0, broken.fullnessMaxGain(), "최소보다 작은 최대는 nextInt 를 터뜨린다");
         assertEquals(1, broken.fullnessMax(), "0 이면 첫 급여부터 막힌다");
@@ -196,7 +198,7 @@ class GrowthServiceTest {
     void feedingTerminalTypeDoesNotRaiseGrowth() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 5, 5, 1_000, 0));
+            new GrowthService.Tuning(10, false, "pig", null, 100, 0, 5, 5, 1_000, 0));
         final PetData pet = baby("wolf");
 
         assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
@@ -209,7 +211,7 @@ class GrowthServiceTest {
     void fullnessBlocksFeedingAtThreshold() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 10, 10, 15, 0));
+            new GrowthService.Tuning(10, false, "pig", null, 100, 0, 10, 10, 15, 0));
         final PetData pet = baby("hatchling");
 
         assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
@@ -231,7 +233,7 @@ class GrowthServiceTest {
         final long decayMillis = 30_000L;
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
+            new GrowthService.Tuning(10, false, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
 
         final long now = System.currentTimeMillis();
         // 다섯 간격 전에 포만도 20으로 저장돼 있던 펫 — 지금 보면 15여야 한다.
@@ -247,7 +249,7 @@ class GrowthServiceTest {
     void fullnessDecayCanBeDisabled() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, 0));
+            new GrowthService.Tuning(10, false, "pig", null, 100, 0, 0, 0, 1_000, 0));
 
         final long now = System.currentTimeMillis();
         final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null, null,
@@ -265,7 +267,7 @@ class GrowthServiceTest {
         final long decayMillis = 30_000L;
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
+            new GrowthService.Tuning(10, false, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
 
         final long now = System.currentTimeMillis();
         final long fullnessAt = now - 29_000L;
@@ -286,7 +288,7 @@ class GrowthServiceTest {
         final long decayMillis = 30_000L;
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
+            new GrowthService.Tuning(10, false, "pig", null, 100, 0, 0, 0, 1_000, decayMillis));
 
         final long now = System.currentTimeMillis();
         final PetData pet = new PetData(UUID.randomUUID(), OWNER, "wolf", null, null,
@@ -330,7 +332,7 @@ class GrowthServiceTest {
         chain.put("juvenile", type("juvenile", 100, RideMode.GROUND, Map.of("dragon", 1)));
         chain.put("dragon", type("dragon", 100, RideMode.FLY, Map.of()));
         final GrowthService growth = new GrowthService(id -> Optional.ofNullable(chain.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, 0));
+            new GrowthService.Tuning(10, false, "pig", null, 100, 0, 0, 0, 1_000, 0));
         final PetData pet = PetData.newBaby(OWNER, "egg", System.currentTimeMillis());
 
         assertEquals(GrowthService.FeedResult.STAGE_UP, growth.feed(pet, FEAST));
@@ -353,7 +355,7 @@ class GrowthServiceTest {
         final Map<String, PetType> world = new LinkedHashMap<>();
         world.put("hatchling", type("hatchling", 100, RideMode.GROUND, Map.of("hatchling", 1)));
         final GrowthService growth = new GrowthService(id -> Optional.ofNullable(world.get(id)),
-            new GrowthService.Tuning(10, false, 10, 60_000L, "pig", null, 100, 0, 0, 0, 1_000, 0));
+            new GrowthService.Tuning(10, false, "pig", null, 100, 0, 0, 0, 1_000, 0));
         final PetData pet = PetData.newBaby(OWNER, "hatchling", System.currentTimeMillis());
 
         assertEquals(GrowthService.FeedResult.STAGE_UP, growth.feed(pet, FEAST));
@@ -376,17 +378,45 @@ class GrowthServiceTest {
     }
 
     @Test
-    @DisplayName("짧은 시간에 몰아 먹이면 돼지가 된다 — 종류까지 바뀐다")
-    void overfeedingTurnsIntoAPig() {
-        final GrowthService growth = service(true, 3, 60_000L);
-        final PetData pet = baby("wolf");
+    @DisplayName("진화하는 순간 포만도가 충분하면 다음 형태 대신 돼지가 된다")
+    void evolvingWithEnoughFullnessBecomesAPigInstead() {
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, true, "pig", null, 100, 0, 0, 0, 1_000, 0));
+        final PetData pet = baby("hatchling");
 
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
-        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, MILK));
+        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, FEAST));
 
         assertEquals(LifeStage.PIG, pet.stage());
         assertEquals("pig", pet.typeId(), "상태만 바꾸면 메시지와 화면이 어긋난다");
+    }
+
+    @Test
+    @DisplayName("next-stage 가 없는 종류는 포만도가 충분해도 돼지가 되지 않는다 — 자랄 기회가 없다")
+    void terminalTypesNeverBecomePigs() {
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, true, "pig", null, 100, 0, 0, 0, 1_000, 0));
+        final PetData pet = baby("wolf");
+
+        for (int i = 0; i < 5; i++) {
+            growth.feed(pet, FEAST);
+        }
+        assertFalse(pet.stage() == LifeStage.PIG);
+        assertEquals("wolf", pet.typeId());
+    }
+
+    @Test
+    @DisplayName("진화 순간 포만도가 기준에 못 미치면 원래대로 진화한다")
+    void evolvingWithoutEnoughFullnessEvolvesNormally() {
+        final GrowthService growth = new GrowthService(
+            id -> Optional.ofNullable(WORLD.get(id)),
+            new GrowthService.Tuning(10, true, "pig", null, 100, 50, 0, 0, 1_000, 0));
+        final PetData pet = baby("hatchling");
+
+        assertEquals(GrowthService.FeedResult.STAGE_UP, growth.feed(pet, FEAST),
+            "포만도(0)가 기준(50)에 못 미치면 정상 진화한다");
+        assertEquals("dragon", pet.typeId());
     }
 
     @Test
@@ -394,14 +424,13 @@ class GrowthServiceTest {
     void overfeedModelAloneOnlyChangesAppearance() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, true, 2, 60_000L, "", "custom_pig_model", 100, 0, 0, 0, 1_000, 0));
-        final PetData pet = baby("wolf");
+            new GrowthService.Tuning(10, true, "", "custom_pig_model", 100, 0, 0, 0, 1_000, 0));
+        final PetData pet = baby("hatchling");
 
-        growth.feed(pet, MILK);
-        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, MILK));
+        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, FEAST));
 
         assertEquals(LifeStage.PIG, pet.stage());
-        assertEquals("wolf", pet.typeId(), "becomes 가 없으면 종류는 안 바뀐다");
+        assertEquals("hatchling", pet.typeId(), "becomes 가 없으면 종류는 안 바뀐다");
         assertEquals("custom_pig_model", pet.modelOverride());
     }
 
@@ -410,83 +439,35 @@ class GrowthServiceTest {
     void overfeedBecomesAndModelCanCombine() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, true, 2, 60_000L, "pig", "custom_pig_model", 100, 0, 0, 0, 1_000, 0));
-        final PetData pet = baby("wolf");
+            new GrowthService.Tuning(10, true, "pig", "custom_pig_model", 100, 0, 0, 0, 1_000, 0));
+        final PetData pet = baby("hatchling");
 
-        growth.feed(pet, MILK);
-        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, MILK));
+        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, FEAST));
 
         assertEquals("pig", pet.typeId());
         assertEquals("custom_pig_model", pet.modelOverride());
     }
 
     @Test
-    @DisplayName("발동 확률이 0이면 조건을 아무리 채워도 발동하지 않는다")
+    @DisplayName("발동 확률이 0이면 조건을 채워도 발동하지 않고 원래대로 진화한다")
     void overfeedNeverFiresWhenChanceIsZero() {
         final GrowthService growth = new GrowthService(
             id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, true, 2, 60_000L, "pig", null, 0, 0, 0, 0, 1_000, 0));
-        final PetData pet = baby("wolf");
+            new GrowthService.Tuning(10, true, "pig", null, 0, 0, 0, 0, 1_000, 0));
+        final PetData pet = baby("hatchling");
 
-        for (int i = 0; i < 20; i++) {
-            assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
-        }
-        assertFalse(pet.stage() == LifeStage.PIG);
+        assertEquals(GrowthService.FeedResult.STAGE_UP, growth.feed(pet, FEAST));
+        assertEquals("dragon", pet.typeId());
     }
 
     @Test
-    @DisplayName("발동 조건(횟수)을 채워도 포만도가 기준에 못 미치면 발동을 미룬다")
-    void overfeedWaitsForMinimumFullness() {
-        final GrowthService growth = new GrowthService(
-            id -> Optional.ofNullable(WORLD.get(id)),
-            new GrowthService.Tuning(10, true, 2, 60_000L, "pig", null, 100, 25, 10, 10, 1_000, 0));
-        final PetData pet = baby("wolf");
-
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK), "1번째: 포만도 10");
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK),
-            "횟수 조건은 채웠지만(2/2) 포만도(20)가 기준(25)에 못 미친다");
-        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, MILK),
-            "포만도(30)가 기준을 넘긴 순간 발동한다");
-    }
-
-    @Test
-    @DisplayName("기믹을 끄면 아무리 먹여도 돼지가 되지 않는다")
+    @DisplayName("기믹을 끄면 포만도가 충분해도 돼지가 되지 않고 원래대로 진화한다")
     void overfeedCanBeDisabled() {
-        final GrowthService growth = service(false, 2, 60_000L);
-        final PetData pet = baby("wolf");
+        final GrowthService growth = service(false);
+        final PetData pet = baby("hatchling");
 
-        for (int i = 0; i < 10; i++) {
-            growth.feed(pet, MILK);
-        }
-        assertFalse(pet.stage() == LifeStage.PIG);
-    }
-
-    @Test
-    @DisplayName("과급식 카운터는 펫마다 따로다 — 여러 마리를 번갈아 먹여도 안 뭉친다")
-    void burstCounterIsPerPet() {
-        // 카운터를 소유자 단위로 세면, 펫 세 마리에게 한 번씩 준 사람이 돼지를 얻는다.
-        final GrowthService growth = service(true, 3, 60_000L);
-        final PetData a = baby("wolf");
-        final PetData b = baby("wolf");
-        final PetData c = baby("wolf");
-
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(a, MILK));
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(b, MILK));
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(c, MILK));
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(a, MILK));
-    }
-
-    @Test
-    @DisplayName("돼지가 된 뒤 카운터가 비워진다 — 아니면 한 번만 먹여도 또 걸린다")
-    void burstCounterResetsAfterTheGimmickFires() {
-        final GrowthService growth = service(true, 2, 60_000L);
-        final PetData pet = baby("wolf");
-        growth.feed(pet, MILK);
-        assertEquals(GrowthService.FeedResult.BECAME_PIG, growth.feed(pet, MILK));
-
-        // 돼지는 과급식 대상이 아니므로(stage != NORMAL) 다시 걸리지 않는다.
-        // 카운터가 남아 있었다면 여기서 다시 BECAME_PIG 가 나온다.
-        assertEquals(GrowthService.FeedResult.FED, growth.feed(pet, MILK));
+        assertEquals(GrowthService.FeedResult.STAGE_UP, growth.feed(pet, FEAST));
+        assertEquals("dragon", pet.typeId());
     }
 
     @Test

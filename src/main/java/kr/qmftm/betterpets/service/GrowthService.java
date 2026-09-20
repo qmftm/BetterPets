@@ -24,6 +24,12 @@ import java.util.concurrent.ThreadLocalRandom;
  * 없는 종류는 <b>애초에 기다릴 게 없으므로</b> 성장도가 아예 오르지 않는다.
  *
  * <p>알 아이템은 펫을 곧바로 꺼내주므로 부화 단계는 없다.
+ *
+ * <p><b>돼지가 되는 것도 이 진화의 갈림길에서만 일어난다.</b> next-stage 로 넘어가는
+ * 바로 그 순간, 포만도가 {@code gimmick.overfeed.min-fullness} 이상이면 다음 형태
+ * 대신 돼지가 된다({@link #promoteIfGrown} 참고). 그래서 next-stage 가 없는 종류
+ * (예: 이미 다 자란 성체, 처음부터 진화하지 않는 종류)는 아무리 먹여도 돼지가 되지
+ * 않는다 — 자랄 기회가 없으면 그 기회를 가로챌 것도 없다.
  */
 public final class GrowthService {
 
@@ -42,8 +48,8 @@ public final class GrowthService {
      *
      * <p>예전에는 이 값들을 생성자에서 붙박아 두고 있었다. {@code /betterpets reload} 로는
      * 바꿀 수 없었다는 뜻이다 — 과급식 기믹도 그랬다. 심지어 기동 코드는 리로드 때마다
-     * {@code gimmick.overfeed.count} 를 다시 읽어 경고까지 냈으면서 정작 그 값을 쓰는
-     * 이쪽에는 밀어 넣지 않았다.
+     * {@code gimmick.overfeed.min-fullness} 를 다시 읽어 경고까지 냈으면서 정작 그 값을
+     * 쓰는 이쪽에는 밀어 넣지 않았다.
      *
      * <p>{@link kr.qmftm.betterpets.domain.PetLimits}·{@code BroadcastService.Rules} 와
      * 같은 방식으로 묶는다 — 레코드 하나를 통째로 갈아끼우면 절반만 반영된 상태가
@@ -54,8 +60,6 @@ public final class GrowthService {
     /** 설정 묶음. 값을 접는 규칙도 여기 둔다 — 접는 자리가 하나면 새는 경로가 없다. */
     public record Tuning(int feedAmount,
                          boolean overfeedGimmick,
-                         int overfeedCount,
-                         long overfeedWindowMillis,
                          String overfeedBecomes,
                          String overfeedModel,
                          int overfeedChance,
@@ -65,9 +69,6 @@ public final class GrowthService {
                          int fullnessMax,
                          long fullnessDecayMillis) {
         public Tuning {
-            // 0 이하로 두면 registerBurst 가 첫 급여에서 바로 참이 된다 — 먹이 한 번에
-            // 모든 펫이 돼지가 된다는 뜻이다. 끄고 싶으면 enabled: false 를 쓴다.
-            overfeedCount = Math.max(2, overfeedCount);
             // 100 이상이면 항상 발동, 0 이하면 조건을 채워도 절대 발동하지 않는다는 뜻이라
             // 그대로 둔다 — enabled 와 달리 "거의 안 터지게" 도 의도일 수 있다.
             overfeedChance = Math.min(100, Math.max(0, overfeedChance));
@@ -85,29 +86,8 @@ public final class GrowthService {
         }
     }
 
-    /**
-     * 펫별 과급식 카운터. 짧은 시간에 몰아 먹이면 돼지가 된다.
-     *
-     * <p>항목은 창(window)이 지나면 의미가 없어지는데, 지우는 곳이 "실제로 돼지가 됐을 때"
-     * 하나뿐이었다. 먹이를 준 모든 펫의 항목이 서버가 살아 있는 내내 남았다는 뜻이다 —
-     * 놓아준 펫도, 퇴장한 플레이어의 펫도. 항목 하나는 작지만 상한이 없는 게 문제다.
-     * {@link #pruneExpired} 가 가끔 훑어 지운다.
-     */
-    private final java.util.Map<java.util.UUID, FeedBurst> bursts = new java.util.concurrent.ConcurrentHashMap<>();
-
-    /**
-     * 이 개수를 넘으면 만료된 항목을 훑어 지운다.
-     *
-     * <p>급여마다 전체를 훑으면 마리 수에 비례하는 일을 매번 하게 된다. 반대로 아예 안
-     * 훑으면 무한히 쌓인다. 5명 서버에서 동시에 과급식 중인 펫이 이 수를 넘을 일은
-     * 없으므로, 넘었다는 건 곧 대부분이 만료된 찌꺼기라는 뜻이다.
-     */
-    private static final int BURST_PRUNE_THRESHOLD = 64;
-
     /** 종류를 찾지 못했을 때 쓰는 성장 상한. 설정이 깨져도 0으로 나누거나 즉시 진화하지 않게 한다. */
     private static final int DEFAULT_GROWTH_MAX = 100;
-
-    private record FeedBurst(int count, long since) {}
 
     /** 운영용. 조회를 카탈로그에 맡긴다. */
     public GrowthService(final PetCatalog catalog, final Tuning tuning) {
@@ -267,14 +247,12 @@ public final class GrowthService {
             data.addGrowth(feed.growthOr(tuning.feedAmount()), type.growthMax());
         }
 
-        if (tuning.overfeedGimmick() && registerBurst(data) && meetsOverfeedFullness(data) && rollOverfeedChance()) {
-            becomePig(data);
-            bursts.remove(data.petId());
-            return FeedResult.BECAME_PIG;
-        }
-
         final StageResult stageResult = promoteIfGrown(data);
-        return stageResult == StageResult.STAGE_UP ? FeedResult.STAGE_UP : FeedResult.FED;
+        return switch (stageResult) {
+            case STAGE_UP -> FeedResult.STAGE_UP;
+            case BECAME_PIG -> FeedResult.BECAME_PIG;
+            case NONE -> FeedResult.FED;
+        };
     }
 
     /**
@@ -284,15 +262,15 @@ public final class GrowthService {
      * 걸리는 시간이다. <b>{@link PetType#growsToNextStage} 가 아닌 종류는 이 메서드가
      * 할 일이 없다.</b> 성장도 자체가 오르지 않으므로(={@link #growsOverTime})
      * {@code growth() < growthMax()} 조건에 항상 걸려 {@link StageResult#NONE} 만
-     * 돌려준다 — 계속 {@link LifeStage#NORMAL} 로 남는다. 일부러 다른 상태로
-     * 승격시키지 않는다: 그러면 {@code registerBurst} 가 {@code stage() == NORMAL} 을
-     * 요구하는 과급식 기믹이 이런 종류에서 첫 급여 한 번 만에 막혀버린다. 진화 여부와
-     * 과급식 대상 여부는 서로 다른 판정이라 하나가 다른 하나를 침범하면 안 된다.
+     * 돌려준다 — 계속 {@link LifeStage#NORMAL} 로 남는다.
      *
-     * <p>{@code growsToNextStage} 인 종류만 성장도가 상한에 닿을 때까지 기다렸다가,
-     * {@code next-stage} 가중치로 종류를 다시 뽑고(자기 자신이 나오면 "한 단계 더
-     * 기다린다") 성장도를 0부터 다시 채운다. 뽑힌 종류에마저 진화할 곳이 없으면,
-     * 그 뒤로는 이 메서드가 다시 위 문단의 경우로 떨어져 조용히 멈춘다.
+     * <p>{@code growsToNextStage} 인 종류만 성장도가 상한에 닿을 때까지 기다린다. 그 순간
+     * <b>다음 형태로 진화하는 대신 돼지가 될 수도 있다</b> — 포만도가 {@code min-fullness}
+     * 이상이고 기믹이 켜져 있으면(그리고 {@code chance} 를 통과하면) {@link #becomePig} 로
+     * 빠진다. 그러지 못했으면 {@code next-stage} 가중치로 종류를 다시 뽑고(자기 자신이
+     * 나오면 "한 단계 더 기다린다") 성장도를 0부터 다시 채운다. <b>next-stage 가 없는
+     * 종류는 자랄 기회 자체가 없으므로 이 경로로도 돼지가 되지 않는다</b> — 돼지가 되는
+     * 건 진화가 갈라지는 그 순간뿐이지, 과급식 자체가 별도의 사건은 아니다.
      *
      * @return 이번 호출로 일어난 일. 아직 자랄 게 남았으면 {@link StageResult#NONE}
      */
@@ -307,6 +285,11 @@ public final class GrowthService {
         }
         if (type == null || !type.growsToNextStage() || data.growth() < type.growthMax()) {
             return StageResult.NONE;
+        }
+
+        if (tuning.overfeedGimmick() && meetsOverfeedFullness(data) && rollOverfeedChance()) {
+            becomePig(data);
+            return StageResult.BECAME_PIG;
         }
 
         final String nextTypeId = Weighted.pick(type.nextStage(), ThreadLocalRandom.current(), type.id());
@@ -342,14 +325,14 @@ public final class GrowthService {
         }
     }
 
-    /** 과급식 최종 발동에 필요한 최소 포만도. 0 이면 조건 없음(항상 통과). */
+    /** 진화 순간의 포만도가 이 기준을 넘어야 돼지가 된다. 0 이면 조건 없음(항상 통과). */
     private boolean meetsOverfeedFullness(final PetData data) {
         return data.fullness() >= tuning.overfeedMinFullness();
     }
 
     /**
      * 조건을 다 채워도 이 확률로만 실제 발동한다. 100 이상이면 항상 발동, 0이면 절대
-     * 발동하지 않는다. 실패해도 과급식 카운터는 그대로 둔다 — 다음 급여에서 다시 굴린다.
+     * 발동하지 않는다. 실패하면 원래대로 next-stage 진화가 그대로 일어난다.
      */
     private boolean rollOverfeedChance() {
         final int chance = tuning.overfeedChance();
@@ -367,41 +350,6 @@ public final class GrowthService {
         final int min = tuning.fullnessMinGain();
         final int max = tuning.fullnessMaxGain();
         return min == max ? min : ThreadLocalRandom.current().nextInt(min, max + 1);
-    }
-
-    /** 과급식 판정. 창 안에서 기준 횟수를 넘으면 true. */
-    private boolean registerBurst(final PetData data) {
-        if (data.stage() != LifeStage.NORMAL) {
-            return false;
-        }
-        final long now = System.currentTimeMillis();
-        if (bursts.size() > BURST_PRUNE_THRESHOLD) {
-            pruneExpired(now);
-        }
-        final FeedBurst updated = bursts.compute(data.petId(), (key, existing) -> {
-            if (existing == null || now - existing.since() > tuning.overfeedWindowMillis()) {
-                return new FeedBurst(1, now);
-            }
-            return new FeedBurst(existing.count() + 1, existing.since());
-        });
-        return updated.count() >= tuning.overfeedCount();
-    }
-
-    /** 창이 지난 항목을 지운다. 지나면 어차피 새 창으로 다시 시작하므로 값이 없다. */
-    private void pruneExpired(final long now) {
-        // 창 길이를 한 번만 읽는다. 람다 안에서 읽으면 항목마다 volatile 을 다시 읽고,
-        // 훑는 도중 리로드가 끼면 앞뒤 항목이 다른 기준으로 지워진다.
-        final long window = tuning.overfeedWindowMillis();
-        bursts.entrySet().removeIf(entry -> now - entry.getValue().since() > window);
-    }
-
-    /**
-     * 이 펫의 과급식 카운터를 버린다.
-     *
-     * <p>돼지가 된 펫과 놓아준 펫의 항목은 남겨둘 이유가 없다.
-     */
-    public void forget(final PetData data) {
-        bursts.remove(data.petId());
     }
 
     public int maxOf(final PetData data) {
@@ -439,6 +387,8 @@ public final class GrowthService {
         /** 진화가 일어나지 않았다 — 아직 안 찼거나, 애초에 진화할 곳이 없는 종류다. */
         NONE,
         /** 다음 종류로 진화했다. */
-        STAGE_UP
+        STAGE_UP,
+        /** 진화하는 순간 다음 형태 대신 돼지가 됐다. */
+        BECAME_PIG
     }
 }

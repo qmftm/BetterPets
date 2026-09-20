@@ -26,6 +26,9 @@ pet:
   released: "<gray>You released the pet."
   # Evolved from time passing. The fed-to-evolve path uses feed.stage-up.
   stage-up: "<aqua>%name% <gray>evolved. <dark_gray>(stage %stage%)"
+  # Became a pig instead, right as it was about to evolve from time passing.
+  # The fed-to-evolve path uses feed.became-pig.
+  became-pig: "<yellow>You overfed it... it turned into a pig."
   release-hint: "<yellow>Use /pet release %id% <gray>to let it go. <red>This cannot be undone."
   rename-hint: "<gray>Use /pet rename %id% <name> to rename it."
   rename-pick: "<yellow>You have several pets out. <gray>Use /pet rename <petId> <name> to pick one."
