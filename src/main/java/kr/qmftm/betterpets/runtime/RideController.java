@@ -2,6 +2,7 @@ package kr.qmftm.betterpets.runtime;
 
 import org.bukkit.Input;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
@@ -37,6 +38,14 @@ public final class RideController {
 
     /** 경로 검사 서브스텝 간격. 이보다 크게 움직이면 얇은 벽을 관통할 수 있다. */
     private static final double SUB_STEP = 0.45;
+
+    /**
+     * 지상 탑승이 내려갈 때 디딜 곳을 찾는 한계 칸수. {@code MovementController.groundLevel} 과
+     * 같은 값이다 — 그보다 깊으면 절벽으로 보고 그 앞에서 멈춘다(오르는 높이만
+     * {@code ride.max-step-height} 로 설정에 노출한다. 내려가는 쪽은 걷는 펫과 달리
+     * 사용자가 직접 조향하므로, 절벽에서 멈추는 편이 갑자기 뚝 떨어지는 것보다 안전하다).
+     */
+    private static final int MAX_STEP_DOWN = 3;
 
     /** 탑승자 몸통 반경. 중심만 검사하면 어깨가 벽에 낀다. */
     private static final double BODY_RADIUS = 0.35;
@@ -82,6 +91,7 @@ public final class RideController {
     private volatile double flightMaxHeight;
     private volatile double seatOffset;
     private volatile double hoverHeight;
+    private volatile double maxStepHeight;
 
     /**
      * 지형 검사용 위치 버퍼.
@@ -104,6 +114,7 @@ public final class RideController {
         flightMaxHeight = plugin.getConfig().getDouble("ride.flight-max-height", 1024.0);
         seatOffset = plugin.getConfig().getDouble("ride.seat-offset", 0.0);
         hoverHeight = plugin.getConfig().getDouble("ride.hover-height", 0.0);
+        maxStepHeight = Math.max(0.0, plugin.getConfig().getDouble("ride.max-step-height", 1.0));
     }
 
     /**
@@ -346,6 +357,9 @@ public final class RideController {
             move.normalize().multiply(ride.speed);
         }
 
+        final float yaw = eye.getYaw();
+        final Location base = ride.mount.getLocation();
+
         if (ride.flying) {
             // 점프=상승, 스니크=하강. 정확히 반대짝이라 둘 다 눌리면 상쇄된다.
             if (input.isJump()) {
@@ -354,25 +368,109 @@ public final class RideController {
             if (input.isSneak()) {
                 move.setY(move.getY() - ride.flightLift);
             }
-        } else {
-            // 지상 탑승은 수평 이동만. 지면 높이는 아래에서 맞춘다.
-            move.setY(0);
-        }
 
-        final float yaw = eye.getYaw();
-        final Location base = ride.mount.getLocation();
+            if (move.lengthSquared() < 1.0e-6) {
+                ride.mount.setRotation(yaw, 0.0f);  // 정지 중에도 바라보는 방향은 따라간다
+                return;
+            }
 
-        if (move.lengthSquared() < 1.0e-6) {
-            ride.mount.setRotation(yaw, 0.0f);      // 정지 중에도 바라보는 방향은 따라간다
+            // 전체 이동 → 수평만 → 수직만. 한 축이 막혔다고 전부 멈추지 않게 하는 벽 슬라이딩이다.
+            if (!tryMove(ride, base, move.getX(), move.getY(), move.getZ(), yaw)
+                && !tryMove(ride, base, move.getX(), 0.0, move.getZ(), yaw)
+                && !tryMove(ride, base, 0.0, move.getY(), 0.0, yaw)) {
+                ride.mount.setRotation(yaw, 0.0f);
+            }
             return;
         }
 
-        // 전체 이동 → 수평만 → 수직만. 한 축이 막혔다고 전부 멈추지 않게 하는 벽 슬라이딩이다.
-        if (!tryMove(ride, base, move.getX(), move.getY(), move.getZ(), yaw)
-            && !tryMove(ride, base, move.getX(), 0.0, move.getZ(), yaw)
-            && !tryMove(ride, base, 0.0, move.getY(), 0.0, yaw)) {
+        // 지상 탑승은 수평 이동만 입력에서 받는다. 지면 높이는 tryGroundMove 가 맞춘다 —
+        // 그대로 두면(예전 방식) 마운트가 탑승 시작 높이를 그대로 붙든 채 수평으로만
+        // 움직여서, 내리막에서는 허공에 뜨고 오르막에서는 벽처럼 막혔다.
+        if (move.lengthSquared() < 1.0e-6) {
+            ride.mount.setRotation(yaw, 0.0f);
+            return;
+        }
+
+        if (!tryGroundMove(ride, base, move.getX(), move.getZ(), yaw)
+            && !tryGroundMove(ride, base, move.getX(), 0.0, yaw)
+            && !tryGroundMove(ride, base, 0.0, move.getZ(), yaw)) {
             ride.mount.setRotation(yaw, 0.0f);
         }
+    }
+
+    /**
+     * 지상 탑승 전용 전진. {@link #tryMove} 와 달리 목적지 y 를 입력에서 받지 않고
+     * {@link #groundLevel} 로 매 서브스텝 직접 구한다 — 오르막·내리막을 따라간다.
+     *
+     * @return 한 칸이라도 나아갔으면 true. 첫 서브스텝부터 막혀 있으면 false(제자리)
+     */
+    private boolean tryGroundMove(final Ride ride, final Location base,
+                                  final double dx, final double dz, final float yaw) {
+        if (dx == 0.0 && dz == 0.0) {
+            return false;
+        }
+        final double distance = Math.sqrt(dx * dx + dz * dz);
+        final int steps = Math.max(1, (int) Math.ceil(distance / SUB_STEP));
+        final World world = base.getWorld();
+
+        double x = base.getX();
+        double y = base.getY();
+        double z = base.getZ();
+        boolean moved = false;
+
+        for (int i = 1; i <= steps; i++) {
+            final double fraction = (double) i / steps;
+            final double nx = base.getX() + dx * fraction;
+            final double nz = base.getZ() + dz * fraction;
+            final double ny = groundLevel(world, nx, nz, y);
+            if (Double.isNaN(ny) || !isSafe(world, nx, ny, nz, false)) {
+                break;      // 여기부터 막혔다. 직전까지만 인정한다
+            }
+            x = nx;
+            y = ny;
+            z = nz;
+            moved = true;
+        }
+        if (!moved) {
+            return false;
+        }
+        final Location target = new Location(world, x, y, z, yaw, 0.0f);
+        ride.mount.teleport(target);
+        return true;
+    }
+
+    /**
+     * 지상 탑승이 이 (x, z) 로 옮겨갈 때 디딜 y. {@code MovementController.groundLevel} 과
+     * 같은 기법이지만 오르는 높이만 {@link #maxStepHeight} 로 설정에서 조절한다.
+     *
+     * @return 디딜 y. 두 칸 벽이거나 {@link #MAX_STEP_DOWN} 칸 안에 바닥이 없으면 {@link Double#NaN}
+     */
+    private double groundLevel(final World world, final double x, final double z, final double currentY) {
+        probe.setWorld(world);
+        probe.setX(x);
+        probe.setZ(z);
+
+        if (isSolidAt(currentY)) {
+            for (double step = 1.0; step <= maxStepHeight + 1.0e-6; step += 1.0) {
+                final double candidate = currentY + step;
+                if (!isSolidAt(candidate)) {
+                    return candidate;
+                }
+            }
+            return Double.NaN;          // maxStepHeight 안에서 디딜 곳이 없다
+        }
+        for (int drop = 1; drop <= MAX_STEP_DOWN; drop++) {
+            if (isSolidAt(currentY - drop)) {
+                return currentY - drop + 1.0;
+            }
+        }
+        return Double.NaN;              // 절벽이다. 그 앞에서 멈춘다
+    }
+
+    /** {@link #probe} 의 x·z 를 그대로 두고 높이만 바꿔 확인한다. */
+    private boolean isSolidAt(final double y) {
+        probe.setY(y);
+        return probe.getBlock().getType().isSolid();
     }
 
     /**
