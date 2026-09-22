@@ -1,4 +1,4 @@
-# 🐾 BetterPets
+# 🐾 QuantumPets
 
 _알에서 키워 타고 다니는 펫: Paper 26.2와 [BetterModel](https://github.com/toxicity188/BetterModel) 기반_
 
@@ -24,13 +24,13 @@ Paper 서버에 옮긴 플러그인이에요.
 | Java | **25**: BetterModel 이 Java 25로 빌드돼 있어서 그 아래로는 로드되지 않아요 |
 | [BetterModel](https://hangar.papermc.io/toxicity188/BetterModel) | **3.4.1+**: 없으면 플러그인이 스스로 꺼집니다 |
 
-1. BetterModel 과 `BetterPets-*.jar` 를 `plugins/` 에 넣고 서버 재시작
+1. BetterModel 과 `QuantumPets-*.jar` 를 `plugins/` 에 넣고 서버 재시작
 2. `.bbmodel` 모델을 `plugins/BetterModel/models/` 에 넣기 → [모델 규격](docs/MODELING.md)
-3. `/betterpets egg <닉네임> chaos_egg` 로 알을 받아 우클릭
+3. `/quantumpets egg <닉네임> chaos_egg` 로 알을 받아 우클릭
 
-처음 켜면 `plugins/BetterPets/` 에 설정이 전부 생기고, 예시 펫 5종(혼돈의 알 · 아기
+처음 켜면 `plugins/QuantumPets/` 에 설정이 전부 생기고, 예시 펫 5종(혼돈의 알 · 아기
 팬텀 · 팬텀 · 엔더 팬텀 · 돼지)도 같이 들어 있어요. 파일을 열어 고치고
-`/betterpets reload` 하면 바로 적용됩니다.
+`/quantumpets reload` 하면 바로 적용됩니다.
 
 **→ 명령어 · 권한 · 설정은 [사용 안내](docs/USAGE.md)에 있어요.**
 
@@ -48,7 +48,7 @@ Paper 서버에 옮긴 플러그인이에요.
 
 ```bash
 export JAVA_HOME=/path/to/jdk-25     # 25 필수
-mvn clean package                    # target/BetterPets-*.jar
+mvn clean package                    # target/QuantumPets-*.jar
 ```
 
 외부 런타임 의존성이 없습니다. 저장은 YAML 로 해요.

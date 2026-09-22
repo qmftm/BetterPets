@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 /**
- * PlaceholderAPI 확장. {@code %betterpets_<키>%}
+ * PlaceholderAPI 확장. {@code %quantumpets_<키>%}
  *
  * <p><b>여기만 컴파일 의존을 건다.</b> {@link PlaceholderExpansion} 을 상속해야 해서
  * 리플렉션으로는 등록조차 할 수 없다 — DiscordSRV·Floodgate 와 다른 점이다. 대신
@@ -92,7 +92,7 @@ public final class PetPlaceholders extends PlaceholderExpansion {
             final boolean ok = new PetPlaceholders(plugin, store, registry, catalog, growth, pets)
                 .register();
             plugin.getLogger().info(ok
-                ? "PlaceholderAPI 연동됨. %betterpets_...% 를 쓸 수 있습니다."
+                ? "PlaceholderAPI 연동됨. %quantumpets_...% 를 쓸 수 있습니다."
                 : "PlaceholderAPI 확장 등록에 실패했습니다.");
             return ok;
         } catch (final LinkageError | RuntimeException error) {
@@ -103,7 +103,7 @@ public final class PetPlaceholders extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getIdentifier() {
-        return "betterpets";
+        return "quantumpets";
     }
 
     @Override

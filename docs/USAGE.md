@@ -3,7 +3,7 @@
 설치와 소개는 [README](../README.md)에 있어요. 이 문서는 **명령어 · 권한 · 설정 · 문제 해결**을
 다룹니다.
 
-설정을 고친 뒤에는 `/betterpets reload` 로 바로 적용할 수 있어요. 오타가 있으면 무엇이
+설정을 고친 뒤에는 `/quantumpets reload` 로 바로 적용할 수 있어요. 오타가 있으면 무엇이
 잘못됐는지 하나씩 알려줍니다.
 
 ---
@@ -39,18 +39,18 @@
 여러 마리를 데리고 다니는 중이면 id 를 앞에 적어 주세요. **네 자리 이상 16진수**만
 id 로 읽으니, `/pet rename 왕 드래곤` 처럼 이름으로 시작해도 이름으로 처리됩니다.
 
-**관리자** — `/betterpets` 는 `/bp` 로 줄여 써도 됩니다.
+**관리자** — `/quantumpets` 는 `/bp` 로 줄여 써도 됩니다.
 
 | 명령어 | 설명 |
 | --- | --- |
-| `/betterpets give <플레이어> <펫종류>` | 펫 바로 지급 |
-| `/betterpets egg <플레이어> <알id> [개수]` | 알 아이템 지급 |
-| `/betterpets feed <플레이어> <먹이id> [개수]` | 먹이 아이템 지급 |
-| `/betterpets eggmaterial <알id>` | 손에 든 아이템으로 그 알의 재질을 바꿉니다 |
-| `/betterpets growth <플레이어> <펫id> <양>` | 성장도 지급 |
-| `/betterpets remove <플레이어> <펫id\|all>` | 펫을 강제로 놓아줍니다. `all` 이면 전부. <dark_gray>되돌릴 수 없습니다</dark_gray> |
-| `/betterpets reload` | 설정 다시 읽기 |
-| `/betterpets debug` | 누수 진단 · 현재 한도 · 연동 상태 |
+| `/quantumpets give <플레이어> <펫종류>` | 펫 바로 지급 |
+| `/quantumpets egg <플레이어> <알id> [개수]` | 알 아이템 지급 |
+| `/quantumpets feed <플레이어> <먹이id> [개수]` | 먹이 아이템 지급 |
+| `/quantumpets eggmaterial <알id>` | 손에 든 아이템으로 그 알의 재질을 바꿉니다 |
+| `/quantumpets growth <플레이어> <펫id> <양>` | 성장도 지급 |
+| `/quantumpets remove <플레이어> <펫id\|all>` | 펫을 강제로 놓아줍니다. `all` 이면 전부. <dark_gray>되돌릴 수 없습니다</dark_gray> |
+| `/quantumpets reload` | 설정 다시 읽기 |
+| `/quantumpets debug` | 누수 진단 · 현재 한도 · 연동 상태 |
 
 > 펫 id 는 **앞 8자리만** 쳐도 되고, 탭 완성도 됩니다.
 
@@ -62,8 +62,8 @@ id 로 읽으니, `/pet rename 왕 드래곤` 처럼 이름으로 시작해도 �
 
 | 권한 | 기본값 | 범위 |
 | --- | --- | --- |
-| `betterpets.use` | 모두 | 보관함, 소환 / 해제, 이름 변경, 탑승 |
-| `betterpets.admin` | OP | 지급, 리로드, 진단 |
+| `quantumpets.use` | 모두 | 보관함, 소환 / 해제, 이름 변경, 탑승 |
+| `quantumpets.admin` | OP | 지급, 리로드, 진단 |
 
 ---
 
@@ -72,7 +72,7 @@ id 로 읽으니, `/pet rename 왕 드래곤` 처럼 이름으로 시작해도 �
 ## ⚙️ 설정
 
 ```
-plugins/BetterPets/
+plugins/QuantumPets/
 ├─ config.yml       한도 · 알림 · 연동 · 성장 · 기믹 · 비행
 ├─ rarity.yml       등급별 수치 (속도 · 비행 확률 · 색)
 ├─ items.yml        알 · 먹이 아이템
@@ -205,14 +205,14 @@ feeds:
     growth: 10               # 안 적으면 config 의 feed-amount 를 씁니다
 ```
 
-`item-model` 로 리소스팩 모델을 지정할 수 있어요 (`betterpets:egg_chaos` 형식).
+`item-model` 로 리소스팩 모델을 지정할 수 있어요 (`quantumpets:egg_chaos` 형식).
 **소문자만 됩니다** — 대문자를 쓰면 기동할 때 알려줍니다.
 
 기본 알 재질은 전부 `SHULKER_SPAWN_EGG` 예요. 알마다 다른 재질을 쓰고 싶으면
 `items.yml` 을 직접 열 필요 없이, 원하는 아이템을 손에 들고
-`/betterpets eggmaterial <알id>` 를 치면 됩니다.
+`/quantumpets eggmaterial <알id>` 를 치면 됩니다.
 
-지급은 `/betterpets egg <플레이어> <알id> [개수]` 와 `/betterpets feed …` 로 합니다.
+지급은 `/quantumpets egg <플레이어> <알id> [개수]` 와 `/quantumpets feed …` 로 합니다.
 
 ### 🎁 놓아주기 보상
 
@@ -406,7 +406,7 @@ effects:
 **펫 종류와 무관하게 전부 공통으로 씁니다** — 먹이(`feed`)·지상 탑승(`mount-ground`)·
 비행 탑승(`mount-flying`)·하차(`dismount`)·성장(`growth`) 다섯 이벤트마다 소리와
 파티클을 하나씩 정할 수 있어요. 이름은 Bukkit 의 `Sound`·`Particle` enum 이름을
-그대로 씁니다(대소문자는 안 가려요). 잘못 적으면 `/betterpets reload` 응답에서
+그대로 씁니다(대소문자는 안 가려요). 잘못 적으면 `/quantumpets reload` 응답에서
 한 번에 알려드립니다 — 재생될 때마다 콘솔에 같은 경고가 반복되지 않아요.
 
 `sound`나 `particle`을 비워두면 그 효과만 꺼지고, 이벤트 섹션 자체를 지우면
@@ -451,12 +451,12 @@ language: ko_kr          # lang/ko_kr.yml 을 읽습니다
 
 ## 🧩 선택 연동
 
-없어도 전부 정상 동작해요. 연동 상태는 `/betterpets debug` 로 확인할 수 있습니다.
+없어도 전부 정상 동작해요. 연동 상태는 `/quantumpets debug` 로 확인할 수 있습니다.
 
 | 플러그인 | 하는 일 |
 | --- | --- |
 | **DiscordSRV** | 서버 전체 알림을 디스코드 채널로도 보냅니다 |
-| **PlaceholderAPI** | `%betterpets_pet_name%` · `%betterpets_owned%` · `%betterpets_active%` 등 |
+| **PlaceholderAPI** | `%quantumpets_pet_name%` · `%quantumpets_owned%` · `%quantumpets_active%` 등 |
 | **Floodgate / Geyser** | GeyserModelEngine 이 있는지 기동 로그로 알려줍니다 |
 | **Skript** | 획득·소환·해제·급여 감지, 펫 목록·추가·제거·보유 여부를 스크립트에서 씁니다 |
 
@@ -531,11 +531,11 @@ command /내펫:
 
 | 구문 | 뜻 |
 | --- | --- |
-| `add pet %string% to %player%` | 그 **종류**(예: `phantom_normal`)의 펫 한 마리를 지급 — `/betterpets give` 와 같은 경로입니다 |
+| `add pet %string% to %player%` | 그 **종류**(예: `phantom_normal`)의 펫 한 마리를 지급 — `/quantumpets give` 와 같은 경로입니다 |
 | `remove pet %string% from %player%` | 그 **id**(앞자리만 적어도 됩니다)를 가진 펫을 놓아줍니다 — `/pet release` 와 같은 경로라 **되돌릴 수 없습니다** |
 | `%player% has pet %string%` | 그 **종류를 하나라도** 가졌거나, 그 **id** 를 가진 펫이 있으면 참 (`doesn't have pet` 도 됩니다) |
 
-`on pet obtain` 은 알 우클릭·관리자 지급(`/betterpets give`·`egg`) 을 전부 잡습니다 —
+`on pet obtain` 은 알 우클릭·관리자 지급(`/quantumpets give`·`egg`) 을 전부 잡습니다 —
 "뽑기로 얻었을 때만" 가리고 싶으면 스크립트 안에서 따로 조건을 거세요. `add`/`remove`·
 종류 id 를 잘못 적으면(없는 종류, 없는 펫) **조용히 아무 일도 하지 않습니다** — 콘솔
 경고 없이 실패하니, 먼저 `has pet`/`owned pets of` 로 확인하고 쓰는 편이 안전합니다.
@@ -550,7 +550,7 @@ command /내펫:
 <summary><b>펫이 안 보여요</b></summary>
 
 `.bbmodel` 파일이 `plugins/BetterModel/models/` 에 있는지, `pets/*.yml` 의 `model:` 값이
-파일 이름과 같은지 확인해 주세요. `/betterpets debug` 로 트래커가 잡혔는지도 볼 수 있어요.
+파일 이름과 같은지 확인해 주세요. `/quantumpets debug` 로 트래커가 잡혔는지도 볼 수 있어요.
 Bedrock 플레이어에게만 안 보인다면 GeyserModelEngine 이 필요합니다.
 </details>
 
@@ -564,7 +564,7 @@ Bedrock 플레이어에게만 안 보인다면 GeyserModelEngine 이 필요합�
 <details>
 <summary><b>설정을 고쳤는데 그대로예요</b></summary>
 
-`/betterpets reload` 를 쳐 주세요. 문제가 있으면 뭐가 잘못됐는지 하나씩 알려줍니다.
+`/quantumpets reload` 를 쳐 주세요. 문제가 있으면 뭐가 잘못됐는지 하나씩 알려줍니다.
 (설정 오류 문구는 파일 경로와 키를 그대로 담고 있어서 언어 설정과 무관하게
 한국어로 나옵니다 — 번역해도 그 안의 경로는 그대로라 오히려 읽기 어려워져요.)
 `config.yml` · `rarity.yml` · `items.yml` · `pets/*.yml` · `lang/*.yml` 이 전부 다시
@@ -585,7 +585,7 @@ Bedrock 플레이어에게만 안 보인다면 GeyserModelEngine 이 필요합�
 <details>
 <summary><b>디스코드로 알림이 안 가요</b></summary>
 
-`/betterpets debug` 의 연동 줄에서 DiscordSRV 가 `(O)` 인지 보세요. `(X)` 면 플러그인이
+`/quantumpets debug` 의 연동 줄에서 DiscordSRV 가 `(O)` 인지 보세요. `(X)` 면 플러그인이
 없는 거고, `(O)` 인데도 안 가면 `integrations.discord.channel` 이름이 DiscordSRV 쪽
 채널 이름과 같은지 확인해 주세요.
 </details>

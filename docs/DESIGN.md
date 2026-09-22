@@ -1,6 +1,6 @@
 # 설계 문서
 
-BetterPets의 아키텍처, 검증된 API, 조사 근거, 리스크. 사용법은 [사용 안내](USAGE.md) 참고.
+QuantumPets의 아키텍처, 검증된 API, 조사 근거, 리스크. 사용법은 [사용 안내](USAGE.md) 참고.
 
 - [설계 전제 — 서버 규모](#설계-전제--서버-규모)
 - [아키텍처](#아키텍처)
@@ -58,7 +58,7 @@ BetterPets의 아키텍처, 검증된 API, 조사 근거, 리스크. 사용법�
 의존 방향은 항상 안쪽(Domain)을 향한다. **Domain은 Bukkit API를 모른다.**
 
 ```
-Presentation   /pet · /betterpets · PetBoxMenu · listener/*
+Presentation   /pet · /quantumpets · PetBoxMenu · listener/*
        ↓
 Application    PetService · GrowthService · RideService
        ↓
@@ -167,7 +167,7 @@ boolean close();
 static List<EntityTrackerRegistry> registries();   // ★ 전역 진단 — 누수 탐지
 ```
 
-> ⚠️ **트래커 누수가 1순위 구현 위험이다.** 닫지 않으면 유령 모델과 고아 스케줄 태스크가 남는다. `PetRenderHandle` 이 `AutoCloseable` 을 구현하고, **소유자 퇴장 · 서버 종료 · 월드 언로드 · 캐리어 사망 네 경로 모두**에서 close를 보장한다. `registries()` 로 엔진이 실제로 들고 있는 트래커 수를 세어 `/betterpets debug` 에 노출한다.
+> ⚠️ **트래커 누수가 1순위 구현 위험이다.** 닫지 않으면 유령 모델과 고아 스케줄 태스크가 남는다. `PetRenderHandle` 이 `AutoCloseable` 을 구현하고, **소유자 퇴장 · 서버 종료 · 월드 언로드 · 캐리어 사망 네 경로 모두**에서 close를 보장한다. `registries()` 로 엔진이 실제로 들고 있는 트래커 수를 세어 `/quantumpets debug` 에 노출한다.
 
 ### 탑승 관련 (사용하지 않기로 함)
 
@@ -226,7 +226,7 @@ BetterModel이 좌석 마운트를 네이티브로 지원하지만, [참고 구�
 
 ## 참고 구현 분석
 
-[`yourShika/betterpets-paper`](https://github.com/yourShika/betterpets-paper) (MIT, v1.26.1)는 **이미 BetterModel 연동과 비행 탑승을 구현해 배포 중인** Paper 플러그인이다. Paper 26.2 · Maven · BetterModel · 탑승 펫으로 목표가 크게 겹친다.
+[`yourShika/quantumpets-paper`](https://github.com/yourShika/quantumpets-paper) (MIT, v1.26.1)는 **이미 BetterModel 연동과 비행 탑승을 구현해 배포 중인** Paper 플러그인이다. Paper 26.2 · Maven · BetterModel · 탑승 펫으로 목표가 크게 겹친다.
 
 > MIT이므로 저작권 표시를 유지하면 참고·차용할 수 있다. 다만 이 프로젝트는 스스로 "AI의 도움으로 만들어졌다"고 밝히고 있으니 검증 없이 옮기지 않는다.
 
@@ -366,12 +366,12 @@ Java 타깃은 21이라 Java 25 JVM에서 도는 데는 문제가 없다.
 
 | 상태 | 진입 조건 | 탑승 |
 | --- | --- | :---: |
-| `NORMAL` | 알 아이템 우클릭 / `/betterpets give` | ✅ |
+| `NORMAL` | 알 아이템 우클릭 / `/quantumpets give` | ✅ |
 | `PIG` | next-stage 로 진화하는 순간, 포만도가 충분하면 | ✅ |
 
 `PIG` 로 갈 때는 **상태뿐 아니라 종류(`typeId`)도 바꾼다.** 상태만 바꾸면 "돼지가 됐다"는 메시지와 화면이 어긋난다 — 겉모습은 여전히 원래 종류다. 어떤 펫으로 바뀔지는 `config.yml` 의 `gimmick.overfeed.becomes` 가 정하고(기본 `pig`), 기본 제공 `pets/pig.yml` 은 걷는 탑승만 되는 펫이다. 그 종류가 없으면 상태만 바꾸고 기동 시 경고한다.
 
-> ⚠️ **진화한 뒤에는 화면을 다시 맞춰야 한다.** 진화는 **재소환 없이** 일어나는데, 모델은 소환 시점에 붙는다. 빠뜨리면 `ActivePet` 이 소환 시점의 `PetType` 을 붙들고 있어 진화해도 예전 모델과 예전 애니메이션 이름을 계속 쓴다. 급여 · 시간 경과 · `/betterpets growth` 세 경로 모두 `PetService.refreshAfterGrowth` 로 마무리한다.
+> ⚠️ **진화한 뒤에는 화면을 다시 맞춰야 한다.** 진화는 **재소환 없이** 일어나는데, 모델은 소환 시점에 붙는다. 빠뜨리면 `ActivePet` 이 소환 시점의 `PetType` 을 붙들고 있어 진화해도 예전 모델과 예전 애니메이션 이름을 계속 쓴다. 급여 · 시간 경과 · `/quantumpets growth` 세 경로 모두 `PetService.refreshAfterGrowth` 로 마무리한다.
 
 ### 성장도
 
@@ -737,7 +737,7 @@ pets:
 | 경로 | 구현 |
 | --- | --- |
 | **알 아이템 우클릭** | 아이템 1개 소비 → 보관함에 `NORMAL` 상태 펫 추가 |
-| 관리자 지급 | `/betterpets give`, `/betterpets egg` |
+| 관리자 지급 | `/quantumpets give`, `/quantumpets egg` |
 
 ### 아이템 — 알과 먹이
 
@@ -779,7 +779,7 @@ feeds:
 - 우클릭 처리는 `PlayerInteractEvent`. **`EquipmentSlot.HAND` 만 처리**해 오프핸드 중복 발동을 막는다
 - 보관함이 가득 찼으면 **아이템을 소비하지 않고** 메시지만 띄운다
 - 설정에서 지워진 먹이를 들고 있으면 **아이템을 먹어치우지 않고** 알려준다
-- 지급: `/betterpets egg <플레이어> <알id> [개수]`, `/betterpets feed <플레이어> <먹이id> [개수]`
+- 지급: `/quantumpets egg <플레이어> <알id> [개수]`, `/quantumpets feed <플레이어> <먹이id> [개수]`
 
 ---
 
@@ -894,7 +894,7 @@ DiscordSRV.getPlugin()
 ## 설정 파일
 
 ```
-plugins/BetterPets/
+plugins/QuantumPets/
 ├─ config.yml       언어 · 알림 · 연동 · 한도 · 성장 · 기믹 · 비행 설정
 ├─ lang/*.yml       사용자 노출 문자열 (MiniMessage). ko_kr · en_us 제공
 ├─ items.yml        알 · 먹이 아이템 정의
@@ -905,7 +905,7 @@ plugins/BetterPets/
 
 GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때 파일을 나눈다.
 
-**리로드가 실제로 반영되는지가 별도의 문제다.** 값을 읽어 들고 있는 쪽은 `/betterpets reload` 때 다시 밀어 넣어야 한다 — 지금은 셋이다: 비행 수치(`RideController`), 보유·소환 한도(`PetService`), 방송 조건(`BroadcastService`). 하나라도 빠뜨리면 "설정을 다시 읽었습니다"가 거짓말이 되고, 그 침묵은 관리자의 오후를 통째로 잡아먹는다. GUI 와 플레이스홀더는 값을 들지 않고 **매번 서비스에 묻는다** — 들고 있으면 같은 문제가 하나 더 생긴다.
+**리로드가 실제로 반영되는지가 별도의 문제다.** 값을 읽어 들고 있는 쪽은 `/quantumpets reload` 때 다시 밀어 넣어야 한다 — 지금은 셋이다: 비행 수치(`RideController`), 보유·소환 한도(`PetService`), 방송 조건(`BroadcastService`). 하나라도 빠뜨리면 "설정을 다시 읽었습니다"가 거짓말이 되고, 그 침묵은 관리자의 오후를 통째로 잡아먹는다. GUI 와 플레이스홀더는 값을 들지 않고 **매번 서비스에 묻는다** — 들고 있으면 같은 문제가 하나 더 생긴다.
 
 **설정 검증** — 로드 시 필수 필드 누락, 존재하지 않는 모델 참조(`BetterModel.modelKeys()` 로 대조)를 **모두 수집해 한 번에 보고**한다. 첫 오류에서 멈추지 않는다. 관리자가 재시작을 반복하게 만들지 않기 위해서다.
 
@@ -988,7 +988,7 @@ GUI 레이아웃은 아직 코드에 있다. 외부화가 필요해지면 그때
 - [ ] 탑승 중 펫이 디스폰돼도 안전하게 하차되는가 (낙하 피해 방지는 의도적으로 없다)
 - [ ] 알 아이템을 모루로 개명해도 여전히 인식되는가 (PDC 식별)
 - [ ] 보관함이 꽉 찬 상태에서 알을 우클릭하면 아이템이 소비되지 않는가
-- [ ] `/betterpets debug` 의 활성 펫 수와 트래커 수가 일치하는가
+- [ ] `/quantumpets debug` 의 활성 펫 수와 트래커 수가 일치하는가
 - [ ] 펫 10마리 소환 상태에서 TPS 20을 유지하는가
 - [ ] 여러 마리 소환 상태에서 한 마리에 탔을 때 나머지가 제자리에 남는가
 - [ ] 걷는 펫(`flying: false`)을 데리고 주인이 비행하면, 펫은 땅에 남고 허공에 뜨지 않는가

@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>kr.qmftm</groupId>
-  <artifactId>betterpets</artifactId>
+  <artifactId>quantumpets</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>BetterPets</name>
+  <name>QuantumPets</name>
   <description>악어의 놀이터 2 스타일 펫 시스템 — BetterModel 기반 Paper 플러그인</description>
 
   <properties>

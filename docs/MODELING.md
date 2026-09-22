@@ -1,6 +1,6 @@
 # 모델 제작 규격
 
-BetterPets가 기대하는 `.bbmodel` 규격. BlockBench로 펫 모델을 만들 때 이 문서를 따르면 된다.
+QuantumPets가 기대하는 `.bbmodel` 규격. BlockBench로 펫 모델을 만들 때 이 문서를 따르면 된다.
 
 - [빠른 체크리스트](#빠른-체크리스트)
 - [애니메이션 이름](#애니메이션-이름)
@@ -176,12 +176,12 @@ pet_pig.bbmodel
 3. `pets/*.yml` 에서 그 이름을 참조한다
 
 ```yaml
-# plugins/BetterPets/pets/wolf.yml
+# plugins/QuantumPets/pets/wolf.yml
 id: wolf
 model: pet_wolf      # ← plugins/BetterModel/models/pet_wolf.bbmodel
 ```
 
-4. `/betterpets reload` 또는 서버 재시작
+4. `/quantumpets reload` 또는 서버 재시작
 
 설정에서 존재하지 않는 모델을 참조하면 로드 시 경고한다. 오타는 이때 잡힌다.
 

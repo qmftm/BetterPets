@@ -1,9 +1,9 @@
-# BetterPets 설정
+# QuantumPets 설정
 #
 # 이 서버는 동시 접속 5명 내외를 전제로 설계했다. 거리 LOD 나 커넥션 풀 같은
 # 대규모 최적화는 의도적으로 넣지 않았다. 자세한 근거는 docs/DESIGN.md 참고.
 
-# 언어. plugins/BetterPets/lang/<코드>.yml 을 읽는다.
+# 언어. plugins/QuantumPets/lang/<코드>.yml 을 읽는다.
 # 기본 제공: ko_kr, en_us. 새로 만들려면 lang/ko_kr.yml 을 복사해 번역한다.
 # 번역이 빠진 키는 내장 한국어로 채워지므로, 바꾸고 싶은 줄만 남겨도 된다.
 language: ko_kr
@@ -122,7 +122,7 @@ ride:
 # 펫 관련 사운드·파티클. 모든 펫이 공통으로 쓴다(펫 종류별로 다르게 줄 수는 없다) —
 # 이벤트 하나마다 sound(소리 이름)·volume·pitch·particle(파티클 이름)·particle-count 를
 # 적을 수 있다. 이름은 Bukkit 의 Sound·Particle enum 이름을 그대로 쓴다(대소문자 무관).
-# 오타는 /betterpets reload 응답에서 한 번에 알려준다.
+# 오타는 /quantumpets reload 응답에서 한 번에 알려준다.
 #
 # sound 나 particle 을 비우면 그 효과만 꺼지고, 이벤트 섹션 전체를 지우면(예: 이 줄
 # 아래 dismount: 를 통째로 삭제) 그 이벤트는 아무 소리도 파티클도 내지 않는다.

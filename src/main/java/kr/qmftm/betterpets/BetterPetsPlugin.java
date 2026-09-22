@@ -41,7 +41,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * BetterPets 진입점.
+ * QuantumPets 진입점.
  *
  * <p><b>이 클래스는 배선만 한다.</b> 로직은 각 계층에 있다. 참고 구현(betterpets-paper)은
  * 진입점 하나가 5,034줄이고 매니저가 3,792줄로 코드의 69%가 두 파일에 몰려 있다.
@@ -67,7 +67,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         // paper-plugin.yml 에서 required: true 로 걸어뒀지만, 로드는 됐어도 초기화에
         // 실패한 상태일 수 있다. 그 경우 첫 소환에서야 터지는데 진단이 훨씬 어렵다.
         if (!getServer().getPluginManager().isPluginEnabled("BetterModel")) {
-            getLogger().severe("BetterModel 이 활성화되지 않았습니다. BetterPets 를 비활성화합니다.");
+            getLogger().severe("BetterModel 이 활성화되지 않았습니다. QuantumPets 를 비활성화합니다.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -105,7 +105,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         rides = new RideController(this);
 
         final GrowthService growth = new GrowthService(catalog, readGrowthTuning());
-        // 값을 들고 있지 않는다 — /betterpets reload 목록에 오를 일이 없다.
+        // 값을 들고 있지 않는다 — /quantumpets reload 목록에 오를 일이 없다.
         final EffectService effects = new EffectService(this);
 
         bedrock = new BedrockSupport(this);
@@ -144,7 +144,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         ticker = new PetTicker(this, registry, rides, pets, catchUp);
         ticker.start();
 
-        // 스코어보드·홀로그램에서 쓸 %betterpets_...%. 없으면 건너뛴다.
+        // 스코어보드·홀로그램에서 쓸 %quantumpets_...%. 없으면 건너뛴다.
         // 한도는 서비스에 물어보게 넘긴다 — 리로드로 바뀐 값이 바로 보여야 한다.
         //
         // 이 if 를 지우면 안 된다. PetPlaceholders 는 PlaceholderExpansion 을 상속해서,
@@ -155,7 +155,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             PetPlaceholders.tryRegister(this, store, registry, catalog, growth, pets);
         } else {
-            getLogger().info("PlaceholderAPI 가 없어 %betterpets_...% 를 건너뜁니다.");
+            getLogger().info("PlaceholderAPI 가 없어 %quantumpets_...% 를 건너뜁니다.");
         }
 
         // event-pet · on pet obtain · summoned/owned pets of ... . 같은 함정, 같은 자리 —
@@ -182,7 +182,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
             });
         }
 
-        getLogger().info("BetterPets 활성화됨. 펫 " + catalog.types().size()
+        getLogger().info("QuantumPets 활성화됨. 펫 " + catalog.types().size()
             + "종, 알 " + catalog.eggs().size() + "종, 먹이 " + catalog.feeds().size()
             + "종, 모델 " + renderer.availableModels().size() + "개.");
     }
@@ -223,8 +223,8 @@ public final class BetterPetsPlugin extends JavaPlugin {
                                   final GrowthCatchUp catchUp,
                                   final GrowthService growth,
                                   final EffectService effects) {
-        bind("pet", "betterpets.use", new PetCommand(pets, store, menus, rides, messages, catchUp, effects));
-        bind("betterpets", List.of("bp"), "betterpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
+        bind("pet", "quantumpets.use", new PetCommand(pets, store, menus, rides, messages, catchUp, effects));
+        bind("quantumpets", List.of("bp"), "quantumpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
             messages, catchUp, () -> {
                 reloadConfig();
                 reloadDefinitions();
@@ -257,7 +257,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         bind(name, List.of(), permission, handler);
     }
 
-    /** 별칭이 있는 명령을 붙인다. {@code /betterpets} 를 {@code /bp} 로 줄여 쓰는 경우가 여기 해당한다. */
+    /** 별칭이 있는 명령을 붙인다. {@code /quantumpets} 를 {@code /bp} 로 줄여 쓰는 경우가 여기 해당한다. */
     private void bind(final String name, final Collection<String> aliases,
                       final String permission, final Object handler) {
         final CommandExecutor executor = (CommandExecutor) handler;
