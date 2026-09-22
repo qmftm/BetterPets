@@ -72,12 +72,13 @@ command:
 
 admin:
   player-not-found: "<red>Player not found."
-  usage: "<gray>/betterpets(/bp) give|egg|feed|eggmaterial|growth|reload|debug"
+  usage: "<gray>/betterpets(/bp) give|egg|feed|eggmaterial|growth|remove|reload|debug"
   usage-give: "<gray>/betterpets give <player> <pet type>"
   usage-egg: "<gray>/betterpets egg <player> <egg id> [amount]"
   usage-feed: "<gray>/betterpets feed <player> <food id> [amount]"
   usage-eggmaterial: "<gray>/betterpets eggmaterial <egg id> <dark_gray>— sets the material to the item in your hand."
   usage-growth: "<gray>/betterpets growth <player> <first digits of petId> <amount>"
+  usage-remove: "<gray>/betterpets remove <player> <first digits of petId|all> <dark_gray>— force-releases it. Cannot be undone."
   unknown-pet-type: "<red>Unknown pet type: <white>%id%"
   unknown-egg: "<red>Unknown egg: <white>%id%"
   unknown-feed: "<red>Unknown food: <white>%id%"
@@ -86,6 +87,8 @@ admin:
   egg-given: "<green>Gave egg <white>%id%<green> to <white>%player%<green>."
   feed-given: "<green>Gave food <white>%id%<green> to <white>%player%<green>."
   growth-given: "<green>Gave <white>%amount%<green> growth."
+  removed: "<green>Removed <white>%player%<green>'s <white>%type%<green> pet."
+  removed-all: "<green>Removed all <white>%count%<green> of <white>%player%<green>'s pets."
   reloaded-active-note: "<yellow><white>%count%<yellow> pet(s) already out keep their old definition. <gray>Re-summon them to pick up the new config."
   inventory-full: "<yellow>%player%'s inventory was full, so it was dropped at their feet."
   # Diagnostic lines for /betterpets debug.

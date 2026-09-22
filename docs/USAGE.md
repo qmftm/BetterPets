@@ -48,6 +48,7 @@ id 로 읽으니, `/pet rename 왕 드래곤` 처럼 이름으로 시작해도 �
 | `/betterpets feed <플레이어> <먹이id> [개수]` | 먹이 아이템 지급 |
 | `/betterpets eggmaterial <알id>` | 손에 든 아이템으로 그 알의 재질을 바꿉니다 |
 | `/betterpets growth <플레이어> <펫id> <양>` | 성장도 지급 |
+| `/betterpets remove <플레이어> <펫id\|all>` | 펫을 강제로 놓아줍니다. `all` 이면 전부. <dark_gray>되돌릴 수 없습니다</dark_gray> |
 | `/betterpets reload` | 설정 다시 읽기 |
 | `/betterpets debug` | 누수 진단 · 현재 한도 · 연동 상태 |
 

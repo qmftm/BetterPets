@@ -26,7 +26,7 @@ import java.util.Optional;
 public final class PetAdminCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS =
-        List.of("give", "egg", "feed", "eggmaterial", "growth", "reload", "debug");
+        List.of("give", "egg", "feed", "eggmaterial", "growth", "remove", "reload", "debug");
 
     private final PetService pets;
     private final PetStore store;
@@ -86,6 +86,7 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
             case "feed" -> feed(sender, args);
             case "eggmaterial" -> eggMaterial(sender, args);
             case "growth" -> growth(sender, args);
+            case "remove" -> remove(sender, args);
             case "reload" -> reload(sender);
             case "debug" -> debug(sender);
             default -> messages.send(sender, "admin.usage");
@@ -232,6 +233,48 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
     }
 
     /**
+     * {@code /betterpets remove <플레이어> <펫id앞자리|all>} — 강제로 놓아준다.
+     *
+     * <p><b>{@link PetService#release} 를 그대로 쓴다.</b> 소환 중이면 먼저 해제하고,
+     * 설정된 보상이 있으면 지급하고, {@code PetReleasedEvent} 를 낸다 — {@code /pet release}
+     * 와 같은 뒤처리다. 따로 만들면 셋 중 하나를 빠뜨리기 쉽다({@code dismiss} 만 하고
+     * 저장소에서 안 지운다든지).
+     *
+     * <p>대상이 온라인이어야 한다. {@code dismiss} 가 {@code Player} 객체를 요구하기
+     * 때문이다({@code growth}·{@code give} 등 다른 하위 명령과 같은 제약이다) —
+     * 접속하지 않은 플레이어의 펫을 지우려면 먼저 들어오게 해야 한다.
+     */
+    private void remove(final CommandSender sender, final String[] args) {
+        if (args.length < 3) {
+            messages.send(sender, "admin.usage-remove");
+            return;
+        }
+        final Player target = sender.getServer().getPlayer(args[1]);
+        if (target == null) {
+            messages.send(sender, "admin.player-not-found");
+            return;
+        }
+        if (args[2].equalsIgnoreCase("all")) {
+            // 순회 중에 store 에서 지우면 컬렉션이 바뀌므로 먼저 통째로 복사해 둔다.
+            final List<PetData> owned = List.copyOf(store.owned(target.getUniqueId()));
+            owned.forEach(pet -> pets.release(target, pet));
+            messages.send(sender, "admin.removed-all",
+                "player", target.getName(), "count", String.valueOf(owned.size()));
+            return;
+        }
+        final String needle = args[2].toLowerCase(Locale.ROOT);
+        final Optional<PetData> pet = store.owned(target.getUniqueId()).stream()
+            .filter(p -> p.petId().toString().toLowerCase(Locale.ROOT).startsWith(needle))
+            .findFirst();
+        if (pet.isEmpty()) {
+            messages.send(sender, "pet.not-found");
+            return;
+        }
+        pets.release(target, pet.get());
+        messages.send(sender, "admin.removed", "player", target.getName(), "type", pet.get().typeId());
+    }
+
+    /**
      * 아이템을 건넨다.
      *
      * <p><b>{@code addItem} 의 반환값을 버리면 안 된다.</b> 인벤토리가 꽉 찼을 때
@@ -362,6 +405,16 @@ public final class PetAdminCommand implements CommandExecutor, TabCompleter {
                     return matching(store.owned(owner.getUniqueId()).stream()
                         .map(pet -> pet.petId().toString().substring(0, 8))
                         .toList(), args[2]);
+                }
+            }
+            if (args[0].equalsIgnoreCase("remove")) {
+                final Player owner = sender.getServer().getPlayer(args[1]);
+                if (owner != null) {
+                    final List<String> ids = new java.util.ArrayList<>(store.owned(owner.getUniqueId()).stream()
+                        .map(pet -> pet.petId().toString().substring(0, 8))
+                        .toList());
+                    ids.add("all");    // 전부 지우는 지름길도 완성해 준다
+                    return matching(ids, args[2]);
                 }
             }
         }
