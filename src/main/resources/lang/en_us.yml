@@ -72,7 +72,7 @@ command:
 
 admin:
   player-not-found: "<red>Player not found."
-  usage: "<gray>/quantumpets(/bp) give|egg|feed|eggmaterial|growth|remove|reload|debug"
+  usage: "<gray>/quantumpets(/qpt) give|egg|feed|eggmaterial|growth|remove|reload|debug"
   usage-give: "<gray>/quantumpets give <player> <pet type>"
   usage-egg: "<gray>/quantumpets egg <player> <egg id> [amount]"
   usage-feed: "<gray>/quantumpets feed <player> <food id> [amount]"

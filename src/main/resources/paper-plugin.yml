@@ -51,7 +51,7 @@ commands:
   quantumpets:
     description: 펫 관리자 명령
     usage: /quantumpets [give|egg|feed|growth|remove|reload|debug]
-    aliases: [bp]
+    aliases: [qpt]
     permission: quantumpets.admin
 
 permissions:

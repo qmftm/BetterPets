@@ -224,7 +224,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
                                   final GrowthService growth,
                                   final EffectService effects) {
         bind("pet", "quantumpets.use", new PetCommand(pets, store, menus, rides, messages, catchUp, effects));
-        bind("quantumpets", List.of("bp"), "quantumpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
+        bind("quantumpets", List.of("qpt"), "quantumpets.admin", new PetAdminCommand(pets, store, catalog, items, registry, renderer,
             messages, catchUp, () -> {
                 reloadConfig();
                 reloadDefinitions();
@@ -257,7 +257,7 @@ public final class BetterPetsPlugin extends JavaPlugin {
         bind(name, List.of(), permission, handler);
     }
 
-    /** 별칭이 있는 명령을 붙인다. {@code /quantumpets} 를 {@code /bp} 로 줄여 쓰는 경우가 여기 해당한다. */
+    /** 별칭이 있는 명령을 붙인다. {@code /quantumpets} 를 {@code /qpt} 로 줄여 쓰는 경우가 여기 해당한다. */
     private void bind(final String name, final Collection<String> aliases,
                       final String permission, final Object handler) {
         final CommandExecutor executor = (CommandExecutor) handler;
